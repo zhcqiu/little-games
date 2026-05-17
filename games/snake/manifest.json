@@ -1,0 +1,11 @@
+{
+  "name": "贪吃蛇",
+  "short_name": "蛇",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fff8e1",
+  "theme_color": "#ff7043",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

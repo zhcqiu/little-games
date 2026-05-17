@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#43a047"/>
+  <!-- 蛇身体三节圆角方 -->
+  <rect x="120" y="280" width="60" height="60" rx="14" fill="#fff8e1"/>
+  <rect x="200" y="280" width="60" height="60" rx="14" fill="#fff8e1"/>
+  <rect x="280" y="280" width="60" height="60" rx="14" fill="#fff8e1"/>
+  <!-- 蛇头大圆角方 + 眼睛 -->
+  <rect x="360" y="270" width="80" height="80" rx="20" fill="#fff8e1"/>
+  <circle cx="395" cy="295" r="8" fill="#1b5e20"/>
+  <circle cx="425" cy="295" r="8" fill="#1b5e20"/>
+  <path d="M395 325 Q400 330 405 325 Q410 320 415 325" stroke="#1b5e20" stroke-width="4" fill="none"/>
+  <!-- 食物 emoji-ish 红苹果 -->
+  <circle cx="220" cy="170" r="36" fill="#e53935"/>
+  <rect x="215" y="130" width="4" height="14" fill="#5d4037"/>
+  <ellipse cx="232" cy="138" rx="10" ry="6" fill="#43a047" transform="rotate(20 232 138)"/>
+</svg>
