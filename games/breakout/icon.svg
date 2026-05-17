@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#ff7043"/>
+  <!-- 砖块 4 行 4 列 -->
+  <g fill="#ffffff" opacity="0.95">
+    <rect x="80"  y="110" width="80" height="40" rx="6"/>
+    <rect x="172" y="110" width="80" height="40" rx="6"/>
+    <rect x="264" y="110" width="80" height="40" rx="6"/>
+    <rect x="356" y="110" width="80" height="40" rx="6"/>
+  </g>
+  <g fill="#fff176">
+    <rect x="80"  y="160" width="80" height="40" rx="6"/>
+    <rect x="172" y="160" width="80" height="40" rx="6"/>
+    <rect x="264" y="160" width="80" height="40" rx="6"/>
+    <rect x="356" y="160" width="80" height="40" rx="6"/>
+  </g>
+  <g fill="#81c784">
+    <rect x="80"  y="210" width="80" height="40" rx="6"/>
+    <rect x="172" y="210" width="80" height="40" rx="6"/>
+    <rect x="264" y="210" width="80" height="40" rx="6"/>
+    <rect x="356" y="210" width="80" height="40" rx="6"/>
+  </g>
+  <g fill="#4fc3f7">
+    <rect x="80"  y="260" width="80" height="40" rx="6"/>
+    <rect x="172" y="260" width="80" height="40" rx="6"/>
+    <rect x="264" y="260" width="80" height="40" rx="6"/>
+    <rect x="356" y="260" width="80" height="40" rx="6"/>
+  </g>
+  <!-- 球 -->
+  <circle cx="256" cy="360" r="18" fill="#ffffff"/>
+  <!-- 板拍 -->
+  <rect x="176" y="410" width="160" height="28" rx="14" fill="#ffffff"/>
+</svg>

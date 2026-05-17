@@ -1,0 +1,12 @@
+{
+  "name": "打砖块",
+  "short_name": "打砖块",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8e1",
+  "theme_color": "#ff7043",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
