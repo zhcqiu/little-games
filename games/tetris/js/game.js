@@ -107,6 +107,10 @@ export class Game {
       p.col = nextCol;
     }
 
+    // 应用上拉地板
+    const minRow = p.lowWaterMark - this.upwardTolerance;
+    targetRow = Math.max(targetRow, minRow);
+
     const rowStep = Math.sign(targetRow - p.row);
     while (p.row !== targetRow && rowStep !== 0) {
       const nextRow = p.row + rowStep;

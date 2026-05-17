@@ -120,3 +120,21 @@ g11.step(400);
 assertEq('400ms 内未锁', g11.current.type, 'O');
 g11.step(200);
 assertTrue('lock 已完成', g11.board[18][1] !== null || g11.current.type !== 'O');
+
+// 上拉容忍
+const g12 = new Game();
+g12.setUpwardTolerance(0);
+g12.current = { type: 'O', rotation: 0, row: 10, col: 0, lowWaterMark: 10 };
+g12.tryMoveTo(5, 0);
+assertEq('tol=0 不能上拉', g12.current.row, 10);
+
+g12.setUpwardTolerance(2);
+g12.tryMoveTo(8, 0);
+assertEq('tol=2 可拉到 10-2=8', g12.current.row, 8);
+g12.tryMoveTo(5, 0);
+assertEq('lowWater=10 tol=2 卡在 8', g12.current.row, 8);
+
+g12.current.row = 12;
+g12.current.lowWaterMark = 12;
+g12.tryMoveTo(8, 0);
+assertEq('lowWater=12 tol=2 = min row 10', g12.current.row, 10);
