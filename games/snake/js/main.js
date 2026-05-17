@@ -3,10 +3,12 @@ import { Game } from './game.js';
 import { Renderer } from './render.js';
 import { Input } from './input.js';
 import { Audio } from './audio.js';
+import { Effects } from './effects.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const game = new Game();
-const renderer = new Renderer(gameCanvas, null);
+const effects = new Effects();
+const renderer = new Renderer(gameCanvas, effects);
 const audio = new Audio();
 
 const input = new Input(
@@ -18,6 +20,7 @@ const input = new Input(
 input.on('swipe', (dir) => {
   game.queueDirection(dir);
   audio.playTurn();
+  vibrate([8]);
 });
 input.on('pauseChange', (paused) => {
   game.setPaused(paused);
@@ -32,6 +35,7 @@ function padDir(dir) {
   audio.unlock();
   game.queueDirection(dir);
   audio.playTurn();
+  vibrate([8]);
 }
 document.getElementById('pad-up').addEventListener('click',    () => padDir('up'));
 document.getElementById('pad-down').addEventListener('click',  () => padDir('down'));
@@ -44,6 +48,7 @@ function loop(now) {
   const dt = now - lastTime;
   lastTime = now;
   game.step(dt);
+  effects.step(dt);
   renderer.draw(game, dt);
   document.getElementById('score').textContent = game.score;
   requestAnimationFrame(loop);
@@ -51,15 +56,34 @@ function loop(now) {
 
 game.onEat(() => {
   audio.playEat();
+  const head = game.snake[0];
+  effects.spawnBurst(head.col, head.row, renderer.cellSize,
+    ['#ffeb3b', '#ff9800', '#4caf50', '#f44336'], 8);
+  effects.triggerShake(3, 80);
+  showClearToast('✨');
+  vibrate([15]);
 });
 game.onDie(() => {
   audio.playDie();
+  const head = game.snake[0];
+  effects.spawnRadial(head.col, head.row, renderer.cellSize,
+    ['#f44336', '#ff9800', '#ffeb3b'], 16, 250);
+  effects.triggerShake(14, 240);
+  showClearToast('😵');
+  vibrate([40, 40, 80, 40, 120]);
 });
 game.onRevive(() => {
   audio.playRevive();
+  const head = game.snake[0];
+  effects.spawnRadial(head.col, head.row, renderer.cellSize,
+    ['#ec407a', '#b388ff', '#42a5f5'], 12, 180);
+  effects.triggerShake(8, 180);
+  showClearToast('💖');
+  vibrate([20, 30, 60]);
 });
 game.onWrap(() => {
   audio.playWrap();
+  showToast('✨');
 });
 
 requestAnimationFrame(loop);
@@ -106,5 +130,36 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
   }
 });
+
+let toastTimer = null;
+function showToast(text) {
+  const t = document.getElementById('event-toast');
+  t.textContent = text;
+  t.classList.remove('hidden');
+  t.style.animation = 'none';
+  t.offsetHeight;
+  t.style.animation = '';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 1000);
+}
+
+let clearToastTimer = null;
+function showClearToast(text) {
+  const t = document.getElementById('clear-toast');
+  t.textContent = text;
+  t.classList.remove('hidden');
+  t.style.animation = 'none';
+  t.offsetHeight;
+  t.style.animation = '';
+  clearTimeout(clearToastTimer);
+  clearToastTimer = setTimeout(() => t.classList.add('hidden'), 900);
+}
+
+function vibrate(pattern) {
+  // fxLevel 控制由 H1 settings 接入后再判；这里先简单 try
+  if (navigator.vibrate) {
+    try { navigator.vibrate(pattern); } catch (e) {}
+  }
+}
 
 window._renderer = renderer;
