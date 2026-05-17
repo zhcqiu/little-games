@@ -86,10 +86,12 @@ export class Settings {
       btn.classList.toggle('active', this.state.theme === btn.dataset.val);
     }
 
-    document.getElementById('sfx-toggle').classList.toggle('active', this.state.sfxOn);
-    document.getElementById('sfx-toggle').textContent = this.state.sfxOn ? '开' : '关';
-    document.getElementById('bgm-toggle').classList.toggle('active', this.state.bgmOn);
-    document.getElementById('bgm-toggle').textContent = this.state.bgmOn ? '开' : '关';
+    const sfxBtn = document.getElementById('sfx-toggle');
+    sfxBtn.classList.toggle('active', this.state.sfxOn);
+    sfxBtn.textContent = this.state.sfxOn ? '🔊' : '🔇';
+    const bgmBtn = document.getElementById('bgm-toggle');
+    bgmBtn.classList.toggle('active', this.state.bgmOn);
+    bgmBtn.textContent = this.state.bgmOn ? '🎵' : '🔕';
   }
 
   bindUi() {

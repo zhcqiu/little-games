@@ -51,13 +51,13 @@ game.onLineClear((rows, colorRows, boardSnapshot) => {
     { amp: 28, dur: 280 },
   ][Math.min(rows.length, 4) - 1];
   renderer.triggerShake(shake.amp, shake.dur);
-  const cheers = ['好棒!', '双消!', '三消!', '四消!'];
+  const cheers = ['👍', '😄', '🤩', '🎉'];
   showClearToast(cheers[Math.min(rows.length, 4) - 1]);
 });
 game.onGameOver((mode, data) => {
   if (mode === 'endless-reset') {
     audio.playEndlessReset();
-    showToast('继续加油！');
+    showToast('💪');
     if (data) {
       const colorRows = data.clearedRows.map((r) => data.boardSnapshot[r].slice());
       renderer.flashRowsAnim(data.clearedRows);
@@ -214,7 +214,7 @@ window.addEventListener('keydown', (e) => {
     game.setPaused(manualPause);
     if (manualPause) {
       audio.stopBgm(100);
-      showToast('已暂停（按 P 继续）');
+      showToast('⏸');
     } else {
       if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
     }

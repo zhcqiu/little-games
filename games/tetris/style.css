@@ -35,6 +35,60 @@ body[data-theme="candy"] {
   --canvas-border: #ec407a;
 }
 
+body[data-theme="forest"] {
+  --bg: #e8f5e9;
+  --bg-2: #43a047;
+  --primary: #2e7d32;
+  --primary-dark: #1b5e20;
+  --text: #ffffff;
+  --text-dim: #c8e6c9;
+  --panel-bg: #c8e6c9;
+  --panel-text: #1b5e20;
+  --button-bg: #ffffff;
+  --button-bg-text: #1b5e20;
+  --button-active: #43a047;
+  --shadow: 0 4px 16px rgba(46, 125, 50, 0.25);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(46, 125, 50, 0.16);
+  --canvas-border: #43a047;
+}
+
+body[data-theme="ocean"] {
+  --bg: #e0f7fa;
+  --bg-2: #00acc1;
+  --primary: #0097a7;
+  --primary-dark: #006064;
+  --text: #ffffff;
+  --text-dim: #b2ebf2;
+  --panel-bg: #b2ebf2;
+  --panel-text: #006064;
+  --button-bg: #ffffff;
+  --button-bg-text: #006064;
+  --button-active: #00acc1;
+  --shadow: 0 4px 16px rgba(0, 151, 167, 0.25);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(0, 151, 167, 0.16);
+  --canvas-border: #00acc1;
+}
+
+body[data-theme="space"] {
+  --bg: #311b92;
+  --bg-2: #5e35b1;
+  --primary: #b388ff;
+  --primary-dark: #7c4dff;
+  --text: #ffffff;
+  --text-dim: #d1c4e9;
+  --panel-bg: #4527a0;
+  --panel-text: #ffffff;
+  --button-bg: #5e35b1;
+  --button-bg-text: #ffffff;
+  --button-active: #b388ff;
+  --shadow: 0 4px 20px rgba(179, 136, 255, 0.4);
+  --canvas-bg: #1a0a4a;
+  --canvas-grid: rgba(179, 136, 255, 0.12);
+  --canvas-border: #b388ff;
+}
+
 body[data-theme="night"] {
   --bg: #1a1a2e;
   --bg-2: #16213e;
@@ -51,6 +105,11 @@ body[data-theme="night"] {
   --canvas-bg: #16213e;
   --canvas-grid: rgba(255, 255, 255, 0.04);
   --canvas-border: #42a5f5;
+}
+
+/* 暗色主题（night, space）补：help-section 半透明白卡片不够亮 */
+body[data-theme="space"] .help-section {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -81,9 +140,15 @@ body { display: flex; flex-direction: column; }
 }
 
 .score-block {
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.4;
   flex: 1;
+  font-weight: bold;
+}
+
+.score-block .emoji {
+  font-size: 20px;
+  margin-right: 2px;
 }
 
 .next-block {
@@ -93,7 +158,7 @@ body { display: flex; flex-direction: column; }
   margin: 0 12px;
 }
 
-.next-block .label { font-size: 11px; color: var(--text-dim); }
+.next-block .label { font-size: 16px; color: var(--text-dim); }
 #next-canvas {
   background: var(--canvas-bg);
   border-radius: 4px;
@@ -226,7 +291,7 @@ main {
 .setting-row label {
   font-size: 16px;
   color: var(--panel-text);
-  opacity: 0.85;
+  font-weight: 600;
 }
 
 .slider-row {
@@ -294,6 +359,15 @@ main {
 .seg-narrow button {
   padding: 0;
   min-width: 44px;
+}
+
+.seg-wrap {
+  flex-wrap: wrap;
+}
+
+.seg-wrap button {
+  flex: 1 1 calc((100% - 24px) / 3);
+  min-width: calc((100% - 24px) / 3);
 }
 
 .seg button.active {
@@ -437,9 +511,28 @@ body[data-theme="night"] .help-section {
   text-align: center;
 }
 
-#gameover-panel h2 { font-size: 32px; margin-bottom: 16px; }
-#gameover-panel p { font-size: 20px; margin: 8px 0; }
-#gameover-panel button.primary { margin-top: 32px; min-width: 200px; }
+.gameover-emoji {
+  font-size: 120px;
+  line-height: 1;
+  margin-bottom: 24px;
+  animation: gameoverBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes gameoverBounce {
+  0% { transform: scale(0.3) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.gameover-stat {
+  font-size: 28px;
+  margin: 6px 0;
+  font-weight: bold;
+  color: var(--panel-text);
+}
+
+#gameover-panel button.primary { margin-top: 32px; min-width: 200px; font-size: 22px; }
 
 /* 无尽模式鼓励浮字 */
 .toast {
@@ -447,16 +540,12 @@ body[data-theme="night"] .help-section {
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(255, 112, 67, 0.95);
-  color: white;
-  padding: 16px 32px;
-  border-radius: 24px;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 96px;
+  line-height: 1;
   z-index: 150;
-  box-shadow: var(--shadow);
   animation: toastFade 1s ease forwards;
   pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 
 .toast.hidden { display: none; }
@@ -468,24 +557,18 @@ body[data-theme="night"] .help-section {
   100% { opacity: 0; transform: translate(-50%, -60%); }
 }
 
-/* 消行欢呼浮字 — 比 encourage-toast 更大更亮，向上漂浮 */
+/* 消行欢呼浮字 — emoji 大字向上漂浮，自带光晕 */
 .clear-toast {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.5);
-  background: linear-gradient(135deg, #ffeb3b, #ff9800);
-  color: #d32f2f;
-  padding: 12px 36px;
-  border-radius: 32px;
-  font-size: 48px;
-  font-weight: bold;
+  font-size: 128px;
+  line-height: 1;
   z-index: 150;
-  box-shadow: 0 0 32px rgba(255, 235, 59, 0.8), var(--shadow);
   animation: clearToastPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   pointer-events: none;
-  text-shadow: 2px 2px 0 #fff;
-  letter-spacing: 4px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 
 .clear-toast.hidden { display: none; }
