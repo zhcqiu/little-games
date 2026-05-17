@@ -17,6 +17,55 @@ settings.load();
 settings.apply();
 settings.bindUi();
 
+// 续玩存盘
+const SAVE_KEY = 'snake.saveGame';
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function persistSave() {
+  if (resumePending) return;   // 守卫：弹窗未决前不要写
+  try {
+    if (game.dead) {
+      localStorage.removeItem(SAVE_KEY);
+      return;
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(game.serialize()));
+  } catch (e) {}
+}
+
+let resumePending = false;
+const savedSnap = loadSave();
+if (savedSnap) {
+  resumePending = true;
+  game.setPaused(true);
+  const popup = document.getElementById('resume-popup');
+  popup.classList.remove('hidden');
+  document.getElementById('resume-continue').addEventListener('click', () => {
+    if (!game.restore(savedSnap)) {
+      console.warn('restore failed');
+      return;
+    }
+    resumePending = false;
+    popup.classList.add('hidden');
+    game.setPaused(false);
+  });
+  document.getElementById('resume-discard').addEventListener('click', () => {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    resumePending = false;
+    popup.classList.add('hidden');
+    game.setPaused(false);
+  });
+}
+
+window.addEventListener('beforeunload', persistSave);
+window.addEventListener('pagehide', persistSave);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) persistSave();
+});
+
 const input = new Input(
   gameCanvas,
   () => renderer.cellSize,
@@ -202,7 +251,9 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 });
 
 // 占位：续玩 / 破纪录追踪在 Phase I 实现
-function clearSave() {}
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+}
 function resetHighScoreTracker() {}
 
 window._renderer = renderer;
