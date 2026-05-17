@@ -31,6 +31,7 @@ input.on('moveTo', (row, col) => {
 input.on('rotate', (dir) => {
   if (game.tryRotate(dir)) audio.playRotate();
 });
+input.on('hardDrop', () => game.hardDrop());
 input.on('pauseChange', (paused) => {
   game.setPaused(paused);
 });
@@ -83,6 +84,7 @@ game.onGameOver((mode, data) => {
   } else {
     audio.playGameOver();
     showGameOverPanel();
+    clearSave();
   }
 });
 
@@ -93,6 +95,50 @@ function resetHighScoreTracker() {
   highScoreBaseline = settings.get('highScore');
   highScoreCelebrated = false;
 }
+
+// 续玩：启动时检查 saved state
+const SAVE_KEY = 'tetris.saveGame';
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function persistSave() {
+  try {
+    if (!game.current) {
+      localStorage.removeItem(SAVE_KEY);
+      return;
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(game.serialize()));
+  } catch (e) {}
+}
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
+const savedSnap = loadSave();
+if (savedSnap) {
+  // 暂停游戏，弹询问
+  game.setPaused(true);
+  const popup = document.getElementById('resume-popup');
+  popup.classList.remove('hidden');
+  document.getElementById('resume-continue').addEventListener('click', () => {
+    game.restore(savedSnap);
+    popup.classList.add('hidden');
+    game.setPaused(false);
+  });
+  document.getElementById('resume-discard').addEventListener('click', () => {
+    clearSave();
+    popup.classList.add('hidden');
+    game.setPaused(false);
+  });
+}
+
+// 关闭 / 切后台时存盘
+window.addEventListener('beforeunload', persistSave);
+window.addEventListener('pagehide', persistSave);  // iOS Safari 上 beforeunload 不可靠
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) persistSave();
+});
 
 // 主循环
 let lastTime = performance.now();
@@ -221,6 +267,13 @@ function setManualPause(p) {
   }
 }
 pauseOverlay.addEventListener('click', () => setManualPause(false));
+document.getElementById('pause-btn').addEventListener('click', () => {
+  // 只在没有面板打开时切换
+  const panelsOpen = !helpPanel.classList.contains('hidden')
+    || !document.getElementById('settings-panel').classList.contains('hidden')
+    || !document.getElementById('gameover-panel').classList.contains('hidden');
+  if (!panelsOpen) setManualPause(!manualPause);
+});
 window.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') return;

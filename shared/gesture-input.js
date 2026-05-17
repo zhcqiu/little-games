@@ -20,7 +20,9 @@ export class Input {
       moveTo: () => {},
       rotate: () => {},
       pauseChange: () => {},
+      hardDrop: () => {},
     };
+    this._lastSpacePress = 0;
 
     canvas.addEventListener('pointerdown', this._onDown.bind(this));
     canvas.addEventListener('pointermove', this._onMove.bind(this));
@@ -56,15 +58,32 @@ export class Input {
       case 'ArrowDown':
       case 's':
       case 'S':
-        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row + 1, piece.col); }
+        if (piece) {
+          e.preventDefault();
+          // Shift + 下 = 硬落下
+          if (e.shiftKey) this.handlers.hardDrop();
+          else this.handlers.moveTo(piece.row + 1, piece.col);
+        }
         break;
       case 'ArrowUp':
       case 'w':
       case 'W':
-      case ' ':
         e.preventDefault();
         this.handlers.rotate(+1);
         break;
+      case ' ': {
+        e.preventDefault();
+        // 空格单击 = 旋转；500ms 内连按两次 = 硬落下
+        const now = Date.now();
+        if (now - this._lastSpacePress < 500) {
+          this.handlers.hardDrop();
+          this._lastSpacePress = 0;
+        } else {
+          this.handlers.rotate(+1);
+          this._lastSpacePress = now;
+        }
+        break;
+      }
       case 'z':
       case 'Z':
         e.preventDefault();

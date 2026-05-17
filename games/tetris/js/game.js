@@ -348,6 +348,45 @@ export class Game {
     this.fallAccumulator = 0;
   }
 
+  /** 序列化游戏状态，可写入 localStorage 续玩 */
+  serialize() {
+    return {
+      v: 1,
+      board: this.board,
+      score: this.score,
+      bag: this.bag,
+      nextBag: this.nextBag,
+      current: this.current,
+      next: this.next,
+    };
+  }
+
+  /** 从 serialize() 的快照恢复 */
+  restore(snap) {
+    if (!snap || snap.v !== 1 || !Array.isArray(snap.board)) return false;
+    try {
+      this.board = snap.board.map((row) => row.slice());
+      this.score = snap.score | 0;
+      this.bag = snap.bag.slice();
+      this.nextBag = snap.nextBag.slice();
+      this.current = snap.current ? { ...snap.current } : this._spawnNext();
+      this.next = snap.next || this._peekNext();
+      this._lockTimer = null;
+      this.fallAccumulator = 0;
+      return true;
+    } catch (e) {
+      console.warn('restore failed:', e);
+      return false;
+    }
+  }
+
+  /** 一键硬落：方块直接落到底并立刻 lock */
+  hardDrop() {
+    if (!this.current || this.paused) return;
+    while (this.tryMoveDown()) {}
+    this._performLock();
+  }
+
   /** 返回当前方块"硬落到底"会在哪一行（不修改状态） */
   computeGhostRow() {
     if (!this.current) return null;

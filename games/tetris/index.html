@@ -20,6 +20,7 @@
       <div class="label" title="下一块">⏭️</div>
       <canvas id="next-canvas" width="60" height="60"></canvas>
     </div>
+    <button id="pause-btn" aria-label="暂停">⏸</button>
     <button id="help-btn" aria-label="帮助">？</button>
     <button id="settings-btn" aria-label="设置">⚙</button>
   </header>
@@ -152,6 +153,15 @@
       </div>
     </div>
     <button id="restart-btn" class="primary">🔄 重新开始</button>
+  </div>
+
+  <!-- 续玩询问气泡 -->
+  <div id="resume-popup" class="popup hidden">
+    <p>📋 上次玩到一半，继续吗？</p>
+    <div class="popup-buttons">
+      <button id="resume-discard">🆕 新开</button>
+      <button id="resume-continue" class="primary">▶️ 继续</button>
+    </div>
   </div>
 
   <!-- 重启确认气泡 -->
