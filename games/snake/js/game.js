@@ -81,4 +81,88 @@ export class Game {
     if (OPPOSITE[ref] === dir) return;
     this.nextDirection = dir;
   }
+
+  _nextHeadCell() {
+    const head = this.snake[0];
+    const dir = DIR_VECTORS[this.currentDirection];
+    return { row: head.row + dir.dr, col: head.col + dir.dc };
+  }
+
+  _hitWall(cell) {
+    return cell.row < 0 || cell.row >= BOARD_HEIGHT
+        || cell.col < 0 || cell.col >= BOARD_WIDTH;
+  }
+
+  /** 检查 cell 是否与蛇身(不含即将弹出的尾)重合 */
+  _hitSelf(cell) {
+    // 若不吃食物，下一 tick 尾巴会弹出，所以 snake[length-1] 不算冲突
+    const eating = this.food && cell.row === this.food.row && cell.col === this.food.col;
+    const limit = eating ? this.snake.length : this.snake.length - 1;
+    for (let i = 0; i < limit; i++) {
+      if (this.snake[i].row === cell.row && this.snake[i].col === cell.col) return true;
+    }
+    return false;
+  }
+
+  _advance() {
+    if (this.dead) return;
+
+    if (this.nextDirection) {
+      this.currentDirection = this.nextDirection;
+      this.nextDirection = null;
+    }
+
+    let nextHead = this._nextHeadCell();
+    const invincible = this.reviveInvincibleMs > 0;
+
+    // 边界处理
+    if (this._hitWall(nextHead)) {
+      if (this.endMode === 'wrap' || invincible) {
+        nextHead = {
+          row: (nextHead.row + BOARD_HEIGHT) % BOARD_HEIGHT,
+          col: (nextHead.col + BOARD_WIDTH) % BOARD_WIDTH,
+        };
+        if (this._onWrap) this._onWrap();
+      } else if (this.endMode === 'revive') {
+        this._triggerRevive();
+        return;
+      } else {
+        this._triggerDie();
+        return;
+      }
+    }
+
+    // 自撞
+    if (this._hitSelf(nextHead)) {
+      if (invincible) {
+        // 无敌期：略过判定
+      } else if (this.endMode === 'revive') {
+        this._triggerRevive();
+        return;
+      } else {
+        this._triggerDie();
+        return;
+      }
+    }
+
+    const ate = this.food && nextHead.row === this.food.row && nextHead.col === this.food.col;
+    this.snake.unshift(nextHead);
+    if (ate) {
+      this.score += 1;
+      this.food = this._spawnFood();   // 可能 null（棋盘填满）
+      if (this._onEat) this._onEat();
+    } else {
+      this.snake.pop();
+    }
+  }
+
+  _triggerDie() {
+    this.dead = true;
+    if (this._onDie) this._onDie();
+  }
+
+  _triggerRevive() {
+    // C6 实现，此处占位
+    this._triggerDie();
+  }
 }
