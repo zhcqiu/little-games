@@ -74,4 +74,37 @@ if ('serviceWorker' in navigator) {
 }
 
 window._game = game;
+// 切后台暂停
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    game.setPaused(true);
+    audio.stopBgm(100);
+  } else {
+    if (input.fingers && input.fingers.size === 0) game.setPaused(false);
+    if (audio.bgmOn && audio.ctx) audio.startBgm();
+  }
+});
+
+// 暂停按钮 + overlay
+let manualPause = false;
+const pauseOverlay = document.getElementById('pause-overlay');
+function setManualPause(p) {
+  manualPause = p;
+  game.setPaused(p);
+  pauseOverlay.classList.toggle('hidden', !p);
+  if (p) audio.stopBgm(100);
+  else if (audio.bgmOn && audio.ctx) audio.startBgm();
+}
+pauseOverlay.addEventListener('click', () => setManualPause(false));
+document.getElementById('pause-btn').addEventListener('click', () => setManualPause(!manualPause));
+
+window.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+  if (e.key === 'p' || e.key === 'P') {
+    setManualPause(!manualPause);
+    e.preventDefault();
+  }
+});
+
 window._renderer = renderer;
