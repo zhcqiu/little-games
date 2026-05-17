@@ -24,6 +24,51 @@ export class Input {
     canvas.addEventListener('pointermove', this._onMove.bind(this));
     canvas.addEventListener('pointerup', this._onUp.bind(this));
     canvas.addEventListener('pointercancel', this._onUp.bind(this));
+
+    // 键盘支持（PC 用）：方向键移动 + 上/W/Space 旋转 CW + Z 旋转 CCW
+    window.addEventListener('keydown', this._onKeyDown.bind(this));
+  }
+
+  _onKeyDown(e) {
+    // 忽略输入控件里的按键（设置面板里的滑条等）
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+
+    if (this._firstTouchHandler) {
+      this._firstTouchHandler();
+      this._firstTouchHandler = null;
+    }
+
+    const piece = this.getPieceState();
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'a':
+      case 'A':
+        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row, piece.col - 1); }
+        break;
+      case 'ArrowRight':
+      case 'd':
+      case 'D':
+        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row, piece.col + 1); }
+        break;
+      case 'ArrowDown':
+      case 's':
+      case 'S':
+        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row + 1, piece.col); }
+        break;
+      case 'ArrowUp':
+      case 'w':
+      case 'W':
+      case ' ':
+        e.preventDefault();
+        this.handlers.rotate(+1);
+        break;
+      case 'z':
+      case 'Z':
+        e.preventDefault();
+        this.handlers.rotate(-1);
+        break;
+    }
   }
 
   on(event, fn) { this.handlers[event] = fn; }
