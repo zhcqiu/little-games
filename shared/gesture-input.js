@@ -22,7 +22,6 @@ export class Input {
       pauseChange: () => {},
       hardDrop: () => {},
     };
-    this._lastSpacePress = 0;
 
     canvas.addEventListener('pointerdown', this._onDown.bind(this));
     canvas.addEventListener('pointermove', this._onMove.bind(this));
@@ -71,19 +70,10 @@ export class Input {
         e.preventDefault();
         this.handlers.rotate(+1);
         break;
-      case ' ': {
+      case ' ':
         e.preventDefault();
-        // 空格单击 = 旋转；500ms 内连按两次 = 硬落下
-        const now = Date.now();
-        if (now - this._lastSpacePress < 500) {
-          this.handlers.hardDrop();
-          this._lastSpacePress = 0;
-        } else {
-          this.handlers.rotate(+1);
-          this._lastSpacePress = now;
-        }
+        this.handlers.rotate(+1);
         break;
-      }
       case 'z':
       case 'Z':
         e.preventDefault();

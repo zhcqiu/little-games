@@ -215,7 +215,32 @@ function showGameOverPanel() {
   document.getElementById('final-score').textContent = game.score;
   document.getElementById('final-high').textContent = settings.get('highScore');
   panel.classList.remove('hidden');
+  // 仅当浏览器支持 Web Share 时显示分享按钮
+  const shareBtn = document.getElementById('share-btn');
+  if (navigator.share) {
+    shareBtn.classList.remove('hidden');
+  } else {
+    shareBtn.classList.add('hidden');
+  }
 }
+
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const score = game.score;
+  const text = `🧱 我在俄罗斯方块里消了 ${score} 行！来挑战我吧 🎯`;
+  try {
+    await navigator.share({
+      title: '俄罗斯方块',
+      text,
+      url: location.href,
+    });
+  } catch (e) {
+    // 用户取消或失败：兜底 copy
+    try {
+      await navigator.clipboard.writeText(`${text} ${location.href}`);
+      showToast('📋');
+    } catch (err) {}
+  }
+});
 
 document.getElementById('replay-btn').addEventListener('click', () => {
   document.getElementById('gameover-panel').classList.add('hidden');

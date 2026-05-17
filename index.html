@@ -99,6 +99,13 @@
       margin: 0;
     }
 
+    .game-high {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin: 0.5rem 0 0;
+    }
+
     .placeholder {
       background: var(--card);
       border: 3px dashed var(--accent);
@@ -148,8 +155,15 @@
   <script>
     // 游戏列表 — 添加新游戏时，在这里加一项即可
     const games = [
-      { title: "俄罗斯方块", desc: "经典玩法，单指移动 + 双指旋转", emoji: "🧱", path: "games/tetris/" },
+      { title: "俄罗斯方块", desc: "经典玩法，单指移动 + 双指旋转", emoji: "🧱", path: "games/tetris/", highScoreKey: "tetris.highScore" },
     ];
+
+    function readHighScore(key) {
+      try {
+        const v = localStorage.getItem(key);
+        return v ? parseInt(v, 10) || 0 : 0;
+      } catch (e) { return 0; }
+    }
 
     const container = document.getElementById("games-container");
     if (games.length > 0) {
@@ -160,10 +174,13 @@
         const a = document.createElement("a");
         a.className = "game-card";
         a.href = g.path;
+        const high = g.highScoreKey ? readHighScore(g.highScoreKey) : 0;
+        const highHtml = high > 0 ? `<p class="game-high">🏆 ${high}</p>` : '';
         a.innerHTML = `
           <span class="game-emoji">${g.emoji}</span>
           <div class="game-title">${g.title}</div>
           <p class="game-desc">${g.desc}</p>
+          ${highHtml}
         `;
         grid.appendChild(a);
       }

@@ -1,0 +1,29 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check all JS
+        run: |
+          shopt -s globstar
+          for f in $(find . -name "*.js" -not -path "./node_modules/*"); do
+            node --check "$f" || exit 1
+          done
+          echo "All JS syntax OK"
+
+      - name: Run pure-function tests
+        run: node tests/run-tests.mjs

@@ -546,6 +546,21 @@ body[data-theme="night"] .help-section {
 
 #gameover-panel button.primary { margin-top: 32px; min-width: 200px; font-size: 22px; }
 
+button.secondary {
+  margin-top: 12px;
+  min-height: 48px;
+  min-width: 200px;
+  background: var(--button-bg);
+  color: var(--button-bg-text);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.secondary.hidden { display: none; }
+
 /* 无尽模式鼓励浮字 */
 .toast {
   position: fixed;
