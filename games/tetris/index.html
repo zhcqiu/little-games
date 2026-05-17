@@ -20,12 +20,66 @@
       <div class="label">下一块</div>
       <canvas id="next-canvas" width="60" height="60"></canvas>
     </div>
+    <button id="help-btn" aria-label="帮助">？</button>
     <button id="settings-btn" aria-label="设置">⚙</button>
   </header>
 
   <main>
     <canvas id="game-canvas"></canvas>
   </main>
+
+  <!-- 帮助面板 -->
+  <div id="help-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>怎么玩</h2>
+      <button id="help-close" aria-label="关闭帮助">✕</button>
+    </div>
+
+    <div class="help-section">
+      <h3>🎮 目标</h3>
+      <p>把方块拼满横着的一整行，那一行就会消除得分。把得分越堆越高！</p>
+    </div>
+
+    <div class="help-section">
+      <h3>📱 手机和平板</h3>
+      <ul>
+        <li><b>单指拖动</b> — 移动方块（上下左右都可以）</li>
+        <li><b>双指拧</b> — 转动方块的角度</li>
+        <li><b>按住</b> — 自动暂停，松手继续</li>
+        <li><b>右上 ⚙</b> — 打开设置（速度、主题、模式…）</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🖱 鼠标（电脑）</h3>
+      <ul>
+        <li><b>鼠标拖动</b> — 移动方块</li>
+        <li><b>按住</b> — 自动暂停</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>⌨️ 键盘（电脑）</h3>
+      <ul>
+        <li><b>← → ↓</b> 或 <b>A D S</b> — 左右移动 / 加速下落</li>
+        <li><b>↑</b> / <b>W</b> / <b>空格</b> — 顺时针转</li>
+        <li><b>Z</b> — 逆时针转</li>
+        <li><b>P</b> — 暂停 / 继续</li>
+        <li><b>Esc</b> — 关掉面板</li>
+        <li><b>Enter</b> — 确认</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🌈 设置里有啥</h3>
+      <ul>
+        <li><b>速度</b> — 砖块下落多快</li>
+        <li><b>上拉容忍</b> — 拼错了可以往回拉几格</li>
+        <li><b>结束模式</b> — 标准 = 堆到顶就结束；无尽 = 永远玩</li>
+        <li><b>色彩主题</b> — 童趣 / 糖果 / 夜空</li>
+      </ul>
+    </div>
+  </div>
 
   <!-- 设置面板 -->
   <div id="settings-panel" class="panel hidden" aria-hidden="true">
@@ -51,10 +105,13 @@
     </div>
     <div class="setting-row">
       <label>上拉容忍</label>
-      <div class="seg" id="upward-seg">
-        <button data-val="0">0 格</button>
-        <button data-val="1" class="active">1 格</button>
-        <button data-val="2">2 格</button>
+      <div class="seg seg-narrow" id="upward-seg">
+        <button data-val="0">0</button>
+        <button data-val="1" class="active">1</button>
+        <button data-val="2">2</button>
+        <button data-val="3">3</button>
+        <button data-val="4">4</button>
+        <button data-val="5">5</button>
       </div>
     </div>
     <div class="setting-row">

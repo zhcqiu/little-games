@@ -209,7 +209,7 @@ export class Game {
   setPaused(p) { this.paused = !!p; }
   setEndMode(m) { this._endMode = m; }
   setUpwardTolerance(n) {
-    this.upwardTolerance = Math.max(0, Math.min(2, n | 0));
+    this.upwardTolerance = Math.max(0, Math.min(5, n | 0));
   }
 
   onLineClear(cb) { this._onLineClear = cb; }

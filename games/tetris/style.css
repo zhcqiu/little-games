@@ -97,14 +97,22 @@ body { display: flex; flex-direction: column; }
   margin-top: 2px;
 }
 
-#settings-btn {
-  width: 48px;
-  height: 48px;
-  font-size: 24px;
+#settings-btn,
+#help-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
   background: transparent;
   color: var(--text);
   border: none;
   cursor: pointer;
+}
+
+#help-btn {
+  font-weight: bold;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  margin-right: 4px;
 }
 
 main {
@@ -234,6 +242,11 @@ main {
   cursor: pointer;
 }
 
+.seg-narrow button {
+  padding: 0;
+  min-width: 44px;
+}
+
 .seg button.active {
   background: var(--button-active);
   color: var(--text);
@@ -284,6 +297,52 @@ button.primary {
 }
 
 button.primary:active { background: var(--primary-dark); }
+
+/* 帮助面板 sections */
+.help-section {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 4px;
+}
+
+body[data-theme="night"] .help-section {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.help-section h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--panel-text);
+}
+
+.help-section p,
+.help-section li {
+  margin: 4px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--panel-text);
+}
+
+.help-section ul {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}
+
+.help-section b {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+#help-close {
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  background: transparent;
+  color: var(--panel-text);
+  border: none;
+  cursor: pointer;
+}
 
 /* 重启确认气泡 */
 .popup {

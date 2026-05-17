@@ -135,6 +135,77 @@ document.getElementById('replay-btn').addEventListener('click', () => {
   game.setPaused(false);
 });
 
+// 帮助按钮
+const helpPanel = document.getElementById('help-panel');
+document.getElementById('help-btn').addEventListener('click', () => {
+  helpPanel.classList.remove('hidden');
+  game.setPaused(true);
+  audio.stopBgm(100);
+});
+document.getElementById('help-close').addEventListener('click', () => {
+  helpPanel.classList.add('hidden');
+  game.setPaused(false);
+  if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+});
+
+// 全局键盘快捷键（ESC/Enter/P）
+let manualPause = false;
+window.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+
+  if (e.key === 'Escape') {
+    // 关掉任何可见面板
+    if (!document.getElementById('restart-confirm').classList.contains('hidden')) {
+      document.getElementById('restart-confirm').classList.add('hidden');
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('settings-panel').classList.contains('hidden')) {
+      settings.close();
+      e.preventDefault();
+      return;
+    }
+    if (!helpPanel.classList.contains('hidden')) {
+      helpPanel.classList.add('hidden');
+      game.setPaused(false);
+      if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+      e.preventDefault();
+      return;
+    }
+  } else if (e.key === 'Enter') {
+    // 优先确认重启
+    const rc = document.getElementById('restart-confirm');
+    if (!rc.classList.contains('hidden')) {
+      document.getElementById('restart-ok').click();
+      e.preventDefault();
+      return;
+    }
+    // 否则游戏结束时按 Enter 再玩一局
+    const go = document.getElementById('gameover-panel');
+    if (!go.classList.contains('hidden')) {
+      document.getElementById('replay-btn').click();
+      e.preventDefault();
+      return;
+    }
+  } else if (e.key === 'p' || e.key === 'P') {
+    // P 暂停 / 继续。只在没有面板打开时生效
+    const panelsOpen = !helpPanel.classList.contains('hidden')
+      || !document.getElementById('settings-panel').classList.contains('hidden')
+      || !document.getElementById('gameover-panel').classList.contains('hidden');
+    if (panelsOpen) return;
+    manualPause = !manualPause;
+    game.setPaused(manualPause);
+    if (manualPause) {
+      audio.stopBgm(100);
+      showToast('已暂停（按 P 继续）');
+    } else {
+      if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+    }
+    e.preventDefault();
+  }
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // 从 games/tetris/js/main.js 上溯 3 层到仓库根的 sw.js
