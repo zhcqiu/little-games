@@ -61,3 +61,16 @@ little-games/
 - 首次访问必须在线
 - iOS Safari 14+ 才完整支持 SW
 - 清浏览器数据后需要再次联网刷新
+
+## 📚 文档
+
+加新游戏前必读三件套：
+
+- [docs/architecture.md](docs/architecture.md) — 仓库结构、硬约束、共享工具 API
+- [docs/adding-a-new-game.md](docs/adding-a-new-game.md) — 从零做新游戏的实操流程 + checklist
+- [docs/lessons-learned.md](docs/lessons-learned.md) — Tetris 踩过的坑 + 沉淀的模式
+
+每款游戏的设计 / 实施文档：
+
+- 设计文档 `docs/superpowers/specs/`
+- 实施计划 `docs/superpowers/plans/`
