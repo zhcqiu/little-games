@@ -162,7 +162,20 @@ export class Game {
   }
 
   _triggerRevive() {
-    // C6 实现，此处占位
-    this._triggerDie();
+    // 回滚致死那一步：蛇头保持在上一 tick 末位置（什么都不做就是回滚）
+    // 砍前 max(2, floor(length/2)) 节
+    const keep = Math.max(2, Math.floor(this.snake.length / 2));
+    this.snake = this.snake.slice(0, keep);
+    // 清队列方向，玩家想转就重新滑
+    this.nextDirection = null;
+    // 1 秒无敌期
+    this.reviveInvincibleMs = 1000;
+    if (this._onRevive) this._onRevive();
+  }
+
+  _tickInvincibility(dt) {
+    if (this.reviveInvincibleMs > 0) {
+      this.reviveInvincibleMs = Math.max(0, this.reviveInvincibleMs - dt);
+    }
   }
 }

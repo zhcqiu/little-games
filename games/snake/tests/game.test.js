@@ -129,3 +129,52 @@ g13.snake = [{ row: 5, col: 5 }, { row: 4, col: 5 }, { row: 4, col: 6 }, { row: 
 g13.currentDirection = 'up';
 g13._advance();
 assertEq('wrap 模式撞自己 dead', g13.dead, true);
+
+// 复活模式撞墙
+const g14 = new Game();
+g14.setEndMode('revive');
+g14.food = { row: 0, col: 0 };
+g14.snake = [
+  { row: 8, col: 11 }, { row: 8, col: 10 }, { row: 8, col: 9 }, { row: 8, col: 8 },
+  { row: 8, col: 7 }, { row: 8, col: 6 }, { row: 8, col: 5 }, { row: 8, col: 4 },
+];
+g14.score = 10;
+g14.currentDirection = 'right';
+g14._advance();
+assertEq('revive 撞墙 dead=false', g14.dead, false);
+assertEq('蛇头不动 (8,11)', g14.snake[0], { row: 8, col: 11 });
+assertEq('蛇身砍到 max(2, floor(8/2))=4', g14.snake.length, 4);
+assertEq('分数不变', g14.score, 10);
+assertTrue('无敌期开启', g14.reviveInvincibleMs > 0);
+
+// 长度小不会砍到 0
+const g15 = new Game();
+g15.setEndMode('revive');
+g15.food = { row: 0, col: 0 };
+g15.snake = [{ row: 0, col: 0 }, { row: 0, col: 1 }];   // 长 2
+g15.currentDirection = 'up';
+g15._advance();
+assertEq('len=2 砍后保留 max(2, 1)=2', g15.snake.length, 2);
+
+// 复活后无敌期内再撞不死
+const g16 = new Game();
+g16.setEndMode('revive');
+g16.food = { row: 0, col: 0 };
+g16.snake = [{ row: 0, col: 11 }, { row: 0, col: 10 }, { row: 0, col: 9 }, { row: 0, col: 8 }];
+g16.currentDirection = 'right';
+g16._advance();   // 触发复活
+assertTrue('无敌期开启', g16.reviveInvincibleMs > 0);
+const lenAfterRevive = g16.snake.length;
+g16._advance();   // 无敌期内继续 right，又出墙
+assertEq('无敌期内 dead=false', g16.dead, false);
+// 无敌期内出墙按 wrap 处理
+assertEq('无敌期+撞右墙：头 wrap 到 (0,0)', g16.snake[0], { row: 0, col: 0 });
+
+// 无敌期超时
+const g17 = new Game();
+g17.setEndMode('revive');
+g17.reviveInvincibleMs = 1000;
+g17._tickInvincibility(500);
+assertEq('500ms 后剩 500', g17.reviveInvincibleMs, 500);
+g17._tickInvincibility(600);
+assertEq('再 600ms 后归 0', g17.reviveInvincibleMs, 0);
