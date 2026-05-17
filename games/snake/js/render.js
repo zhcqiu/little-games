@@ -53,11 +53,9 @@ export class Renderer {
     ctx.clearRect(0, 0, w, h);
     ctx.translate(offset.x, offset.y);
 
-    // 背景
     ctx.fillStyle = theme.canvasBg;
     ctx.fillRect(0, 0, w, h);
 
-    // 网格
     ctx.strokeStyle = theme.canvasGrid;
     ctx.lineWidth = 1;
     for (let r = 0; r <= BOARD_HEIGHT; r++) {
@@ -77,6 +75,12 @@ export class Renderer {
     this._drawFood(game);
 
     if (this.effects) this.effects.drawParticles(ctx, dt);
+
+    // 死亡淡化：蛇 dead 时整画面再蒙一层灰
+    if (game.dead) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.fillRect(0, 0, w, h);
+    }
 
     ctx.restore();
   }
