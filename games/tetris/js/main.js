@@ -115,7 +115,9 @@ document.getElementById('replay-btn').addEventListener('click', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    // 用相对路径解析到仓库根的 sw.js，兼容 GitHub Pages 子路径部署
+    const swUrl = new URL('../../sw.js', import.meta.url);
+    navigator.serviceWorker.register(swUrl).catch((err) => {
       console.warn('SW 注册失败：', err);
     });
   });

@@ -1,10 +1,12 @@
 // sw.js — 整站离线缓存（cache-first + runtime caching）
 const CACHE_NAME = 'little-games-v1';
+// 用 SW 自身位置解析路径，兼容子路径部署（GitHub Pages 在 /repo-name/ 下）
+const SCOPE = new URL('./', self.location).href;
 const PRECACHE = [
-  '/',
-  '/index.html',
-  '/icon.svg',
-  '/manifest.json',
+  SCOPE,
+  SCOPE + 'index.html',
+  SCOPE + 'icon.svg',
+  SCOPE + 'manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
