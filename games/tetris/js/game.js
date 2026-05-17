@@ -193,11 +193,12 @@ export class Game {
   }
 
   _clearRows(rows) {
-    rows = rows.slice().sort((a, b) => a - b);
-    for (const r of rows.reverse()) {
-      this.board.splice(r, 1);
-      this.board.unshift(Array(BOARD_WIDTH).fill(null));
-    }
+    // 一次性 filter 出未被消的行，再在顶部补对应数量空行
+    // （原实现 splice + unshift 交替会被前一次 unshift 偏移索引，导致多行只消掉一行）
+    const cleared = new Set(rows);
+    const remaining = this.board.filter((_, i) => !cleared.has(i));
+    const empties = Array.from({ length: rows.length }, () => Array(BOARD_WIDTH).fill(null));
+    this.board = [...empties, ...remaining];
     this.score += rows.length;
   }
 
@@ -307,13 +308,24 @@ export class Game {
 
   _handleGameOver() {
     if (this._endMode === 'endless') {
-      for (let r = 10; r < BOARD_HEIGHT; r++) {
-        this.board[r] = Array(BOARD_WIDTH).fill(null);
-      }
+      // 快照棋盘给 render 做下落动画
+      const boardSnapshot = this.board.map((row) => row.slice());
+      const halfClearedRows = [];
+      for (let r = 10; r < BOARD_HEIGHT; r++) halfClearedRows.push(r);
+
+      // 清掉下半区 + 上半区下移填补（这样新方块在顶部有空间出生）
+      const upper = this.board.slice(0, 10).map((row) => row.slice());
+      const emptyRows = Array.from({ length: 10 }, () => Array(BOARD_WIDTH).fill(null));
+      this.board = [...emptyRows, ...upper];
+
       this.current = this._spawnNext();
       this.next = this._peekNext();
-      if (this._onGameOver) this._onGameOver('endless-reset');
+      if (this._onGameOver) this._onGameOver('endless-reset', {
+        clearedRows: halfClearedRows,
+        boardSnapshot,
+      });
       if (this._collides(this.current.row, this.current.col, this.current.rotation, this.current.type)) {
+        // 极端情况：清半区后还碰 → 直接结束
         if (this._onGameOver) this._onGameOver('standard');
         this.current = null;
       }

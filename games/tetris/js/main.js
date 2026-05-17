@@ -54,10 +54,17 @@ game.onLineClear((rows, colorRows, boardSnapshot) => {
   const cheers = ['好棒!', '双消!', '三消!', '四消!'];
   showClearToast(cheers[Math.min(rows.length, 4) - 1]);
 });
-game.onGameOver((mode) => {
+game.onGameOver((mode, data) => {
   if (mode === 'endless-reset') {
     audio.playEndlessReset();
     showToast('继续加油！');
+    if (data) {
+      const colorRows = data.clearedRows.map((r) => data.boardSnapshot[r].slice());
+      renderer.flashRowsAnim(data.clearedRows);
+      renderer.spawnParticles(data.clearedRows, colorRows);
+      renderer.startSettling(data.clearedRows, data.boardSnapshot);
+      renderer.triggerShake(24, 280);
+    }
   } else {
     audio.playGameOver();
     showGameOverPanel();

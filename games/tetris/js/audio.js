@@ -60,7 +60,39 @@ export class Audio {
   }
 
   playLock() {
-    this._playTone({ freq: 220, type: 'triangle', duration: 100, gain: 0.4, attack: 5 });
+    if (!this.sfxOn || !this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    // 主体：sine 200Hz → 80Hz 快速下扫，模拟落地"咚"
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, t0);
+    osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.06);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.55, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + 0.2);
+
+    // 顶部叠加噪声 click 增加触感
+    const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.04), this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const hpf = this.ctx.createBiquadFilter();
+    hpf.type = 'highpass';
+    hpf.frequency.value = 1500;
+    const ng = this.ctx.createGain();
+    ng.gain.setValueAtTime(0.5, t0);
+    ng.gain.exponentialRampToValueAtTime(0.001, t0 + 0.04);
+    src.connect(hpf);
+    hpf.connect(ng);
+    ng.connect(this.master);
+    src.start(t0);
+    src.stop(t0 + 0.05);
   }
 
   playMove() {
