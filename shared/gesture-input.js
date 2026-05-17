@@ -15,12 +15,14 @@ export class Input {
     this.dragOrigin = null;
     this.rotateAngle0 = 0;
     this.rotateAccumulator = 0;
+    this.swipeOrigin = null;
     this._firstTouchHandler = null;
     this.handlers = {
       moveTo: () => {},
       rotate: () => {},
       pauseChange: () => {},
       hardDrop: () => {},
+      swipe: () => {},
     };
 
     canvas.addEventListener('pointerdown', this._onDown.bind(this));
@@ -33,7 +35,6 @@ export class Input {
   }
 
   _onKeyDown(e) {
-    // 忽略输入控件里的按键（设置面板里的滑条等）
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
 
@@ -47,19 +48,23 @@ export class Input {
       case 'ArrowLeft':
       case 'a':
       case 'A':
-        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row, piece.col - 1); }
+        e.preventDefault();
+        this.handlers.swipe('left');
+        if (piece) this.handlers.moveTo(piece.row, piece.col - 1);
         break;
       case 'ArrowRight':
       case 'd':
       case 'D':
-        if (piece) { e.preventDefault(); this.handlers.moveTo(piece.row, piece.col + 1); }
+        e.preventDefault();
+        this.handlers.swipe('right');
+        if (piece) this.handlers.moveTo(piece.row, piece.col + 1);
         break;
       case 'ArrowDown':
       case 's':
       case 'S':
+        e.preventDefault();
+        this.handlers.swipe('down');
         if (piece) {
-          e.preventDefault();
-          // Shift + 下 = 硬落下
           if (e.shiftKey) this.handlers.hardDrop();
           else this.handlers.moveTo(piece.row + 1, piece.col);
         }
@@ -68,6 +73,7 @@ export class Input {
       case 'w':
       case 'W':
         e.preventDefault();
+        this.handlers.swipe('up');
         this.handlers.rotate(+1);
         break;
       case ' ':
@@ -126,14 +132,18 @@ export class Input {
   _enterState(s) {
     if (s === STATE_DRAG) {
       const f = this.fingers.values().next().value;
+      if (f) {
+        this.swipeOrigin = { x: f.x, y: f.y };  // swipe 检测起点（与 piece state 无关）
+      }
       const piece = this.getPieceState();
-      if (!piece || !f) return;
-      this.dragOrigin = {
-        touchX: f.x,
-        touchY: f.y,
-        pieceCol: piece.col,
-        pieceRow: piece.row,
-      };
+      if (piece && f) {
+        this.dragOrigin = {
+          touchX: f.x,
+          touchY: f.y,
+          pieceCol: piece.col,
+          pieceRow: piece.row,
+        };
+      }
     } else if (s === STATE_ROTATE) {
       const fingers = Array.from(this.fingers.values());
       if (fingers.length < 2) return;
@@ -144,17 +154,36 @@ export class Input {
       this.rotateAccumulator = 0;
     } else {
       this.dragOrigin = null;
+      this.swipeOrigin = null;
     }
   }
 
   _tick() {
-    if (this.state === STATE_DRAG && this.dragOrigin) {
+    if (this.state === STATE_DRAG) {
       const f = this.fingers.values().next().value;
+      if (!f) return;
       const cell = this.getCellSize();
-      if (cell <= 0) return;
-      const targetCol = this.dragOrigin.pieceCol + Math.round((f.x - this.dragOrigin.touchX) / cell);
-      const targetRow = this.dragOrigin.pieceRow + Math.round((f.y - this.dragOrigin.touchY) / cell);
-      this.handlers.moveTo(targetRow, targetCol);
+
+      // swipe 检测：与 piece state 无关，蛇游戏单独订阅
+      if (this.swipeOrigin) {
+        const dx = f.x - this.swipeOrigin.x;
+        const dy = f.y - this.swipeOrigin.y;
+        const threshold = Math.max(20, cell * 0.6);
+        if (Math.abs(dx) >= threshold || Math.abs(dy) >= threshold) {
+          const dir = Math.abs(dx) > Math.abs(dy)
+            ? (dx > 0 ? 'right' : 'left')
+            : (dy > 0 ? 'down' : 'up');
+          this.handlers.swipe(dir);
+          this.swipeOrigin = { x: f.x, y: f.y };  // 锚点跟随，支持连续多次
+        }
+      }
+
+      // Tetris 用的 moveTo（蛇游戏不订阅，但保留 Tetris 行为）
+      if (this.dragOrigin && cell > 0) {
+        const targetCol = this.dragOrigin.pieceCol + Math.round((f.x - this.dragOrigin.touchX) / cell);
+        const targetRow = this.dragOrigin.pieceRow + Math.round((f.y - this.dragOrigin.touchY) / cell);
+        this.handlers.moveTo(targetRow, targetCol);
+      }
     } else if (this.state === STATE_ROTATE) {
       this._rotateTick();
     }
