@@ -91,6 +91,13 @@ export class Settings {
       btn.classList.toggle('active', this.state.theme === btn.dataset.val);
     }
 
+    const fxSeg = document.getElementById('fx-seg');
+    if (fxSeg) {
+      for (const btn of fxSeg.querySelectorAll('button')) {
+        btn.classList.toggle('active', this.state.fxLevel === btn.dataset.val);
+      }
+    }
+
     const sfxBtn = document.getElementById('sfx-toggle');
     sfxBtn.classList.toggle('active', this.state.sfxOn);
     sfxBtn.textContent = this.state.sfxOn ? '🔊' : '🔇';
@@ -124,6 +131,15 @@ export class Settings {
         this.set('theme', e.target.dataset.val);
       }
     });
+
+    const fxSeg = document.getElementById('fx-seg');
+    if (fxSeg) {
+      fxSeg.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          this.set('fxLevel', e.target.dataset.val);
+        }
+      });
+    }
 
     document.getElementById('sfx-toggle').addEventListener('click', () => {
       this.set('sfxOn', !this.state.sfxOn);

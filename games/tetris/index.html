@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>俄罗斯方块 · 小游戏乐园</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
@@ -143,6 +143,14 @@
       <label>🎵 背景音乐</label>
       <button id="bgm-toggle" class="toggle active" data-on="true" aria-label="背景音乐开关">🎵</button>
     </div>
+    <div class="setting-row">
+      <label>🎬 动效强度</label>
+      <div class="seg" id="fx-seg">
+        <button data-val="strong" class="active">✨ 强</button>
+        <button data-val="mild">🌿 弱</button>
+        <button data-val="off">🚫 关</button>
+      </div>
+    </div>
     <button id="restart-btn" class="primary">🔄 重新开始</button>
   </div>
 
@@ -168,6 +176,15 @@
 
   <!-- 消行欢呼浮字 -->
   <div id="clear-toast" class="clear-toast hidden">好棒!</div>
+
+  <!-- 持久暂停 overlay -->
+  <div id="pause-overlay" class="pause-overlay hidden">
+    <div class="pause-icon">⏸</div>
+    <div class="pause-hint">点屏幕 / 按 P 继续</div>
+  </div>
+
+  <!-- 角落版本号 -->
+  <div id="version-tag" class="version-tag">v1.5</div>
 
   <script type="module" src="./js/main.js"></script>
 </body>

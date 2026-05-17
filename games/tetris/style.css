@@ -134,9 +134,16 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  padding-left: calc(12px + env(safe-area-inset-left, 0px));
+  padding-right: calc(12px + env(safe-area-inset-right, 0px));
   background: var(--bg-2);
-  height: 56px;
+  min-height: 56px;
   flex-shrink: 0;
+}
+
+#control-pad {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .score-block {
@@ -549,6 +556,54 @@ body[data-theme="night"] .help-section {
 }
 
 .toast.hidden { display: none; }
+
+/* 暂停 overlay */
+.pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: white;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.pause-overlay.hidden { display: none; }
+
+.pause-overlay .pause-icon {
+  font-size: 144px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  animation: pausePulse 1.5s ease-in-out infinite;
+}
+
+.pause-overlay .pause-hint {
+  font-size: 18px;
+  opacity: 0.85;
+}
+
+@keyframes pausePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 角落版本号 */
+.version-tag {
+  position: fixed;
+  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  right: calc(6px + env(safe-area-inset-right, 0px));
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 50;
+  font-family: monospace;
+}
 
 @keyframes toastFade {
   0% { opacity: 0; transform: translate(-50%, -40%); }

@@ -40,7 +40,10 @@ input.onFirstTouch(() => {
 });
 
 // Game 事件 → Audio / Renderer
-game.onLock(() => audio.playLock());
+game.onLock(() => {
+  audio.playLock();
+  vibrate(20);
+});
 game.onLineClear((rows, colorRows, boardSnapshot) => {
   audio.playClear(rows.length);
   effects.flashRowsAnim(rows);
@@ -55,7 +58,17 @@ game.onLineClear((rows, colorRows, boardSnapshot) => {
   effects.triggerShake(shake.amp, shake.dur);
   const cheers = ['👍', '😄', '🤩', '🎉'];
   showClearToast(cheers[Math.min(rows.length, 4) - 1]);
+  // 触觉：消行数越多震得越强
+  const pattern = [[40], [30, 30, 60], [30, 20, 50, 20, 80], [50, 20, 60, 20, 80, 30, 120]];
+  vibrate(pattern[Math.min(rows.length, 4) - 1]);
 });
+
+function vibrate(pattern) {
+  if (settings.get('fxLevel') === 'off') return;
+  if (navigator.vibrate) {
+    try { navigator.vibrate(pattern); } catch (e) {}
+  }
+}
 game.onGameOver((mode, data) => {
   if (mode === 'endless-reset') {
     audio.playEndlessReset();
@@ -73,6 +86,14 @@ game.onGameOver((mode, data) => {
   }
 });
 
+// 破纪录庆祝：游戏开始时锁定 baseline，越过那条线时炸一次彩虹
+let highScoreBaseline = settings.get('highScore');
+let highScoreCelebrated = false;
+function resetHighScoreTracker() {
+  highScoreBaseline = settings.get('highScore');
+  highScoreCelebrated = false;
+}
+
 // 主循环
 let lastTime = performance.now();
 function loop(now) {
@@ -83,12 +104,30 @@ function loop(now) {
   renderer.draw(game, dt);
   document.getElementById('score').textContent = game.score;
   document.getElementById('high-score').textContent = settings.get('highScore');
+
+  if (!highScoreCelebrated && highScoreBaseline > 0 && game.score > highScoreBaseline) {
+    highScoreCelebrated = true;
+    celebrateHighScore();
+  }
   if (game.score > settings.get('highScore')) {
     settings.set('highScore', game.score);
   }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+
+function celebrateHighScore() {
+  audio.playHighScore();
+  vibrate([60, 30, 60, 30, 100]);
+  showClearToast('🏆');
+  // 顶上撒一拨彩色粒子
+  const colorRows = [[
+    '#ff7043', '#ffeb3b', '#4caf50', '#42a5f5', '#9c27b0',
+    '#f44336', '#00bcd4', '#ff9800', '#3f51b5', '#e91e63',
+  ]];
+  effects.spawnParticles([2], colorRows, renderer.cellSize);
+  effects.triggerShake(16, 280);
+}
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -136,6 +175,7 @@ document.getElementById('replay-btn').addEventListener('click', () => {
   document.getElementById('gameover-panel').classList.add('hidden');
   game.reset();
   game.setPaused(false);
+  resetHighScoreTracker();
 });
 
 // 屏幕方向板（仅桌面显示，通过 CSS media query 控制可见性；按钮事件无条件绑定）
@@ -167,8 +207,20 @@ document.getElementById('help-close').addEventListener('click', () => {
   if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
 });
 
-// 全局键盘快捷键（ESC/Enter/P）
+// 全局键盘快捷键（ESC/Enter/P）+ 暂停 overlay
 let manualPause = false;
+const pauseOverlay = document.getElementById('pause-overlay');
+function setManualPause(p) {
+  manualPause = p;
+  game.setPaused(p);
+  pauseOverlay.classList.toggle('hidden', !p);
+  if (p) {
+    audio.stopBgm(100);
+  } else {
+    if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+  }
+}
+pauseOverlay.addEventListener('click', () => setManualPause(false));
 window.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') return;
@@ -208,19 +260,11 @@ window.addEventListener('keydown', (e) => {
       return;
     }
   } else if (e.key === 'p' || e.key === 'P') {
-    // P 暂停 / 继续。只在没有面板打开时生效
     const panelsOpen = !helpPanel.classList.contains('hidden')
       || !document.getElementById('settings-panel').classList.contains('hidden')
       || !document.getElementById('gameover-panel').classList.contains('hidden');
     if (panelsOpen) return;
-    manualPause = !manualPause;
-    game.setPaused(manualPause);
-    if (manualPause) {
-      audio.stopBgm(100);
-      showToast('⏸');
-    } else {
-      if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
-    }
+    setManualPause(!manualPause);
     e.preventDefault();
   }
 });
