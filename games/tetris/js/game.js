@@ -143,4 +143,41 @@ export class Game {
     if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
     return true;
   }
+
+  _color(type) {
+    return PIECES_COLOR[type];
+  }
+
+  /** 把当前方块写入 board，发新块 */
+  lockPiece() {
+    if (!this.current) return;
+    const p = this.current;
+    const cells = getCells(p.type, p.rotation);
+    for (const { row: dr, col: dc } of cells) {
+      const r = p.row + dr;
+      const c = p.col + dc;
+      if (r >= 0 && r < BOARD_HEIGHT && c >= 0 && c < BOARD_WIDTH) {
+        this.board[r][c] = this._color(p.type);
+      }
+    }
+    this.current = this._spawnNext();
+    this.next = this._peekNext();
+  }
+
+  _findFullRows() {
+    const rows = [];
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      if (this.board[r].every((c) => c !== null)) rows.push(r);
+    }
+    return rows;
+  }
+
+  _clearRows(rows) {
+    rows = rows.slice().sort((a, b) => a - b);
+    for (const r of rows.reverse()) {
+      this.board.splice(r, 1);
+      this.board.unshift(Array(BOARD_WIDTH).fill(null));
+    }
+    this.score += rows.length;
+  }
 }

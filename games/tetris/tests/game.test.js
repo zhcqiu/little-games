@@ -72,3 +72,24 @@ for (let r = 4; r <= 9; r++) for (let c = 2; c <= 8; c++) {
 const r2 = g7.tryRotate(1);
 assertEq('卡死时 tryRotate 返回 false', r2, false);
 assertEq('卡死时旋转态不变', g7.current.rotation, 0);
+
+// lockPiece
+const g8 = new Game();
+g8.current = { type: 'O', rotation: 0, row: 18, col: 0, lowWaterMark: 18 };
+const beforeNext = g8.next;
+g8.lockPiece();
+assertEq('O 块锁后 (18,1) 有色', g8.board[18][1], '#ffeb3b');
+assertEq('O 块锁后 (19,1) 有色', g8.board[19][1], '#ffeb3b');
+assertEq('锁后切换到 next', g8.current.type, beforeNext);
+
+// 消行
+const g9 = new Game();
+for (let c = 0; c < 10; c++) g9.board[19][c] = '#aaa';
+for (let c = 1; c < 10; c++) g9.board[18][c] = '#aaa';
+const cleared = g9._findFullRows();
+assertEq('第 19 行满', cleared, [19]);
+
+g9._clearRows([19]);
+assertEq('清行后第 19 行 col 0 = null', g9.board[19][0], null);
+assertEq('清行后第 19 行 col 1 = 原 18 行 col 1', g9.board[19][1], '#aaa');
+assertEq('score 增加', g9.score, 1);
