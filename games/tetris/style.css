@@ -12,8 +12,9 @@
   --button-bg-text: #5d4037;
   --button-active: #ff7043;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  --canvas-bg: #fff5d6;
-  --canvas-grid: rgba(255, 112, 67, 0.14);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(255, 112, 67, 0.16);
+  --canvas-border: #ff7043;
 }
 
 body[data-theme="candy"] {
@@ -31,6 +32,7 @@ body[data-theme="candy"] {
   --shadow: 0 4px 16px rgba(236, 64, 122, 0.3);
   --canvas-bg: #ffffff;
   --canvas-grid: rgba(236, 64, 122, 0.16);
+  --canvas-border: #ec407a;
 }
 
 body[data-theme="night"] {
@@ -48,6 +50,7 @@ body[data-theme="night"] {
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   --canvas-bg: #16213e;
   --canvas-grid: rgba(255, 255, 255, 0.04);
+  --canvas-border: #42a5f5;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -121,14 +124,60 @@ main {
   justify-content: center;
   align-items: center;
   width: 100%;
-  height: calc(100% - 56px);
+  min-height: 0;
   background: var(--bg);
+}
+
+#control-pad {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+#control-pad button {
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--primary);
+  border-radius: 14px;
+  background: var(--button-bg);
+  color: var(--primary-dark);
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.05s ease, background 0.1s ease;
+}
+
+#control-pad button:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+#control-pad button:active {
+  transform: translateY(2px) scale(0.96);
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+/* 仅在鼠标 / 精细指针设备（桌面）显示方向板 */
+@media (hover: hover) and (pointer: fine) {
+  #control-pad {
+    display: flex;
+  }
 }
 
 #game-canvas {
   background: var(--canvas-bg);
   display: block;
   touch-action: none;
+  outline: 3px solid var(--canvas-border);
+  outline-offset: 0;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
 /* 面板（设置 / 游戏结束） */

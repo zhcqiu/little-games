@@ -28,6 +28,15 @@
     <canvas id="game-canvas"></canvas>
   </main>
 
+  <!-- 方向板（仅鼠标 / 桌面环境显示，触屏不显示）-->
+  <div id="control-pad" aria-label="方向按键">
+    <button id="pad-rotate-ccw" aria-label="逆时针旋转">↺</button>
+    <button id="pad-left" aria-label="左移">←</button>
+    <button id="pad-down" aria-label="加速下落">↓</button>
+    <button id="pad-right" aria-label="右移">→</button>
+    <button id="pad-rotate-cw" aria-label="顺时针旋转">↻</button>
+  </div>
+
   <!-- 帮助面板 -->
   <div id="help-panel" class="panel hidden" aria-hidden="true">
     <div class="panel-header">
@@ -55,6 +64,7 @@
       <ul>
         <li><b>鼠标拖动</b> — 移动方块</li>
         <li><b>按住</b> — 自动暂停</li>
+        <li><b>屏幕底部方向板</b> — 点 ← → ↓ 移动，点 ↺ ↻ 旋转</li>
       </ul>
     </div>
 

@@ -135,6 +135,22 @@ document.getElementById('replay-btn').addEventListener('click', () => {
   game.setPaused(false);
 });
 
+// 屏幕方向板（仅桌面显示，通过 CSS media query 控制可见性；按钮事件无条件绑定）
+function padMove(dRow, dCol) {
+  if (!game.current) return;
+  audio.unlock();  // 首次点击解锁音频
+  game.tryMoveTo(game.current.row + dRow, game.current.col + dCol);
+}
+function padRotate(dir) {
+  audio.unlock();
+  if (game.tryRotate(dir)) audio.playRotate();
+}
+document.getElementById('pad-left').addEventListener('click', () => padMove(0, -1));
+document.getElementById('pad-right').addEventListener('click', () => padMove(0, +1));
+document.getElementById('pad-down').addEventListener('click', () => padMove(+1, 0));
+document.getElementById('pad-rotate-cw').addEventListener('click', () => padRotate(+1));
+document.getElementById('pad-rotate-ccw').addEventListener('click', () => padRotate(-1));
+
 // 帮助按钮
 const helpPanel = document.getElementById('help-panel');
 document.getElementById('help-btn').addEventListener('click', () => {
