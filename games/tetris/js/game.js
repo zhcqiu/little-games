@@ -18,6 +18,8 @@ export function createBag() {
   return bag;
 }
 
+const SPEEDS = [1500, 1000, 700, 450, 250];
+
 export class Game {
   constructor() {
     this.board = Array.from({ length: BOARD_HEIGHT }, () =>
@@ -28,6 +30,16 @@ export class Game {
     this.nextBag = createBag();
     this.current = this._spawnNext();
     this.next = this._peekNext();
+
+    this.fallSpeed = 1500;
+    this.fallAccumulator = 0;
+    this.paused = false;
+    this._lockTimer = null;
+    this._onLineClear = null;
+    this._onGameOver = null;
+    this._onLock = null;
+    this._endMode = 'standard';
+    this.upwardTolerance = 1;
   }
 
   _drawFromBag() {
@@ -104,7 +116,9 @@ export class Game {
 
     if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
 
-    return p.row !== startRow || p.col !== startCol;
+    const moved = p.row !== startRow || p.col !== startCol;
+    if (moved) this.resetLockTimerIfApplicable();
+    return moved;
   }
 
   /**
@@ -128,6 +142,7 @@ export class Game {
         p.col += dc;
         p.rotation = newRot;
         if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
+        this.resetLockTimerIfApplicable();
         return true;
       }
     }
@@ -141,6 +156,7 @@ export class Game {
     if (this._collides(p.row + 1, p.col, p.rotation, p.type)) return false;
     p.row++;
     if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
+    this.resetLockTimerIfApplicable();
     return true;
   }
 
@@ -179,5 +195,119 @@ export class Game {
       this.board.unshift(Array(BOARD_WIDTH).fill(null));
     }
     this.score += rows.length;
+  }
+
+  setSpeed(level) {
+    this.fallSpeed = SPEEDS[Math.max(0, Math.min(4, level - 1))];
+  }
+
+  setPaused(p) { this.paused = !!p; }
+  setEndMode(m) { this._endMode = m; }
+  setUpwardTolerance(n) {
+    this.upwardTolerance = Math.max(0, Math.min(2, n | 0));
+  }
+
+  onLineClear(cb) { this._onLineClear = cb; }
+  onGameOver(cb) { this._onGameOver = cb; }
+  onLock(cb) { this._onLock = cb; }
+
+  step(dt) {
+    if (this.paused || !this.current) return;
+
+    if (this._lockTimer !== null) {
+      this._lockTimer += dt;
+      if (this._lockTimer >= 500) {
+        this._performLock();
+      }
+      return;
+    }
+
+    this.fallAccumulator += dt;
+    while (this.fallAccumulator >= this.fallSpeed) {
+      this.fallAccumulator -= this.fallSpeed;
+      const moved = this.tryMoveDown();
+      if (!moved) {
+        this._lockTimer = 0;
+        break;
+      }
+    }
+  }
+
+  resetLockTimerIfApplicable() {
+    if (this._lockTimer === null) return;
+    const p = this.current;
+    if (p && !this._collides(p.row + 1, p.col, p.rotation, p.type)) {
+      this._lockTimer = null;
+    } else {
+      this._lockTimer = 0;
+    }
+  }
+
+  _performLock() {
+    if (this._onLock) this._onLock(this.current);
+    const p = this.current;
+    const cells = getCells(p.type, p.rotation);
+    for (const { row: dr, col: dc } of cells) {
+      const r = p.row + dr;
+      const c = p.col + dc;
+      if (r >= 0 && r < BOARD_HEIGHT && c >= 0 && c < BOARD_WIDTH) {
+        this.board[r][c] = this._color(p.type);
+      }
+    }
+    this._lockTimer = null;
+
+    const fullRows = this._findFullRows();
+    if (fullRows.length > 0) {
+      const colorSnapshots = fullRows.map((r) => this.board[r].slice());
+      if (this._onLineClear) this._onLineClear(fullRows, colorSnapshots);
+      this._clearRows(fullRows);
+    }
+
+    this.current = this._spawnNext();
+    this.next = this._peekNext();
+
+    if (this._collides(this.current.row, this.current.col, this.current.rotation, this.current.type)) {
+      this._handleGameOver();
+    }
+  }
+
+  _handleGameOver() {
+    if (this._endMode === 'endless') {
+      for (let r = 10; r < BOARD_HEIGHT; r++) {
+        this.board[r] = Array(BOARD_WIDTH).fill(null);
+      }
+      this.current = this._spawnNext();
+      this.next = this._peekNext();
+      if (this._onGameOver) this._onGameOver('endless-reset');
+      if (this._collides(this.current.row, this.current.col, this.current.rotation, this.current.type)) {
+        if (this._onGameOver) this._onGameOver('standard');
+        this.current = null;
+      }
+    } else {
+      if (this._onGameOver) this._onGameOver('standard');
+      this.current = null;
+    }
+  }
+
+  reset() {
+    this.board = Array.from({ length: BOARD_HEIGHT }, () =>
+      Array(BOARD_WIDTH).fill(null)
+    );
+    this.score = 0;
+    this.bag = createBag();
+    this.nextBag = createBag();
+    this.current = this._spawnNext();
+    this.next = this._peekNext();
+    this._lockTimer = null;
+    this.fallAccumulator = 0;
+  }
+
+  /** 返回当前方块"硬落到底"会在哪一行（不修改状态） */
+  computeGhostRow() {
+    if (!this.current) return null;
+    const p = this.current;
+    let r = p.row;
+    while (!this._collides(r + 1, p.col, p.rotation, p.type)) r++;
+    return r;
   }
 }

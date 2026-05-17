@@ -93,3 +93,30 @@ g9._clearRows([19]);
 assertEq('清行后第 19 行 col 0 = null', g9.board[19][0], null);
 assertEq('清行后第 19 行 col 1 = 原 18 行 col 1', g9.board[19][1], '#aaa');
 assertEq('score 增加', g9.score, 1);
+
+// step + auto fall
+const g10 = new Game();
+g10.setSpeed(5);
+g10.current = { type: 'I', rotation: 1, row: 0, col: 4, lowWaterMark: 0 };
+g10.step(100);
+assertEq('100ms 不够下落', g10.current.row, 0);
+g10.step(200);
+assertEq('300ms 下落一格', g10.current.row, 1);
+
+g10.setPaused(true);
+g10.step(500);
+assertEq('暂停时不下落', g10.current.row, 1);
+g10.setPaused(false);
+g10.step(300);
+assertTrue('恢复后下落', g10.current.row > 1);
+
+// lock delay
+const g11 = new Game();
+g11.setSpeed(5);
+g11.current = { type: 'O', rotation: 0, row: 18, col: 0, lowWaterMark: 18 };
+g11.step(300);
+assertTrue('到底后开始 lock', g11._lockTimer !== null);
+g11.step(400);
+assertEq('400ms 内未锁', g11.current.type, 'O');
+g11.step(200);
+assertTrue('lock 已完成', g11.board[18][1] !== null || g11.current.type !== 'O');
