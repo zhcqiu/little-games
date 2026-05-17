@@ -259,16 +259,16 @@ export class Renderer {
       const colors = rowSnapshots[i];
       for (let c = 0; c < BOARD_WIDTH; c++) {
         const color = colors[c] || '#ffffff';
-        for (let k = 0; k < 8; k++) {
+        for (let k = 0; k < 14; k++) {
           this.particles.push({
             x: c * s + s / 2,
             y: r * s + s / 2,
-            vx: (Math.random() - 0.5) * 400,
-            vy: -300 - Math.random() * 200,
+            vx: (Math.random() - 0.5) * 600,
+            vy: -350 - Math.random() * 300,
             color,
-            life: 800,
+            life: 1000,
             elapsed: 0,
-            size: 4 + Math.random() * 4,
+            size: 5 + Math.random() * 6,
           });
         }
       }
@@ -276,6 +276,6 @@ export class Renderer {
   }
 
   flashRowsAnim(rows) {
-    this.flashRows.push({ rows: rows.slice(), elapsed: 0, duration: 200 });
+    this.flashRows.push({ rows: rows.slice(), elapsed: 0, duration: 300 });
   }
 }

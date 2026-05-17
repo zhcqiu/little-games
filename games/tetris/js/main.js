@@ -45,12 +45,14 @@ game.onLineClear((rows, colorRows, boardSnapshot) => {
   renderer.spawnParticles(rows, colorRows);
   renderer.startSettling(rows, boardSnapshot);
   const shake = [
-    { amp: 4, dur: 80 },
-    { amp: 6, dur: 100 },
     { amp: 8, dur: 120 },
-    { amp: 12, dur: 150 },
+    { amp: 12, dur: 160 },
+    { amp: 18, dur: 200 },
+    { amp: 28, dur: 280 },
   ][Math.min(rows.length, 4) - 1];
   renderer.triggerShake(shake.amp, shake.dur);
+  const cheers = ['好棒!', '双消!', '三消!', '四消!'];
+  showClearToast(cheers[Math.min(rows.length, 4) - 1]);
 });
 game.onGameOver((mode) => {
   if (mode === 'endless-reset') {
@@ -98,6 +100,18 @@ function showToast(text) {
   t.style.animation = '';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 1000);
+}
+
+let clearToastTimer = null;
+function showClearToast(text) {
+  const t = document.getElementById('clear-toast');
+  t.textContent = text;
+  t.classList.remove('hidden');
+  t.style.animation = 'none';
+  t.offsetHeight;
+  t.style.animation = '';
+  clearTimeout(clearToastTimer);
+  clearToastTimer = setTimeout(() => t.classList.add('hidden'), 900);
 }
 
 function showGameOverPanel() {

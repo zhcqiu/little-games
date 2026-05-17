@@ -16,7 +16,7 @@ export class Audio {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.8;
+      this.master.gain.value = 1.0;
       this.master.connect(this.ctx.destination);
     } catch (e) {
       console.warn('AudioContext 创建失败：', e);
@@ -89,14 +89,28 @@ export class Audio {
     }
 
     if (lines >= 4) {
-      const arp = [1046.50, 1318.51, 1567.98];
+      // 四消额外：上行琶音 + 一记低音 boom
+      const arp = [1046.50, 1318.51, 1567.98, 2093.00];
       for (let i = 0; i < arp.length; i++) {
-        this._scheduleChordNote(arp[i], t0 + 0.4 + i * 0.08, 80);
+        this._scheduleChordNote(arp[i], t0 + 0.4 + i * 0.08, 100, 0.45);
       }
+      // 低音 boom
+      const boom = this.ctx.createOscillator();
+      const bg = this.ctx.createGain();
+      boom.type = 'sine';
+      boom.frequency.setValueAtTime(80, t0);
+      boom.frequency.exponentialRampToValueAtTime(40, t0 + 0.6);
+      bg.gain.setValueAtTime(0, t0);
+      bg.gain.linearRampToValueAtTime(0.6, t0 + 0.02);
+      bg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.7);
+      boom.connect(bg);
+      bg.connect(this.master);
+      boom.start(t0);
+      boom.stop(t0 + 0.8);
     }
   }
 
-  _scheduleChordNote(freq, when, duration, gain = 0.25, type = 'sine') {
+  _scheduleChordNote(freq, when, duration, gain = 0.38, type = 'sine') {
     if (!this.ctx) return;
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
