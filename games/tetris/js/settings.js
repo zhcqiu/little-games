@@ -128,7 +128,7 @@ export class Settings {
   open() {
     document.getElementById('settings-panel').classList.remove('hidden');
     this.game.setPaused(true);
-    if (this.audio.bgmController) this.audio.bgmController.stop(100);
+    this.audio.stopBgm(100);
   }
 
   close() {

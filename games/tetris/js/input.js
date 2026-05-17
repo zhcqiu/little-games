@@ -114,10 +114,10 @@ export class Input {
     let delta = cur - this.rotateAngle0;
     while (delta > Math.PI) delta -= 2 * Math.PI;
     while (delta < -Math.PI) delta += 2 * Math.PI;
-    this.rotateAccumulator += delta * 0.5;
+    this.rotateAccumulator += delta;
     this.rotateAngle0 = cur;
 
-    const threshold = Math.PI / 6;  // 30°
+    const threshold = Math.PI / 9;  // 20°
     while (this.rotateAccumulator > threshold) {
       this.handlers.rotate(+1);
       this.rotateAccumulator -= threshold;

@@ -110,16 +110,26 @@ g10.setPaused(false);
 g10.step(300);
 assertTrue('恢复后下落', g10.current.row > 1);
 
-// lock delay
+// lock delay 200ms（V1.1：原 500ms 缩短到 200ms 加快反应）
 const g11 = new Game();
 g11.setSpeed(5);
 g11.current = { type: 'O', rotation: 0, row: 18, col: 0, lowWaterMark: 18 };
 g11.step(300);
 assertTrue('到底后开始 lock', g11._lockTimer !== null);
-g11.step(400);
-assertEq('400ms 内未锁', g11.current.type, 'O');
-g11.step(200);
-assertTrue('lock 已完成', g11.board[18][1] !== null || g11.current.type !== 'O');
+g11.step(100);
+assertEq('100ms 内未锁', g11.current.type, 'O');
+g11.step(150);  // 累计 250ms > 200ms
+assertTrue('250ms 后锁定', g11.board[18][1] !== null || g11.current.type !== 'O');
+
+// 满行立即锁
+const g13 = new Game();
+g13.setSpeed(5);
+for (let c = 2; c < 10; c++) g13.board[18][c] = '#aaa';
+for (let c = 2; c < 10; c++) g13.board[19][c] = '#aaa';
+g13.current = { type: 'O', rotation: 0, row: 18, col: -1, lowWaterMark: 18 };
+g13.step(300);
+assertEq('满行立即锁清 2 行', g13.score, 2);
+assertEq('lockTimer 已清', g13._lockTimer, null);
 
 // 上拉容忍
 const g12 = new Game();

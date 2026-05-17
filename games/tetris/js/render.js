@@ -12,6 +12,7 @@ export class Renderer {
     this.particles = [];
     this.shake = null;          // { amplitude, duration, elapsed }
     this.flashRows = [];        // [{ rows, elapsed, duration }]
+    this.settling = null;       // { ghostBoard, clearedRows, elapsed, duration }
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -39,6 +40,8 @@ export class Renderer {
     const ctx = this.ctx;
     const w = this.cellSize * BOARD_WIDTH;
     const h = this.cellSize * BOARD_HEIGHT;
+
+    if (this.settling) this.settling.elapsed += dt;
 
     // 屏幕抖动
     let offsetX = 0, offsetY = 0;
@@ -89,12 +92,47 @@ export class Renderer {
       ctx.lineTo(c * s, s * BOARD_HEIGHT);
       ctx.stroke();
     }
-    for (let r = 0; r < BOARD_HEIGHT; r++) {
-      for (let c = 0; c < BOARD_WIDTH; c++) {
-        const color = game.board[r][c];
-        if (color) this._drawCell(c * s, r * s, color, 1.0);
+
+    if (this.settling && this.settling.elapsed < this.settling.duration) {
+      this._drawSettlingBoard();
+    } else {
+      if (this.settling) this.settling = null;
+      for (let r = 0; r < BOARD_HEIGHT; r++) {
+        for (let c = 0; c < BOARD_WIDTH; c++) {
+          const color = game.board[r][c];
+          if (color) this._drawCell(c * s, r * s, color, 1.0);
+        }
       }
     }
+  }
+
+  _drawSettlingBoard() {
+    const s = this.cellSize;
+    const settling = this.settling;
+    const t = settling.elapsed / settling.duration;
+    // easeInOutQuad: 加速然后减速
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      if (settling.clearedRows.includes(r)) continue;
+      // 这一行原本要往下落多少格 = 它下方被消的行数
+      let shift = 0;
+      for (const cr of settling.clearedRows) if (cr > r) shift++;
+      const visualRow = r + shift * ease;
+      for (let c = 0; c < BOARD_WIDTH; c++) {
+        const color = settling.ghostBoard[r][c];
+        if (color) this._drawCell(c * s, visualRow * s, color, 1.0);
+      }
+    }
+  }
+
+  startSettling(clearedRows, boardSnapshot) {
+    this.settling = {
+      ghostBoard: boardSnapshot,
+      clearedRows: clearedRows.slice(),
+      elapsed: 0,
+      duration: 250,
+    };
   }
 
   _drawCell(x, y, color, alpha = 1.0) {

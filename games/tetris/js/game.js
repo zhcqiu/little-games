@@ -220,7 +220,7 @@ export class Game {
 
     if (this._lockTimer !== null) {
       this._lockTimer += dt;
-      if (this._lockTimer >= 500) {
+      if (this._lockTimer >= 200) {
         this._performLock();
       }
       return;
@@ -231,10 +231,38 @@ export class Game {
       this.fallAccumulator -= this.fallSpeed;
       const moved = this.tryMoveDown();
       if (!moved) {
-        this._lockTimer = 0;
+        // 满行立即锁，跳过 lock delay 提高响应
+        if (this._wouldClearLines()) {
+          this._performLock();
+        } else {
+          this._lockTimer = 0;
+        }
         break;
       }
     }
+  }
+
+  /** 判断当前位置 lock 后是否至少有一行会被消 */
+  _wouldClearLines() {
+    if (!this.current) return false;
+    const p = this.current;
+    const cells = getCells(p.type, p.rotation);
+    const rowOccupiers = new Map();
+    for (const { row: dr, col: dc } of cells) {
+      const r = p.row + dr;
+      const c = p.col + dc;
+      if (r < 0 || r >= BOARD_HEIGHT) continue;
+      if (!rowOccupiers.has(r)) rowOccupiers.set(r, new Set());
+      rowOccupiers.get(r).add(c);
+    }
+    for (const [r, cols] of rowOccupiers) {
+      let count = cols.size;
+      for (let c = 0; c < BOARD_WIDTH; c++) {
+        if (!cols.has(c) && this.board[r][c] !== null) count++;
+      }
+      if (count >= BOARD_WIDTH) return true;
+    }
+    return false;
   }
 
   resetLockTimerIfApplicable() {
@@ -263,7 +291,9 @@ export class Game {
     const fullRows = this._findFullRows();
     if (fullRows.length > 0) {
       const colorSnapshots = fullRows.map((r) => this.board[r].slice());
-      if (this._onLineClear) this._onLineClear(fullRows, colorSnapshots);
+      // 快照整个棋盘给 render，用于消行后的下落补位动画
+      const boardSnapshot = this.board.map((row) => row.slice());
+      if (this._onLineClear) this._onLineClear(fullRows, colorSnapshots, boardSnapshot);
       this._clearRows(fullRows);
     }
 

@@ -39,10 +39,11 @@ input.onFirstTouch(() => {
 
 // Game 事件 → Audio / Renderer
 game.onLock(() => audio.playLock());
-game.onLineClear((rows, colorRows) => {
+game.onLineClear((rows, colorRows, boardSnapshot) => {
   audio.playClear(rows.length);
   renderer.flashRowsAnim(rows);
   renderer.spawnParticles(rows, colorRows);
+  renderer.startSettling(rows, boardSnapshot);
   const shake = [
     { amp: 4, dur: 80 },
     { amp: 6, dur: 100 },
@@ -80,7 +81,7 @@ requestAnimationFrame(loop);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     game.setPaused(true);
-    if (audio.bgmController) audio.bgmController.stop(100);
+    audio.stopBgm(100);
   } else {
     if (input.fingers && input.fingers.size === 0) game.setPaused(false);
     if (settings.get('bgmOn') && audio.ctx) audio.startBgm();

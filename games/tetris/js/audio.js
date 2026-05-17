@@ -26,11 +26,18 @@ export class Audio {
   setSfxOn(on) { this.sfxOn = on; }
   setBgmOn(on) {
     this.bgmOn = on;
-    if (!on && this.bgmController) {
-      this.bgmController.stop(200);
-      this.bgmController = null;
+    if (!on) {
+      this.stopBgm(200);
     } else if (on && !this.bgmController && this.ctx) {
       this._startBgm();
+    }
+  }
+
+  /** 停止 BGM 并 fade out，自动 null 控制器 */
+  stopBgm(fadeMs = 200) {
+    if (this.bgmController) {
+      this.bgmController.stop(fadeMs);
+      this.bgmController = null;
     }
   }
 
