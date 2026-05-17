@@ -77,6 +77,8 @@ game.onDie(() => {
   effects.triggerShake(14, 240);
   showClearToast('😵');
   vibrate([40, 40, 80, 40, 120]);
+  showGameOverPanel();
+  clearSave();
 });
 game.onRevive(() => {
   audio.playRevive();
@@ -167,5 +169,40 @@ function vibrate(pattern) {
     try { navigator.vibrate(pattern); } catch (e) {}
   }
 }
+
+function showGameOverPanel() {
+  game.setPaused(true);
+  const panel = document.getElementById('gameover-panel');
+  document.getElementById('final-score').textContent = game.score;
+  document.getElementById('final-high').textContent = settings.get('highScore');
+  panel.classList.remove('hidden');
+  const shareBtn = document.getElementById('share-btn');
+  if (navigator.share) shareBtn.classList.remove('hidden');
+  else shareBtn.classList.add('hidden');
+}
+
+document.getElementById('replay-btn').addEventListener('click', () => {
+  document.getElementById('gameover-panel').classList.add('hidden');
+  game.reset();
+  game.setPaused(false);
+  resetHighScoreTracker();
+});
+
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const score = game.score;
+  const text = `🐍 我在贪吃蛇里吃了 ${score} 个！来挑战我吧 🎯`;
+  try {
+    await navigator.share({ title: '贪吃蛇', text, url: location.href });
+  } catch (e) {
+    try {
+      await navigator.clipboard.writeText(`${text} ${location.href}`);
+      showToast('📋');
+    } catch (err) {}
+  }
+});
+
+// 占位：续玩 / 破纪录追踪在 Phase I 实现
+function clearSave() {}
+function resetHighScoreTracker() {}
 
 window._renderer = renderer;
