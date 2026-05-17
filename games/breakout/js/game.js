@@ -108,6 +108,14 @@ export class GameLogic {
       }
     }
 
+    // 砖块下移定时器
+    this.brickDescentTimer -= dt;
+    if (this.brickDescentTimer <= 0) {
+      this.brickDescentTimer += DESCENT_TABLE[this.speedLevel - 1];
+      this._descendBricks();
+    }
+    if (this.gameOver) return;
+
     if (this.ballRespawnTimer > 0) {
       this.ballRespawnTimer = Math.max(0, this.ballRespawnTimer - dt);
       for (const b of this.balls) {
@@ -223,6 +231,43 @@ export class GameLogic {
     if (this._onDrop) this._onDrop();
     this.balls = [this._spawnBall()];
     this.ballRespawnTimer = 1500;
+  }
+
+  _descendBricks() {
+    // 检查是否会压到板拍（任意砖下沿越过 PADDLE_Y - PADDLE_HALF_HEIGHT）
+    // 当前最低有砖的行 + 1 = 下沿
+    let lowestBrickRow = -1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (this.board[r].some((v) => v > 0)) { lowestBrickRow = r; break; }
+    }
+    // 下移后最低砖在 lowestBrickRow + 1
+    const wouldHitPaddle = lowestBrickRow + 1 + 1 > PADDLE_Y - PADDLE_HALF_HEIGHT;
+    if (lowestBrickRow >= 0 && wouldHitPaddle) {
+      this._handleTopOut();
+      return;
+    }
+    // 安全：所有砖下移 1 行 + 顶部新生成一行
+    for (let r = ROWS - 1; r > 0; r--) {
+      for (let c = 0; c < COLS; c++) this.board[r][c] = this.board[r - 1][c];
+    }
+    for (let c = 0; c < COLS; c++) this.board[0][c] = randomBrickValue(this._rng);
+  }
+
+  _handleTopOut() {
+    if (this.endMode === 'standard') {
+      this.gameOver = true;
+      if (this._onGameOver) this._onGameOver('standard');
+      return;
+    }
+    // endless：清前 9 行，row 9..17 → row 0..8，row 9..17 清空
+    const upper = this.board.slice(9, ROWS).map((row) => row.slice());
+    const empty = Array.from({ length: 9 }, () => Array(COLS).fill(0));
+    this.board = [...upper, ...empty];
+    this.combo = 1;
+    this.balls = [this._spawnBall()];
+    this.ballRespawnTimer = 1500;
+    if (this._onComboChange) this._onComboChange(this.combo);
+    if (this._onTopOut) this._onTopOut();
   }
 
   _launchAllBalls() {

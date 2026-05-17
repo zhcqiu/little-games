@@ -1,6 +1,6 @@
 // game.test.js — GameLogic 纯函数测试
 import { GameLogic } from '../js/game.js';
-import { SPEED_TABLE, PADDLE_Y } from '../js/game.js';
+import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
 
 // 初始状态
 {
@@ -159,4 +159,57 @@ import { SPEED_TABLE, PADDLE_Y } from '../js/game.js';
   g.step(100);
   const totalDestroyed = (g.board[5][6] === 0 ? 1 : 0) + (g.board[5][7] === 0 ? 1 : 0);
   assertTrue('only 1 brick destroyed per step', totalDestroyed >= 1);
+}
+
+// 砖块下移：定时器到 → 所有砖下移一行 + 顶部生成新行
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.brickDescentTimer = 1;
+  const before = g.board.map(row => row.slice());
+  g.step(100);
+  // 原先 row 0 的砖现在在 row 1
+  for (let c = 0; c < COLS; c++) {
+    assertEq(`row 0 moved to row 1 col=${c}`, g.board[1][c], before[0][c]);
+  }
+  // row 0 重新生成（部分非零）
+  assertTrue('row 0 regenerated', g.board[0].some(v => v > 0));
+}
+
+// 压顶（标准）：触发 game over
+{
+  const g = new GameLogic();
+  g.endMode = 'standard';
+  g.ballRespawnTimer = 0;
+  // 把整板填满，下沿越过 PADDLE_Y
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 1;
+  let gameOverCalled = null;
+  g.onGameOver((mode) => { gameOverCalled = mode; });
+  // 触发砖块下移检查
+  g.brickDescentTimer = 1;
+  g.step(100);
+  assertEq('standard topOut triggers gameOver', gameOverCalled, 'standard');
+  assertEq('gameOver flag set', g.gameOver, true);
+}
+
+// 压顶（无尽）：清前 9 行 + 下半区上移 9 行
+{
+  const g = new GameLogic();
+  g.endMode = 'endless';
+  g.ballRespawnTimer = 0;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 1;
+  // 上半（前 9 行）放标记值
+  for (let c = 0; c < g.cols; c++) { g.board[5][c] = 3; }   // 标志位
+  let topOutCalled = 0;
+  g.onTopOut(() => topOutCalled++);
+  g.brickDescentTimer = 1;
+  g.step(100);
+  assertEq('endless topOut fired', topOutCalled, 1);
+  assertEq('combo reset', g.combo, 1);
+  assertEq('gameOver still false', g.gameOver, false);
+  // 清前 9 行（含 row 5 标记）+ 下半区上移：原 row 5 标记被清掉
+  assertEq('row 5 marker cleared (was in upper half)', g.board[14][3], 0);
+  // 下半区 row 9..17 现已经空
+  assertEq('row 9..17 cleared', g.board[15][3], 0);
+  assertEq('row 17 cleared',     g.board[17][3], 0);
 }
