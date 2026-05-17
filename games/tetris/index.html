@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>俄罗斯方块 · 小游戏乐园</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <meta name="theme-color" content="#42a5f5">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header id="top-bar">
+    <div class="score-block">
+      <div>本局: <span id="score">0</span> 行</div>
+      <div>最高: <span id="high-score">0</span> 行</div>
+    </div>
+    <div class="next-block">
+      <div class="label">下一块</div>
+      <canvas id="next-canvas" width="60" height="60"></canvas>
+    </div>
+    <button id="settings-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <main>
+    <canvas id="game-canvas"></canvas>
+  </main>
+
+  <!-- 设置面板 -->
+  <div id="settings-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>设置</h2>
+      <button id="settings-close" aria-label="关闭设置">✕</button>
+    </div>
+    <div class="setting-row">
+      <label>下落速度</label>
+      <div class="slider-row">
+        <span>慢</span>
+        <input type="range" id="speed-slider" min="1" max="5" step="1" value="1">
+        <span>快</span>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>上拉容忍</label>
+      <div class="seg" id="upward-seg">
+        <button data-val="0">0 格</button>
+        <button data-val="1" class="active">1 格</button>
+        <button data-val="2">2 格</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>结束模式</label>
+      <div class="seg" id="end-mode-seg">
+        <button data-val="standard" class="active">标准</button>
+        <button data-val="endless">无尽</button>
+      </div>
+      <p class="hint">标准 = 堆到顶就结束；无尽 = 堆到顶清下半区继续</p>
+    </div>
+    <div class="setting-row toggle-row">
+      <label>音效</label>
+      <button id="sfx-toggle" class="toggle active" data-on="true">开</button>
+    </div>
+    <div class="setting-row toggle-row">
+      <label>背景音乐</label>
+      <button id="bgm-toggle" class="toggle active" data-on="true">开</button>
+    </div>
+    <button id="restart-btn" class="primary">重新开始游戏</button>
+  </div>
+
+  <!-- 重启确认气泡 -->
+  <div id="restart-confirm" class="popup hidden">
+    <p>当前进度会丢失，确认？</p>
+    <div class="popup-buttons">
+      <button id="restart-cancel">取消</button>
+      <button id="restart-ok" class="primary">确认</button>
+    </div>
+  </div>
+
+  <!-- 游戏结束面板 -->
+  <div id="gameover-panel" class="panel hidden">
+    <h2>🎮 游戏结束</h2>
+    <p>本局消除: <span id="final-score">0</span> 行</p>
+    <p>最高记录: <span id="final-high">0</span> 行</p>
+    <button id="replay-btn" class="primary">再玩一局</button>
+  </div>
+
+  <!-- 无尽模式清半区浮字 -->
+  <div id="encourage-toast" class="toast hidden">继续加油！</div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
