@@ -47,3 +47,17 @@ little-games/
 - 用 CSS `touch-action` 控制手势，避免页面被意外滚动或缩放。
 - 互动元素最小尺寸建议 44×44px。
 - 在真实手机或浏览器开发者工具的设备模拟器里测试。
+
+## 🔌 离线优先
+
+所有游戏必须在首次在线访问后**离线可玩**。仓库根的 `sw.js` 负责整站缓存。加新游戏时：
+
+1. 在游戏的 `index.html` 里调用 `navigator.serviceWorker.register('/sw.js')`
+2. 不要引用任何外部 CDN / Google Fonts / 远程图片——全部资源同源
+3. 建议给每个游戏自带 `manifest.json` + `icon.svg`，让小朋友能"添加到主屏幕"作为独立 PWA
+
+已知限制：
+
+- 首次访问必须在线
+- iOS Safari 14+ 才完整支持 SW
+- 清浏览器数据后需要再次联网刷新
