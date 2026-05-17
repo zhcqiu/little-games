@@ -60,4 +60,60 @@ export class Game {
       lowWaterMark: row,
     };
   }
+
+  /**
+   * 在 (row, col, rotation) 放置 type 是否与棋盘或边界冲突
+   */
+  _collides(row, col, rotation, type) {
+    const cells = getCells(type, rotation);
+    for (const { row: dr, col: dc } of cells) {
+      const r = row + dr;
+      const c = col + dc;
+      if (c < 0 || c >= BOARD_WIDTH) return true;
+      if (r >= BOARD_HEIGHT) return true;
+      if (r < 0) continue;  // spawn buffer 上方，不算冲突
+      if (this.board[r][c] !== null) return true;
+    }
+    return false;
+  }
+
+  /**
+   * 尝试把当前方块移到 (targetRow, targetCol)。
+   * 横向纵向各自从当前位置朝目标方向逐格挪，碰撞就停。
+   * @returns {boolean} 是否发生任何移动
+   */
+  tryMoveTo(targetRow, targetCol) {
+    if (!this.current) return false;
+    const p = this.current;
+    const startRow = p.row;
+    const startCol = p.col;
+
+    const colStep = Math.sign(targetCol - startCol);
+    while (p.col !== targetCol) {
+      const nextCol = p.col + colStep;
+      if (this._collides(p.row, nextCol, p.rotation, p.type)) break;
+      p.col = nextCol;
+    }
+
+    const rowStep = Math.sign(targetRow - p.row);
+    while (p.row !== targetRow && rowStep !== 0) {
+      const nextRow = p.row + rowStep;
+      if (this._collides(nextRow, p.col, p.rotation, p.type)) break;
+      p.row = nextRow;
+    }
+
+    if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
+
+    return p.row !== startRow || p.col !== startCol;
+  }
+
+  /** 尝试下移一格。失败返回 false。 */
+  tryMoveDown() {
+    if (!this.current) return false;
+    const p = this.current;
+    if (this._collides(p.row + 1, p.col, p.rotation, p.type)) return false;
+    p.row++;
+    if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
+    return true;
+  }
 }

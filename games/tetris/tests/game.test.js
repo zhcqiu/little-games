@@ -16,3 +16,34 @@ assertEq('一袋含 IJLOSTZ', sorted, ['I', 'J', 'L', 'O', 'S', 'T', 'Z']);
 assertTrue('有当前方块', g.current !== null);
 assertTrue('有下一块', g.next !== null);
 assertTrue('当前方块在棋盘顶上方', g.current.row <= 0);
+
+// 碰撞检测
+const g2 = new Game();
+g2.current = { type: 'T', rotation: 0, row: 5, col: 4, lowWaterMark: 5 };
+assertEq('在空棋盘 (5,4) 不冲突', g2._collides(5, 4, 0, 'T'), false);
+assertEq('越左边界冲突', g2._collides(5, -1, 0, 'T'), true);
+assertEq('越右边界冲突 (T width=3)', g2._collides(5, 8, 0, 'T'), true);
+assertEq('越下边界冲突', g2._collides(19, 4, 0, 'T'), true);
+
+g2.board[6][5] = '#aaa';
+// T 块 rotation 0 在 (5,4) 时占 (6,4)(6,5)(6,6)(7,5)
+assertEq('堵在前方就冲突', g2._collides(5, 4, 0, 'T'), true);
+
+// tryMoveTo
+const g3 = new Game();
+g3.current = { type: 'O', rotation: 0, row: 0, col: 0, lowWaterMark: 0 };
+const ok = g3.tryMoveTo(0, 5);
+assertEq('成功移动到 (0,5)', ok && g3.current.col, 5);
+
+g3.current = { type: 'O', rotation: 0, row: 0, col: 0, lowWaterMark: 0 };
+g3.tryMoveTo(0, 20);
+// O 块 shape 在 4×4 中占 col 1,2，所以最大有效 col = 10 - 3 = 7
+assertEq('右越界夹到 col=7', g3.current.col, 7);
+
+// tryMoveDown
+const g4 = new Game();
+g4.current = { type: 'I', rotation: 1, row: 0, col: 4, lowWaterMark: 0 };
+const moved = g4.tryMoveDown();
+assertEq('I 块下移一格', g4.current.row, 1);
+assertEq('tryMoveDown 返回 true', moved, true);
+assertEq('lowWaterMark 更新', g4.current.lowWaterMark, 1);
