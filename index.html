@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <meta name="theme-color" content="#ff7043">
   <title>小游戏乐园 · Little Games</title>
   <style>
     :root {
@@ -144,8 +148,7 @@
   <script>
     // 游戏列表 — 添加新游戏时，在这里加一项即可
     const games = [
-      // 示例:
-      // { title: "拼图游戏", desc: "拖动方块拼出图案", emoji: "🧩", path: "games/puzzle/" },
+      { title: "俄罗斯方块", desc: "经典玩法，单指移动 + 双指旋转", emoji: "🧱", path: "games/tetris/" },
     ];
 
     const container = document.getElementById("games-container");
@@ -165,6 +168,14 @@
         grid.appendChild(a);
       }
       container.appendChild(grid);
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('SW 注册失败：', err);
+        });
+      });
     }
   </script>
 </body>
