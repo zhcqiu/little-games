@@ -191,7 +191,46 @@ document.getElementById('pause-btn').addEventListener('click', () => setManualPa
 window.addEventListener('keydown', (e) => {
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') return;
-  if (e.key === 'p' || e.key === 'P') {
+
+  const helpPanel = document.getElementById('help-panel');
+  const settingsPanel = document.getElementById('settings-panel');
+  const gameoverPanel = document.getElementById('gameover-panel');
+  const restartConfirm = document.getElementById('restart-confirm');
+
+  if (e.key === 'Escape') {
+    if (!restartConfirm.classList.contains('hidden')) {
+      restartConfirm.classList.add('hidden');
+      e.preventDefault();
+      return;
+    }
+    if (!settingsPanel.classList.contains('hidden')) {
+      settings.close();
+      e.preventDefault();
+      return;
+    }
+    if (!helpPanel.classList.contains('hidden')) {
+      helpPanel.classList.add('hidden');
+      game.setPaused(false);
+      if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+      e.preventDefault();
+      return;
+    }
+  } else if (e.key === 'Enter') {
+    if (!restartConfirm.classList.contains('hidden')) {
+      document.getElementById('restart-ok').click();
+      e.preventDefault();
+      return;
+    }
+    if (!gameoverPanel.classList.contains('hidden')) {
+      document.getElementById('replay-btn').click();
+      e.preventDefault();
+      return;
+    }
+  } else if (e.key === 'p' || e.key === 'P') {
+    const panelsOpen = !helpPanel.classList.contains('hidden')
+      || !settingsPanel.classList.contains('hidden')
+      || !gameoverPanel.classList.contains('hidden');
+    if (panelsOpen) return;
     setManualPause(!manualPause);
     e.preventDefault();
   }
