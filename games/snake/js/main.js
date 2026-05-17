@@ -106,6 +106,15 @@ function loop(now) {
   effects.step(dt);
   renderer.draw(game, dt);
   document.getElementById('score').textContent = game.score;
+  document.getElementById('high-score').textContent = settings.get('highScore');
+
+  if (!highScoreCelebrated && highScoreBaseline > 0 && game.score > highScoreBaseline) {
+    highScoreCelebrated = true;
+    celebrateHighScore();
+  }
+  if (game.score > settings.get('highScore')) {
+    settings.set('highScore', game.score);
+  }
   requestAnimationFrame(loop);
 }
 
@@ -254,6 +263,20 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 function clearSave() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
 }
-function resetHighScoreTracker() {}
+let highScoreBaseline = settings.get('highScore');
+let highScoreCelebrated = false;
+function resetHighScoreTracker() {
+  highScoreBaseline = settings.get('highScore');
+  highScoreCelebrated = false;
+}
+function celebrateHighScore() {
+  audio.playHighScore();
+  vibrate([60, 30, 60, 30, 100]);
+  showClearToast('🏆');
+  // 顶上撒一拨彩色粒子
+  effects.spawnBurst(6, 0, renderer.cellSize,
+    ['#ff7043', '#ffeb3b', '#4caf50', '#42a5f5', '#9c27b0', '#f44336', '#ff9800'], 20, [-500, -250]);
+  effects.triggerShake(16, 280);
+}
 
 window._renderer = renderer;
