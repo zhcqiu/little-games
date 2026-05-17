@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>打砖块测试</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #fff; color: #333; }
+    .ok { color: green; }
+    .fail { color: red; font-weight: bold; }
+    #summary { font-size: 18px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>🧨 打砖块测试</h1>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script type="module">
+    const results = document.getElementById('results');
+    let passed = 0, failed = 0;
+
+    window.assertEq = (label, actual, expected) => {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      const line = document.createElement('div');
+      if (ok) {
+        line.className = 'ok';
+        line.textContent = `✓ ${label}`;
+        passed++;
+      } else {
+        line.className = 'fail';
+        line.textContent = `✗ ${label} — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`;
+        failed++;
+      }
+      results.appendChild(line);
+    };
+
+    window.assertTrue = (label, cond) => {
+      const line = document.createElement('div');
+      if (cond) {
+        line.className = 'ok';
+        line.textContent = `✓ ${label}`;
+        passed++;
+      } else {
+        line.className = 'fail';
+        line.textContent = `✗ ${label}`;
+        failed++;
+      }
+      results.appendChild(line);
+    };
+
+    await import('./tests/physics.test.js');
+    await import('./tests/game.test.js');
+
+    const summary = document.getElementById('summary');
+    summary.textContent = `${passed} passed, ${failed} failed`;
+    summary.style.color = failed === 0 ? 'green' : 'red';
+  </script>
+</body>
+</html>
