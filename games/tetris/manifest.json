@@ -1,0 +1,11 @@
+{
+  "name": "俄罗斯方块",
+  "short_name": "方块",
+  "start_url": "/games/tetris/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#42a5f5",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
