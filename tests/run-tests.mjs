@@ -137,6 +137,77 @@ eq('restore score', g14.score, 7);
 eq('restore current type', g14.current.type, 'T');
 eq('restore current rotation', g14.current.rotation, 1);
 
+// ───── snake ─────
+const { Game: SnakeGame, BOARD_WIDTH: SW, BOARD_HEIGHT: SH } =
+  await import('../games/snake/js/game.js');
+
+eq('snake board 12 wide', SW, 12);
+eq('snake board 16 tall', SH, 16);
+
+const sg = new SnakeGame();
+eq('snake init len 4', sg.snake.length, 4);
+eq('snake head (8,7)', sg.snake[0], { row: 8, col: 7 });
+eq('snake init dir right', sg.currentDirection, 'right');
+
+// 180° 反向拒绝
+const sg2 = new SnakeGame();
+sg2.queueDirection('left');
+eq('snake reject 180°', sg2.nextDirection, null);
+sg2.queueDirection('up');
+eq('snake accept perpendicular', sg2.nextDirection, 'up');
+
+// advance + 撞墙（标准）
+const sg3 = new SnakeGame();
+sg3.food = { row: 0, col: 0 };
+sg3.snake = [{ row: 8, col: 11 }, { row: 8, col: 10 }, { row: 8, col: 9 }];
+sg3._advance();
+eq('snake wall hits dead', sg3.dead, true);
+
+// wrap
+const sg4 = new SnakeGame();
+sg4.setEndMode('wrap');
+sg4.food = { row: 0, col: 0 };
+sg4.snake = [{ row: 8, col: 11 }, { row: 8, col: 10 }];
+sg4._advance();
+eq('snake wrap to col 0', sg4.snake[0], { row: 8, col: 0 });
+eq('snake wrap not dead', sg4.dead, false);
+
+// revive
+const sg5 = new SnakeGame();
+sg5.setEndMode('revive');
+sg5.food = { row: 0, col: 0 };
+sg5.snake = [
+  { row: 8, col: 11 }, { row: 8, col: 10 }, { row: 8, col: 9 }, { row: 8, col: 8 },
+  { row: 8, col: 7 }, { row: 8, col: 6 }, { row: 8, col: 5 }, { row: 8, col: 4 },
+];
+sg5.score = 5;
+sg5._advance();
+eq('snake revive not dead', sg5.dead, false);
+eq('snake revive trim to 4', sg5.snake.length, 4);
+eq('snake revive score kept', sg5.score, 5);
+truthy('snake revive invincible', sg5.reviveInvincibleMs > 0);
+
+// 吃食物
+const sg6 = new SnakeGame();
+sg6.food = { row: 8, col: 8 };
+sg6._advance();
+eq('snake ate +1', sg6.score, 1);
+eq('snake grew', sg6.snake.length, 5);
+
+// 序列化
+const sg7 = new SnakeGame();
+sg7.score = 11;
+sg7.currentDirection = 'down';
+sg7.foodEmoji = '🍓';
+const snakeSnap = sg7.serialize();
+const sg8 = new SnakeGame();
+const ok = sg8.restore(snakeSnap);
+truthy('snake restore ok', ok);
+eq('snake restore score', sg8.score, 11);
+eq('snake restore dir', sg8.currentDirection, 'down');
+eq('snake restore emoji', sg8.foodEmoji, '🍓');
+eq('snake restore invalid', sg8.restore({}), false);
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
