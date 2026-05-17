@@ -47,3 +47,28 @@ const moved = g4.tryMoveDown();
 assertEq('I 块下移一格', g4.current.row, 1);
 assertEq('tryMoveDown 返回 true', moved, true);
 assertEq('lowWaterMark 更新', g4.current.lowWaterMark, 1);
+
+// 旋转无障碍
+const g5 = new Game();
+g5.current = { type: 'T', rotation: 0, row: 5, col: 4, lowWaterMark: 5 };
+const r1 = g5.tryRotate(1);
+assertEq('T 顺时针旋转成功', r1 && g5.current.rotation, 1);
+
+// wall-kick：T 块贴左壁旋转，应被推回界内
+const g6 = new Game();
+g6.current = { type: 'T', rotation: 0, row: 5, col: -1, lowWaterMark: 5 };
+const before = g6.current.col;
+g6.tryRotate(1);
+assertEq('wall-kick 把方块向右推', g6.current.col > before, true);
+
+// 完全卡死
+const g7 = new Game();
+g7.current = { type: 'I', rotation: 0, row: 5, col: 3, lowWaterMark: 5 };
+for (let r = 4; r <= 9; r++) for (let c = 2; c <= 8; c++) {
+  if (r >= 0 && r < 20 && c >= 0 && c < 10) {
+    if (!(r === 6 && c >= 3 && c <= 6)) g7.board[r][c] = '#aaa';
+  }
+}
+const r2 = g7.tryRotate(1);
+assertEq('卡死时 tryRotate 返回 false', r2, false);
+assertEq('卡死时旋转态不变', g7.current.rotation, 0);

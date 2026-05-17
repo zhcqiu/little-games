@@ -107,6 +107,33 @@ export class Game {
     return p.row !== startRow || p.col !== startCol;
   }
 
+  /**
+   * 尝试旋转。dir = +1 顺时针，-1 逆时针。
+   * 旋转后若冲突，按顺序尝试 wall-kick：原位、左 1、右 1、下 1
+   * @returns {boolean}
+   */
+  tryRotate(dir) {
+    if (!this.current) return false;
+    const p = this.current;
+    const newRot = ((p.rotation + dir) % 4 + 4) % 4;
+    const kicks = [
+      { dr: 0, dc: 0 },
+      { dr: 0, dc: -1 },
+      { dr: 0, dc: +1 },
+      { dr: +1, dc: 0 },
+    ];
+    for (const { dr, dc } of kicks) {
+      if (!this._collides(p.row + dr, p.col + dc, newRot, p.type)) {
+        p.row += dr;
+        p.col += dc;
+        p.rotation = newRot;
+        if (p.row > p.lowWaterMark) p.lowWaterMark = p.row;
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** 尝试下移一格。失败返回 false。 */
   tryMoveDown() {
     if (!this.current) return false;
