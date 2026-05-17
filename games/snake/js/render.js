@@ -102,17 +102,29 @@ export class Renderer {
     }
     ctx.globalAlpha = 1;
 
-    // 蛇头表情（延后到 D2 处理，先占位画两个白圆点当眼睛）
+    // 蛇头表情：emoji 旋转到行进方向
     if (len > 0) {
       const head = game.snake[0];
-      ctx.fillStyle = '#ffffff';
+      const cx = head.col * s + s / 2;
+      const cy = head.row * s + s / 2;
+      const angle = {
+        right: 0,
+        down: Math.PI / 2,
+        left: Math.PI,
+        up: -Math.PI / 2,
+      }[game.currentDirection] || 0;
+
+      ctx.save();
       ctx.globalAlpha = baseAlpha;
-      // 简单两眼，先不区分方向
-      ctx.beginPath();
-      ctx.arc(head.col * s + s * 0.35, head.row * s + s * 0.4, s * 0.08, 0, Math.PI * 2);
-      ctx.arc(head.col * s + s * 0.65, head.row * s + s * 0.4, s * 0.08, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.font = `${s * 0.85}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // 用一个朝右的表情；旋转后自然朝任意方向
+      // 注：emoji 在不同平台渲染略有差，可换为 😋 / 🙂 / 🐲
+      ctx.fillText('🐍', 0, 0);
+      ctx.restore();
     }
   }
 
