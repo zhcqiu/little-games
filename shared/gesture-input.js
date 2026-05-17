@@ -1,6 +1,6 @@
 // shared/gesture-input.js — 手势 + 键盘统一输入状态机
 // 可被任何游戏复用：构造时注入 canvas / cellSize getter / piece-state getter
-// 通过 .on('moveTo' | 'rotate' | 'pauseChange', cb) 订阅语义事件
+// 通过 .on('moveTo' | 'rotate' | 'pauseChange' | 'hardDrop' | 'swipe', cb) 订阅语义事件
 const STATE_IDLE = 0;
 const STATE_DRAG = 1;
 const STATE_ROTATE = 2;
@@ -35,6 +35,7 @@ export class Input {
   }
 
   _onKeyDown(e) {
+    // 忽略输入控件里的按键（设置面板里的滑条等）
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
 
@@ -65,6 +66,7 @@ export class Input {
         e.preventDefault();
         this.handlers.swipe('down');
         if (piece) {
+          // Shift + 下 = 硬落下
           if (e.shiftKey) this.handlers.hardDrop();
           else this.handlers.moveTo(piece.row + 1, piece.col);
         }
