@@ -92,3 +92,40 @@ g9.currentDirection = 'down';  // 朝 (6,5)，那是尾
 g9._advance();
 assertEq('入尾位不死', g9.dead, false);
 assertEq('新头在尾位 (6,5)', g9.snake[0], { row: 6, col: 5 });
+
+// 吃食物：长度 +1，分数 +1
+const g10 = new Game();
+g10.food = { row: 8, col: 8 };
+const lenBefore = g10.snake.length;
+g10._advance();
+assertEq('吃后长 +1', g10.snake.length, lenBefore + 1);
+assertEq('分数 +1', g10.score, 1);
+assertTrue('新食物不在蛇身', !g10.snake.some((s) => s.row === g10.food.row && s.col === g10.food.col));
+
+// 穿墙模式：右出左入
+const g11 = new Game();
+g11.setEndMode('wrap');
+g11.food = { row: 0, col: 0 };
+g11.snake = [{ row: 8, col: 11 }, { row: 8, col: 10 }, { row: 8, col: 9 }];
+g11.currentDirection = 'right';
+g11._advance();
+assertEq('穿墙后 dead=false', g11.dead, false);
+assertEq('穿墙后头在左边 (8,0)', g11.snake[0], { row: 8, col: 0 });
+
+// 上出下入
+const g12 = new Game();
+g12.setEndMode('wrap');
+g12.food = { row: 4, col: 4 };
+g12.snake = [{ row: 0, col: 7 }, { row: 1, col: 7 }, { row: 2, col: 7 }];
+g12.currentDirection = 'up';
+g12._advance();
+assertEq('上穿墙头在 (15,7)', g12.snake[0], { row: 15, col: 7 });
+
+// 穿墙模式撞自己仍死
+const g13 = new Game();
+g13.setEndMode('wrap');
+g13.food = { row: 0, col: 0 };
+g13.snake = [{ row: 5, col: 5 }, { row: 4, col: 5 }, { row: 4, col: 6 }, { row: 5, col: 6 }, { row: 6, col: 6 }, { row: 6, col: 5 }];
+g13.currentDirection = 'up';
+g13._advance();
+assertEq('wrap 模式撞自己 dead', g13.dead, true);
