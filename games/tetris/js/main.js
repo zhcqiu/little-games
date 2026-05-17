@@ -1,7 +1,8 @@
 // main.js — 入口与主循环
 import { Game } from './game.js';
 import { Renderer } from './render.js';
-import { Input } from './input.js';
+import { Effects } from './effects.js';
+import { Input } from '../../../shared/gesture-input.js';
 import { Audio } from './audio.js';
 import { Settings } from './settings.js';
 
@@ -9,9 +10,10 @@ const gameCanvas = document.getElementById('game-canvas');
 const nextCanvas = document.getElementById('next-canvas');
 
 const game = new Game();
-const renderer = new Renderer(gameCanvas, nextCanvas);
+const effects = new Effects();
+const renderer = new Renderer(gameCanvas, nextCanvas, effects);
 const audio = new Audio();
-const settings = new Settings(game, audio);
+const settings = new Settings(game, audio, effects);
 
 settings.load();
 settings.apply();
@@ -41,16 +43,16 @@ input.onFirstTouch(() => {
 game.onLock(() => audio.playLock());
 game.onLineClear((rows, colorRows, boardSnapshot) => {
   audio.playClear(rows.length);
-  renderer.flashRowsAnim(rows);
-  renderer.spawnParticles(rows, colorRows);
-  renderer.startSettling(rows, boardSnapshot);
+  effects.flashRowsAnim(rows);
+  effects.spawnParticles(rows, colorRows, renderer.cellSize);
+  effects.startSettling(rows, boardSnapshot);
   const shake = [
     { amp: 8, dur: 120 },
     { amp: 12, dur: 160 },
     { amp: 18, dur: 200 },
     { amp: 28, dur: 280 },
   ][Math.min(rows.length, 4) - 1];
-  renderer.triggerShake(shake.amp, shake.dur);
+  effects.triggerShake(shake.amp, shake.dur);
   const cheers = ['👍', '😄', '🤩', '🎉'];
   showClearToast(cheers[Math.min(rows.length, 4) - 1]);
 });
@@ -60,10 +62,10 @@ game.onGameOver((mode, data) => {
     showToast('💪');
     if (data) {
       const colorRows = data.clearedRows.map((r) => data.boardSnapshot[r].slice());
-      renderer.flashRowsAnim(data.clearedRows);
-      renderer.spawnParticles(data.clearedRows, colorRows);
-      renderer.startSettling(data.clearedRows, data.boardSnapshot);
-      renderer.triggerShake(24, 280);
+      effects.flashRowsAnim(data.clearedRows);
+      effects.spawnParticles(data.clearedRows, colorRows, renderer.cellSize);
+      effects.startSettling(data.clearedRows, data.boardSnapshot);
+      effects.triggerShake(24, 280);
     }
   } else {
     audio.playGameOver();
@@ -77,6 +79,7 @@ function loop(now) {
   const dt = now - lastTime;
   lastTime = now;
   game.step(dt);
+  effects.step(dt);
   renderer.draw(game, dt);
   document.getElementById('score').textContent = game.score;
   document.getElementById('high-score').textContent = settings.get('highScore');

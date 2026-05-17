@@ -9,12 +9,16 @@ const DEFAULTS = {
   sfxOn: true,
   bgmOn: true,
   theme: 'cheery',
+  fxLevel: 'strong',  // strong | mild | off
 };
 
+const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
+
 export class Settings {
-  constructor(game, audio) {
+  constructor(game, audio, effects) {
     this.game = game;
     this.audio = audio;
+    this.effects = effects;
     this.state = { ...DEFAULTS };
     this.highScore = 0;
   }
@@ -59,6 +63,7 @@ export class Settings {
     this.game.setEndMode(this.state.endMode);
     this.audio.setSfxOn(this.state.sfxOn);
     this.audio.setBgmOn(this.state.bgmOn);
+    if (this.effects) this.effects.setIntensity(FX_INTENSITY[this.state.fxLevel] ?? 1.0);
     document.body.dataset.theme = this.state.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',

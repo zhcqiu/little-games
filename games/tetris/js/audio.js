@@ -1,29 +1,14 @@
-// audio.js — Web Audio API 合成
-export class Audio {
+// games/tetris/js/audio.js — Tetris 专属音效
+// 通用合成原语在 /shared/audio-engine.js
+import { AudioEngine } from '../../../shared/audio-engine.js';
+
+export class Audio extends AudioEngine {
   constructor() {
-    this.ctx = null;
-    this.master = null;
-    this.sfxOn = true;
+    super();
     this.bgmOn = true;
     this.bgmController = null;
   }
 
-  /** 由首次用户手势触发 */
-  unlock() {
-    if (this.ctx) return;
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      this.ctx = new AC();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 1.0;
-      this.master.connect(this.ctx.destination);
-    } catch (e) {
-      console.warn('AudioContext 创建失败：', e);
-    }
-  }
-
-  setSfxOn(on) { this.sfxOn = on; }
   setBgmOn(on) {
     this.bgmOn = on;
     if (!on) {
@@ -33,7 +18,6 @@ export class Audio {
     }
   }
 
-  /** 停止 BGM 并 fade out，自动 null 控制器 */
   stopBgm(fadeMs = 200) {
     if (this.bgmController) {
       this.bgmController.stop(fadeMs);
@@ -41,66 +25,16 @@ export class Audio {
     }
   }
 
-  /** 创建一个简单的 oscillator + envelope */
-  _playTone({ freq, type = 'sine', duration, gain = 0.3, attack = 5 }) {
-    if (!this.sfxOn || !this.ctx) return;
-    const t0 = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(gain, t0 + attack / 1000);
-    g.gain.linearRampToValueAtTime(gain * 0.7, t0 + (attack + 20) / 1000);
-    g.gain.exponentialRampToValueAtTime(0.001, t0 + duration / 1000);
-    osc.connect(g);
-    g.connect(this.master);
-    osc.start(t0);
-    osc.stop(t0 + duration / 1000 + 0.05);
-  }
-
   playLock() {
-    if (!this.sfxOn || !this.ctx) return;
-    const t0 = this.ctx.currentTime;
-    // 主体：sine 200Hz → 80Hz 快速下扫，模拟落地"咚"
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(200, t0);
-    osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.06);
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.55, t0 + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
-    osc.connect(g);
-    g.connect(this.master);
-    osc.start(t0);
-    osc.stop(t0 + 0.2);
-
-    // 顶部叠加噪声 click 增加触感
-    const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.04), this.ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf;
-    const hpf = this.ctx.createBiquadFilter();
-    hpf.type = 'highpass';
-    hpf.frequency.value = 1500;
-    const ng = this.ctx.createGain();
-    ng.gain.setValueAtTime(0.5, t0);
-    ng.gain.exponentialRampToValueAtTime(0.001, t0 + 0.04);
-    src.connect(hpf);
-    hpf.connect(ng);
-    ng.connect(this.master);
-    src.start(t0);
-    src.stop(t0 + 0.05);
+    this.playThump({ fromFreq: 200, toFreq: 80, duration: 180, gain: 0.55 });
   }
 
   playMove() {
-    this._playTone({ freq: 600, type: 'sine', duration: 30, gain: 0.1, attack: 2 });
+    this.playTone({ freq: 600, type: 'sine', duration: 30, gain: 0.1, attack: 2 });
   }
 
   playRotate() {
-    this._playTone({ freq: 800, type: 'sine', duration: 30, gain: 0.1, attack: 2 });
+    this.playTone({ freq: 800, type: 'sine', duration: 30, gain: 0.1, attack: 2 });
   }
 
   playClear(lines) {
@@ -116,17 +50,16 @@ export class Audio {
     const duration = [250, 350, 450, 600][Math.min(lines, 4) - 1] || 250;
 
     for (const freq of tones) {
-      this._scheduleChordNote(freq, t0, duration);
-      this._scheduleChordNote(freq * 2, t0, duration, 0.1, 'triangle');
+      this.scheduleNote(freq, t0, duration);
+      this.scheduleNote(freq * 2, t0, duration, 0.1, 'triangle');
     }
 
     if (lines >= 4) {
       // 四消额外：上行琶音 + 一记低音 boom
       const arp = [1046.50, 1318.51, 1567.98, 2093.00];
       for (let i = 0; i < arp.length; i++) {
-        this._scheduleChordNote(arp[i], t0 + 0.4 + i * 0.08, 100, 0.45);
+        this.scheduleNote(arp[i], t0 + 0.4 + i * 0.08, 100, 0.45);
       }
-      // 低音 boom
       const boom = this.ctx.createOscillator();
       const bg = this.ctx.createGain();
       boom.type = 'sine';
@@ -140,22 +73,6 @@ export class Audio {
       boom.start(t0);
       boom.stop(t0 + 0.8);
     }
-  }
-
-  _scheduleChordNote(freq, when, duration, gain = 0.38, type = 'sine') {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(gain, when + 0.01);
-    g.gain.linearRampToValueAtTime(gain * 0.7, when + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, when + duration / 1000);
-    osc.connect(g);
-    g.connect(this.master);
-    osc.start(when);
-    osc.stop(when + duration / 1000 + 0.05);
   }
 
   playGameOver() {
@@ -187,36 +104,22 @@ export class Audio {
   }
 
   playEndlessReset() {
+    this.playNoiseSweep({ fromFreq: 2000, toFreq: 200, duration: 400, gain: 0.3, q: 2 });
+  }
+
+  /** 破纪录的"叮咚！" 上行 4 音 */
+  playHighScore() {
     if (!this.sfxOn || !this.ctx) return;
     const t0 = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 0.4;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
-
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(2000, t0);
-    filter.frequency.exponentialRampToValueAtTime(200, t0 + 0.4);
-    filter.Q.value = 2;
-
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.3, t0);
-    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
-
-    source.connect(filter);
-    filter.connect(g);
-    g.connect(this.master);
-    source.start(t0);
-    source.stop(t0 + 0.4);
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    for (let i = 0; i < notes.length; i++) {
+      this.scheduleNote(notes[i], t0 + i * 0.08, 200, 0.4, 'triangle');
+    }
   }
 
   _startBgm() {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    // C 大调五声音阶
     const melody = [
       261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 196.00,
       261.63, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63,

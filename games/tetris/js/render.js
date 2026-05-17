@@ -1,18 +1,20 @@
-// render.js — Canvas 绘制 + FX
+// render.js — Canvas 棋盘绘制；特效交给 effects.js
 import { getCells, PIECES } from './pieces.js';
 import { BOARD_WIDTH, BOARD_HEIGHT } from './game.js';
 
 export class Renderer {
-  constructor(canvas, nextCanvas) {
+  /**
+   * @param {HTMLCanvasElement} canvas - 主棋盘画布
+   * @param {HTMLCanvasElement} nextCanvas - "下一块"预览
+   * @param {import('./effects.js').Effects} effects - 特效系统
+   */
+  constructor(canvas, nextCanvas, effects) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.nextCanvas = nextCanvas;
     this.nextCtx = nextCanvas.getContext('2d');
+    this.effects = effects;
     this.cellSize = 30;
-    this.particles = [];
-    this.shake = null;          // { amplitude, duration, elapsed }
-    this.flashRows = [];        // [{ rows, elapsed, duration }]
-    this.settling = null;       // { ghostBoard, clearedRows, elapsed, duration }
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -41,32 +43,17 @@ export class Renderer {
     const w = this.cellSize * BOARD_WIDTH;
     const h = this.cellSize * BOARD_HEIGHT;
 
-    if (this.settling) this.settling.elapsed += dt;
-
-    // 屏幕抖动
-    let offsetX = 0, offsetY = 0;
-    if (this.shake) {
-      this.shake.elapsed += dt;
-      if (this.shake.elapsed >= this.shake.duration) {
-        this.shake = null;
-      } else {
-        const e = this.shake.elapsed;
-        const d = this.shake.duration;
-        const amp = this.shake.amplitude * (1 - e / d);
-        offsetX = Math.sin(e * 0.06) * amp;
-        offsetY = Math.cos(e * 0.065) * amp;
-      }
-    }
+    const offset = this.effects.getShakeOffset();
 
     ctx.save();
     ctx.clearRect(0, 0, w, h);
-    ctx.translate(offsetX, offsetY);
+    ctx.translate(offset.x, offset.y);
 
     this._drawBoard(game);
     this._drawGhost(game);
     this._drawCurrent(game);
-    this._drawFlashes(dt);
-    this._drawParticles(dt);
+    this.effects.drawFlashes(ctx, this.cellSize, dt);
+    this.effects.drawParticles(ctx, dt);
 
     ctx.restore();
 
@@ -94,10 +81,9 @@ export class Renderer {
       ctx.stroke();
     }
 
-    if (this.settling && this.settling.elapsed < this.settling.duration) {
+    if (this.effects.settling) {
       this._drawSettlingBoard();
     } else {
-      if (this.settling) this.settling = null;
       for (let r = 0; r < BOARD_HEIGHT; r++) {
         for (let c = 0; c < BOARD_WIDTH; c++) {
           const color = game.board[r][c];
@@ -109,14 +95,12 @@ export class Renderer {
 
   _drawSettlingBoard() {
     const s = this.cellSize;
-    const settling = this.settling;
+    const settling = this.effects.settling;
     const t = settling.elapsed / settling.duration;
-    // easeInOutQuad: 加速然后减速
     const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
     for (let r = 0; r < BOARD_HEIGHT; r++) {
       if (settling.clearedRows.includes(r)) continue;
-      // 这一行原本要往下落多少格 = 它下方被消的行数
       let shift = 0;
       for (const cr of settling.clearedRows) if (cr > r) shift++;
       const visualRow = r + shift * ease;
@@ -125,24 +109,6 @@ export class Renderer {
         if (color) this._drawCell(c * s, visualRow * s, color, 1.0);
       }
     }
-  }
-
-  startSettling(clearedRows, boardSnapshot) {
-    this.settling = {
-      ghostBoard: boardSnapshot,
-      clearedRows: clearedRows.slice(),
-      elapsed: 0,
-      duration: 250,
-    };
-  }
-
-  /** 从 CSS 自定义属性读取主题相关画布颜色 */
-  _readTheme() {
-    const styles = getComputedStyle(document.body);
-    return {
-      canvasBg: styles.getPropertyValue('--canvas-bg').trim() || '#16213e',
-      canvasGrid: styles.getPropertyValue('--canvas-grid').trim() || 'rgba(255,255,255,0.04)',
-    };
   }
 
   _drawCell(x, y, color, alpha = 1.0) {
@@ -200,49 +166,6 @@ export class Renderer {
     ctx.globalAlpha = 1.0;
   }
 
-  _drawFlashes(dt) {
-    const ctx = this.ctx;
-    const s = this.cellSize;
-    for (let i = this.flashRows.length - 1; i >= 0; i--) {
-      const f = this.flashRows[i];
-      f.elapsed += dt;
-      if (f.elapsed >= f.duration) {
-        this.flashRows.splice(i, 1);
-        continue;
-      }
-      const alpha = 0.85 * (1 - f.elapsed / f.duration);
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#ffffff';
-      for (const r of f.rows) {
-        ctx.fillRect(0, r * s, s * BOARD_WIDTH, s);
-      }
-    }
-    ctx.globalAlpha = 1.0;
-  }
-
-  _drawParticles(dt) {
-    const ctx = this.ctx;
-    const gravity = 980 / 1000;  // px/ms²
-
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.elapsed += dt;
-      if (p.elapsed >= p.life) {
-        this.particles.splice(i, 1);
-        continue;
-      }
-      const dts = dt / 1000;
-      p.x += p.vx * dts;
-      p.y += p.vy * dts;
-      p.vy += gravity * dt;
-      const alpha = 1 - p.elapsed / p.life;
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-    }
-    ctx.globalAlpha = 1.0;
-  }
-
   _drawNext(game) {
     const ctx = this.nextCtx;
     ctx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
@@ -258,34 +181,11 @@ export class Renderer {
     }
   }
 
-  triggerShake(amplitude, duration) {
-    this.shake = { amplitude, duration, elapsed: 0 };
-  }
-
-  spawnParticles(rows, rowSnapshots) {
-    const s = this.cellSize;
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const colors = rowSnapshots[i];
-      for (let c = 0; c < BOARD_WIDTH; c++) {
-        const color = colors[c] || '#ffffff';
-        for (let k = 0; k < 14; k++) {
-          this.particles.push({
-            x: c * s + s / 2,
-            y: r * s + s / 2,
-            vx: (Math.random() - 0.5) * 600,
-            vy: -350 - Math.random() * 300,
-            color,
-            life: 1000,
-            elapsed: 0,
-            size: 5 + Math.random() * 6,
-          });
-        }
-      }
-    }
-  }
-
-  flashRowsAnim(rows) {
-    this.flashRows.push({ rows: rows.slice(), elapsed: 0, duration: 300 });
+  _readTheme() {
+    const styles = getComputedStyle(document.body);
+    return {
+      canvasBg: styles.getPropertyValue('--canvas-bg').trim() || '#16213e',
+      canvasGrid: styles.getPropertyValue('--canvas-grid').trim() || 'rgba(255,255,255,0.04)',
+    };
   }
 }
