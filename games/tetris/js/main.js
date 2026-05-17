@@ -115,8 +115,9 @@ document.getElementById('replay-btn').addEventListener('click', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // 用相对路径解析到仓库根的 sw.js，兼容 GitHub Pages 子路径部署
-    const swUrl = new URL('../../sw.js', import.meta.url);
+    // 从 games/tetris/js/main.js 上溯 3 层到仓库根的 sw.js
+    // 兼容 GitHub Pages 子路径部署（站点不一定挂在域名根）
+    const swUrl = new URL('../../../sw.js', import.meta.url);
     navigator.serviceWorker.register(swUrl).catch((err) => {
       console.warn('SW 注册失败：', err);
     });
