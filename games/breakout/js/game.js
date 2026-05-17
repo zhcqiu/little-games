@@ -136,22 +136,39 @@ export class GameLogic {
   }
 
   _stepBall(ball, dtSec) {
-    // 子步：每帧拆 N 步，避免穿透
     const steps = Math.max(1, Math.ceil(Math.hypot(ball.vx, ball.vy) * dtSec / 0.4));
     const subDt = dtSec / steps;
     for (let i = 0; i < steps; i++) {
+      const prev = { x: ball.x, y: ball.y };
       let nx = ball.x + ball.vx * subDt;
       let ny = ball.y + ball.vy * subDt;
 
-      // 左右墙
       if (nx < BALL_RADIUS) { nx = BALL_RADIUS; ball.vx = Math.abs(ball.vx); }
       else if (nx > COLS - BALL_RADIUS) { nx = COLS - BALL_RADIUS; ball.vx = -Math.abs(ball.vx); }
 
-      // 顶墙
       if (ny < BALL_RADIUS) { ny = BALL_RADIUS; ball.vy = Math.abs(ball.vy); }
 
       ball.x = nx;
       ball.y = ny;
+
+      // 板拍命中（仅当球向下移动）
+      if (ball.vy > 0) {
+        const half = this._paddleHalfWidth();
+        const padL = this.paddle.col - half;
+        const padR = this.paddle.col + half;
+        const padT = PADDLE_Y - PADDLE_HALF_HEIGHT;
+        const padB = PADDLE_Y + PADDLE_HALF_HEIGHT;
+        // 球底沿（球中心 + radius）越过板拍上沿
+        if (ball.y + BALL_RADIUS >= padT && ball.y - BALL_RADIUS <= padB
+            && ball.x >= padL && ball.x <= padR) {
+          const hitOffset = (ball.x - this.paddle.col) / half;
+          const r = paddleReflectionAngle({ vx: ball.vx, vy: ball.vy }, hitOffset);
+          ball.vx = r.vx;
+          ball.vy = r.vy;
+          ball.y = padT - BALL_RADIUS - 0.01;   // 推出板拍上沿，防止反复命中
+          if (this._onPaddleHit) this._onPaddleHit();
+        }
+      }
     }
   }
 
