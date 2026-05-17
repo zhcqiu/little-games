@@ -73,4 +73,12 @@ export class Game {
   onDie(cb)    { this._onDie = cb; }
   onRevive(cb) { this._onRevive = cb; }
   onWrap(cb)   { this._onWrap = cb; }
+
+  queueDirection(dir) {
+    if (!DIR_VECTORS[dir]) return;
+    // 拒绝 180° 反向：以"队列里下一个"为基准，没有就用 currentDirection
+    const ref = this.nextDirection || this.currentDirection;
+    if (OPPOSITE[ref] === dir) return;
+    this.nextDirection = dir;
+  }
 }

@@ -21,3 +21,24 @@ assertEq('初始 paused false', g.paused, false);
 assertTrue('食物不在蛇身上', !g.snake.some((s) => s.row === g.food.row && s.col === g.food.col));
 assertTrue('食物有效行', g.food.row >= 0 && g.food.row < BOARD_HEIGHT);
 assertTrue('食物有效列', g.food.col >= 0 && g.food.col < BOARD_WIDTH);
+
+// queueDirection
+const g2 = new Game();
+assertEq('初始 right', g2.currentDirection, 'right');
+g2.queueDirection('up');
+assertEq('up 入队', g2.nextDirection, 'up');
+g2.queueDirection('left');
+assertEq('left 入队（同 tick 多次取最后）', g2.nextDirection, 'left');
+
+// 180° 反向拒绝
+const g3 = new Game();          // currentDirection = right
+g3.queueDirection('left');      // 反向
+assertEq('反向 left 被拒绝', g3.nextDirection, null);
+g3.queueDirection('down');
+assertEq('非反向 down 接受', g3.nextDirection, 'down');
+
+// 反向也要考虑已经入队的方向（蛇可能正要转 up，反 up 是 down，要拒绝）
+const g4 = new Game();
+g4.queueDirection('up');       // current=right, next=up
+g4.queueDirection('down');     // down 是 up 的反向 → 拒绝
+assertEq('next=up 时反向 down 被拒绝', g4.nextDirection, 'up');
