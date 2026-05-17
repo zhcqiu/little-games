@@ -96,6 +96,51 @@ export class GameLogic {
 
   setPaused(p) { this.paused = !!p; }
 
+  step(dt) {
+    if (this.paused || this.gameOver) return;
+
+    // 慢球计时
+    if (this.slowRemainMs > 0) {
+      this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
+    }
+    // 板拍加宽计时
+    if (this.paddle.widthRemainMs > 0) {
+      this.paddle.widthRemainMs = Math.max(0, this.paddle.widthRemainMs - dt);
+      if (this.paddle.widthRemainMs === 0) {
+        this.paddle.widthMul = 1;
+        this.setPaddleCol(this.paddle.col);
+      }
+    }
+
+    // 球贴板倒计时
+    if (this.ballRespawnTimer > 0) {
+      this.ballRespawnTimer = Math.max(0, this.ballRespawnTimer - dt);
+      // 球贴在板拍中间
+      for (const b of this.balls) {
+        b.x = this.paddle.col;
+        b.y = PADDLE_Y - PADDLE_HALF_HEIGHT - BALL_RADIUS - 0.05;
+        b.vx = 0;
+        b.vy = 0;
+      }
+      if (this.ballRespawnTimer === 0) {
+        this._launchAllBalls();
+      }
+      return;
+    }
+  }
+
+  _launchAllBalls() {
+    const baseSpeed = SPEED_TABLE[this.speedLevel - 1];
+    const mul = this.slowRemainMs > 0 ? 0.7 : 1;
+    for (const b of this.balls) {
+      // 向上 ±45° 随机
+      const angle = (this._rng() * 90 - 45) * Math.PI / 180;
+      const sp = baseSpeed * mul;
+      b.vx = sp * Math.sin(angle);
+      b.vy = -sp * Math.cos(angle);
+    }
+  }
+
   // 事件钩子
   onLock(fn)        { this._onLock = fn; }
   onBrick(fn)       { this._onBrick = fn; }

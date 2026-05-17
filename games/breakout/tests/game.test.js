@@ -1,5 +1,6 @@
 // game.test.js — GameLogic 纯函数测试
 import { GameLogic } from '../js/game.js';
+import { SPEED_TABLE } from '../js/game.js';
 
 // 初始状态
 {
@@ -26,4 +27,27 @@ import { GameLogic } from '../js/game.js';
   assertTrue('paddle col >= half-width (left clamp)', g.paddle.col >= 1.5);
   g.setPaddleCol(99);
   assertTrue('paddle col <= cols - half-width (right clamp)', g.paddle.col <= 12 - 1.5);
+}
+
+// 球发射：1.5s 倒计时
+{
+  const g = new GameLogic();
+  assertTrue('initial ball glued (vy=0)', g.balls[0].vy === 0);
+  g.step(800);
+  assertTrue('still glued mid-countdown', g.balls[0].vy === 0);
+  g.step(800);
+  assertTrue('ball launched (vy != 0)', g.balls[0].vy !== 0);
+  assertTrue('ball goes up', g.balls[0].vy < 0);
+  const sp = Math.hypot(g.balls[0].vx, g.balls[0].vy);
+  const expected = SPEED_TABLE[g.speedLevel - 1];
+  assertTrue('ball speed = speed table', Math.abs(sp - expected) < 0.01);
+}
+
+// paused 时 step 不推进
+{
+  const g = new GameLogic();
+  g.setPaused(true);
+  const before = g.ballRespawnTimer;
+  g.step(2000);
+  assertEq('paused: timer unchanged', g.ballRespawnTimer, before);
 }
