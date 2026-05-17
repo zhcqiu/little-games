@@ -16,6 +16,7 @@ const settings = new Settings(game, audio, effects);
 settings.load();
 settings.apply();
 settings.bindUi();
+settings.onReset(() => resetHighScoreTracker());
 
 // 续玩存盘
 const SAVE_KEY = 'snake.saveGame';
@@ -88,6 +89,7 @@ input.onFirstTouch(() => {
 // 桌面方向板
 function padDir(dir) {
   audio.unlock();
+  if (settings.get('bgmOn') && audio.ctx && !audio.bgmController) audio.startBgm();
   game.queueDirection(dir);
   audio.playTurn();
   vibrate([8]);
