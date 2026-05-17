@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Tests</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #fff; }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Snake 纯函数测试</h1>
+  <pre id="log"></pre>
+  <script type="module">
+    const log = document.getElementById('log');
+    let passed = 0, failed = 0;
+
+    window.assertEq = (label, actual, expected) => {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      if (ok) { passed++; log.innerHTML += `<span class="pass">✓ ${label}</span>\n`; }
+      else {
+        failed++;
+        log.innerHTML += `<span class="fail">✗ ${label}\n  expected: ${JSON.stringify(expected)}\n  got:      ${JSON.stringify(actual)}</span>\n`;
+        console.error(`FAIL: ${label}`, { actual, expected });
+      }
+    };
+
+    window.assertTrue = (label, cond) => {
+      if (cond) { passed++; log.innerHTML += `<span class="pass">✓ ${label}</span>\n`; }
+      else {
+        failed++;
+        log.innerHTML += `<span class="fail">✗ ${label}</span>\n`;
+        console.error(`FAIL: ${label}`);
+      }
+    };
+
+    await import('./tests/game.test.js');
+
+    log.innerHTML += `\n${passed} passed, ${failed} failed`;
+    document.title = (failed === 0 ? '✓ ' : '✗ ') + document.title;
+  </script>
+</body>
+</html>
