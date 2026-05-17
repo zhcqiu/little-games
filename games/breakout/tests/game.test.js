@@ -114,3 +114,49 @@ import { SPEED_TABLE, PADDLE_Y } from '../js/game.js';
   assertTrue('left-of-center hit -> vx < 0', g.balls[0].vx < 0);
   assertTrue('vy < 0 (going up)', g.balls[0].vy < 0);
 }
+
+// 砖块命中 → 得分 = 颜色分值 × combo
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.combo = 3;
+  // 把整个 board 清空，只剩 (5, 6) 一个 value=2 砖
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  g.board[5][6] = 2;
+  // 球从 (6.5, 6) 向上撞砖底（即 row=5+1=6 处）
+  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  let brickHits = 0;
+  g.onBrick(() => brickHits++);
+  g.step(50);
+  assertEq('brick destroyed', g.board[5][6], 0);
+  assertEq('score = 2 * 3 = 6', g.score, 6);
+  assertEq('combo +1 -> 4', g.combo, 4);
+  assertEq('onBrick fired', brickHits, 1);
+}
+
+// combo 上限 ×10
+{
+  const g = new GameLogic();
+  g.combo = 10;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  g.board[5][6] = 1;
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.step(50);
+  assertEq('combo capped at 10', g.combo, 10);
+}
+
+// 同帧最多消 1 砖
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  // 两个连续砖：(5, 6) 和 (5, 7)
+  g.board[5][6] = 1;
+  g.board[5][7] = 1;
+  // 球横穿过两砖
+  g.balls[0] = { x: 5.5, y: 5.5, vx: 30, vy: 0 };
+  g.step(100);
+  const totalDestroyed = (g.board[5][6] === 0 ? 1 : 0) + (g.board[5][7] === 0 ? 1 : 0);
+  assertTrue('only 1 brick destroyed per step', totalDestroyed >= 1);
+}

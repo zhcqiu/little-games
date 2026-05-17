@@ -140,8 +140,25 @@ export class GameLogic {
     const subDt = dtSec / steps;
     for (let i = 0; i < steps; i++) {
       const prev = { x: ball.x, y: ball.y };
-      let nx = ball.x + ball.vx * subDt;
-      let ny = ball.y + ball.vy * subDt;
+      const next = {
+        x: ball.x + ball.vx * subDt,
+        y: ball.y + ball.vy * subDt,
+      };
+
+      // 1. 砖块碰撞（找最近一个 hit）
+      const brickHit = this._findBrickHit(prev, next);
+      if (brickHit) {
+        const r = reflectFromBrick({ vx: ball.vx, vy: ball.vy }, brickHit.side);
+        ball.vx = r.vx;
+        ball.vy = r.vy;
+        ball.x = brickHit.contactX;
+        ball.y = brickHit.contactY;
+        this._onBrickDestroyed(brickHit.col, brickHit.row);
+        continue;   // 这一子步消耗在砖上，直接进下一子步
+      }
+
+      // 2. 没撞砖 → 推进
+      let nx = next.x, ny = next.y;
 
       if (nx < BALL_RADIUS) { nx = BALL_RADIUS; ball.vx = Math.abs(ball.vx); }
       else if (nx > COLS - BALL_RADIUS) { nx = COLS - BALL_RADIUS; ball.vx = -Math.abs(ball.vx); }
@@ -151,25 +168,53 @@ export class GameLogic {
       ball.x = nx;
       ball.y = ny;
 
-      // 板拍命中（仅当球向下移动）
+      // 3. 板拍
       if (ball.vy > 0) {
         const half = this._paddleHalfWidth();
         const padL = this.paddle.col - half;
         const padR = this.paddle.col + half;
         const padT = PADDLE_Y - PADDLE_HALF_HEIGHT;
         const padB = PADDLE_Y + PADDLE_HALF_HEIGHT;
-        // 球底沿（球中心 + radius）越过板拍上沿
         if (ball.y + BALL_RADIUS >= padT && ball.y - BALL_RADIUS <= padB
             && ball.x >= padL && ball.x <= padR) {
           const hitOffset = (ball.x - this.paddle.col) / half;
           const r = paddleReflectionAngle({ vx: ball.vx, vy: ball.vy }, hitOffset);
           ball.vx = r.vx;
           ball.vy = r.vy;
-          ball.y = padT - BALL_RADIUS - 0.01;   // 推出板拍上沿，防止反复命中
+          ball.y = padT - BALL_RADIUS - 0.01;
           if (this._onPaddleHit) this._onPaddleHit();
         }
       }
     }
+  }
+
+  _findBrickHit(prev, next) {
+    // 扫一遍 board 找 sweep 命中（粗剔除：只检查 ball 包围盒覆盖的格子）
+    const minR = Math.max(0, Math.floor(Math.min(prev.y, next.y) - BALL_RADIUS) - 1);
+    const maxR = Math.min(ROWS - 1, Math.ceil(Math.max(prev.y, next.y) + BALL_RADIUS) + 1);
+    const minC = Math.max(0, Math.floor(Math.min(prev.x, next.x) - BALL_RADIUS) - 1);
+    const maxC = Math.min(COLS - 1, Math.ceil(Math.max(prev.x, next.x) + BALL_RADIUS) + 1);
+    let best = null;
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        if (this.board[r][c] === 0) continue;
+        const h = sweepAgainstBrick(prev, next, c, r, BALL_RADIUS);
+        if (h && (best === null || h.t < best.t)) {
+          best = { ...h, col: c, row: r };
+        }
+      }
+    }
+    return best;
+  }
+
+  _onBrickDestroyed(col, row) {
+    const value = this.board[row][col];
+    this.board[row][col] = 0;
+    this.score += value * this.combo;
+    if (this.combo < 10) this.combo++;
+    if (this._onScoreChange) this._onScoreChange(this.score);
+    if (this._onComboChange) this._onComboChange(this.combo);
+    if (this._onBrick) this._onBrick({ col, row, value });
   }
 
   _handleDrop() {
