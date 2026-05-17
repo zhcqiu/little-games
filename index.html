@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小游戏乐园 · Little Games</title>
+  <style>
+    :root {
+      --bg: #fff8e1;
+      --card: #ffffff;
+      --primary: #ff7043;
+      --primary-dark: #e64a19;
+      --accent: #42a5f5;
+      --text: #3e2723;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      margin: 0;
+      color: var(--primary-dark);
+      text-shadow: 2px 2px 0 #ffe0b2;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: #6d4c41;
+      margin-top: 0.5rem;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 3rem;
+    }
+
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .game-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 3px solid transparent;
+    }
+
+    .game-card:hover,
+    .game-card:focus {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .game-emoji {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .game-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin: 0.25rem 0;
+    }
+
+    .game-desc {
+      font-size: 0.95rem;
+      color: #6d4c41;
+      margin: 0;
+    }
+
+    .placeholder {
+      background: var(--card);
+      border: 3px dashed var(--accent);
+      border-radius: 16px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: #6d4c41;
+    }
+
+    .placeholder h2 {
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #8d6e63;
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎮 小游戏乐园</h1>
+    <p class="subtitle">为小朋友精心准备的网页小游戏</p>
+  </header>
+
+  <main>
+    <div id="games-container">
+      <div class="placeholder">
+        <h2>🌱 游戏即将上线</h2>
+        <p>第一个小游戏正在制作中，敬请期待！</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>用 ❤️ 制作 · <a href="https://github.com/zhcqiu/little-games">查看源代码</a></p>
+  </footer>
+
+  <script>
+    // 游戏列表 — 添加新游戏时，在这里加一项即可
+    const games = [
+      // 示例:
+      // { title: "拼图游戏", desc: "拖动方块拼出图案", emoji: "🧩", path: "games/puzzle/" },
+    ];
+
+    const container = document.getElementById("games-container");
+    if (games.length > 0) {
+      container.innerHTML = "";
+      const grid = document.createElement("div");
+      grid.className = "games";
+      for (const g of games) {
+        const a = document.createElement("a");
+        a.className = "game-card";
+        a.href = g.path;
+        a.innerHTML = `
+          <span class="game-emoji">${g.emoji}</span>
+          <div class="game-title">${g.title}</div>
+          <p class="game-desc">${g.desc}</p>
+        `;
+        grid.appendChild(a);
+      }
+      container.appendChild(grid);
+    }
+  </script>
+</body>
+</html>
