@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>贪吃蛇 · 小游戏乐园</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <meta name="theme-color" content="#ff7043">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header id="top-bar">
+    <div class="score-block">
+      <div title="本局"><span class="emoji">🎯</span> <span id="score">0</span></div>
+      <div title="最高"><span class="emoji">🏆</span> <span id="high-score">0</span></div>
+    </div>
+    <button id="pause-btn" aria-label="暂停">⏸</button>
+    <button id="help-btn" aria-label="帮助">？</button>
+    <button id="settings-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <main>
+    <canvas id="game-canvas"></canvas>
+  </main>
+
+  <!-- 桌面方向板（CSS 限定 hover/fine 才显示） -->
+  <div id="control-pad" aria-label="方向按键">
+    <button id="pad-up" aria-label="上">↑</button>
+    <button id="pad-left" aria-label="左">←</button>
+    <button id="pad-down" aria-label="下">↓</button>
+    <button id="pad-right" aria-label="右">→</button>
+  </div>
+
+  <!-- 帮助面板 -->
+  <div id="help-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>怎么玩</h2>
+      <button id="help-close" aria-label="关闭帮助">✕</button>
+    </div>
+
+    <div class="help-section">
+      <h3>🎮 目标</h3>
+      <p>控制蛇去吃食物，吃越多越长，看能长多长！</p>
+    </div>
+
+    <div class="help-section">
+      <h3>📱 手机和平板</h3>
+      <ul>
+        <li><b>单指快速滑动</b> ↑ ↓ ← → — 蛇下一格往那个方向走</li>
+        <li><b>按住屏幕</b> — 蛇会停下来等你松手再继续</li>
+        <li><b>右上 ⚙</b> — 打开设置（速度、模式、主题…）</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🖱 鼠标（电脑）</h3>
+      <ul>
+        <li><b>鼠标按住 + 拖动</b> — 跟手指一样</li>
+        <li><b>屏幕底部方向板</b> — 点 ← ↑ ↓ →</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>⌨️ 键盘（电脑）</h3>
+      <ul>
+        <li><b>← ↑ → ↓</b> 或 <b>A W D S</b> — 转向</li>
+        <li><b>P</b> — 暂停 / 继续</li>
+        <li><b>Esc</b> — 关掉面板</li>
+        <li><b>Enter</b> — 确认</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>🌈 设置里有啥</h3>
+      <ul>
+        <li><b>速度</b> — 蛇爬多快</li>
+        <li><b>结束模式</b> — 🎯 撞=结束 · ♾️ 穿墙 · 💖 复活</li>
+        <li><b>色彩主题</b> — 6 种</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 设置面板 -->
+  <div id="settings-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>设置</h2>
+      <button id="settings-close" aria-label="关闭设置">✕</button>
+    </div>
+    <div class="setting-row">
+      <label>🎨 色彩主题</label>
+      <div class="seg seg-wrap" id="theme-seg">
+        <button data-val="cheery" class="active">🎨 童趣</button>
+        <button data-val="candy">🍬 糖果</button>
+        <button data-val="forest">🌳 森林</button>
+        <button data-val="ocean">🌊 海洋</button>
+        <button data-val="space">🚀 太空</button>
+        <button data-val="night">🌙 夜空</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>⏱️ 爬行速度</label>
+      <div class="slider-row">
+        <span>🐌</span>
+        <input type="range" id="speed-slider" min="1" max="5" step="1" value="1">
+        <span>🚀</span>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>🏁 结束模式</label>
+      <div class="seg" id="end-mode-seg">
+        <button data-val="standard" class="active">🎯 标准</button>
+        <button data-val="wrap">♾️ 穿墙</button>
+        <button data-val="revive">💖 复活</button>
+      </div>
+      <p class="hint">🎯 撞=结束 · ♾️ 穿墙 · 💖 撞会断半身后续命</p>
+    </div>
+    <div class="setting-row toggle-row">
+      <label>🔊 音效</label>
+      <button id="sfx-toggle" class="toggle active" data-on="true" aria-label="音效开关">🔊</button>
+    </div>
+    <div class="setting-row toggle-row">
+      <label>🎵 背景音乐</label>
+      <button id="bgm-toggle" class="toggle active" data-on="true" aria-label="背景音乐开关">🎵</button>
+    </div>
+    <div class="setting-row">
+      <label>🎬 动效强度</label>
+      <div class="seg" id="fx-seg">
+        <button data-val="strong" class="active">✨ 强</button>
+        <button data-val="mild">🌿 弱</button>
+        <button data-val="off">🚫 关</button>
+      </div>
+    </div>
+    <button id="restart-btn" class="primary">🔄 重新开始</button>
+  </div>
+
+  <!-- 续玩气泡 -->
+  <div id="resume-popup" class="popup hidden">
+    <p>📋 上次玩到一半，继续吗？</p>
+    <div class="popup-buttons">
+      <button id="resume-discard">🆕 新开</button>
+      <button id="resume-continue" class="primary">▶️ 继续</button>
+    </div>
+  </div>
+
+  <!-- 重启确认气泡 -->
+  <div id="restart-confirm" class="popup hidden">
+    <p>⚠️ 当前进度会丢失</p>
+    <div class="popup-buttons">
+      <button id="restart-cancel">❌ 取消</button>
+      <button id="restart-ok" class="primary">✅ 确认</button>
+    </div>
+  </div>
+
+  <!-- 游戏结束面板 -->
+  <div id="gameover-panel" class="panel hidden">
+    <div class="gameover-emoji">💥</div>
+    <p class="gameover-stat">🎯 <span id="final-score">0</span></p>
+    <p class="gameover-stat">🏆 <span id="final-high">0</span></p>
+    <button id="replay-btn" class="primary">▶️ 再玩一局</button>
+    <button id="share-btn" class="secondary hidden">📤 分享成绩</button>
+  </div>
+
+  <!-- 浮字 toast -->
+  <div id="event-toast" class="toast hidden">✨</div>
+  <div id="clear-toast" class="clear-toast hidden">✨</div>
+
+  <!-- 持久暂停 overlay -->
+  <div id="pause-overlay" class="pause-overlay hidden">
+    <div class="pause-icon">⏸</div>
+    <div class="pause-hint">点屏幕 / 按 P 继续</div>
+  </div>
+
+  <!-- 角落版本号 -->
+  <div id="version-tag" class="version-tag">v1.0</div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
