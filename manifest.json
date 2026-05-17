@@ -1,0 +1,11 @@
+{
+  "name": "小游戏乐园",
+  "short_name": "小游戏",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8e1",
+  "theme_color": "#ff7043",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

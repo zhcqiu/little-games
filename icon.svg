@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#ff7043"/>
+  <g fill="#ffffff">
+    <rect x="120" y="240" width="40" height="40" rx="6"/>
+    <rect x="160" y="240" width="40" height="40" rx="6"/>
+    <rect x="200" y="240" width="40" height="40" rx="6"/>
+    <rect x="280" y="200" width="40" height="40" rx="6"/>
+    <rect x="320" y="200" width="40" height="40" rx="6"/>
+    <rect x="280" y="240" width="40" height="40" rx="6"/>
+    <rect x="320" y="240" width="40" height="40" rx="6"/>
+  </g>
+  <text x="256" y="380" text-anchor="middle" font-family="sans-serif" font-size="60" font-weight="bold" fill="#ffffff">小游戏</text>
+</svg>
