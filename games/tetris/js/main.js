@@ -105,6 +105,9 @@ function loadSave() {
   } catch (e) { return null; }
 }
 function persistSave() {
+  // 守卫：用户还没在"继续上局"弹窗里做决定时，不要拿新一局的状态去覆盖旧存盘
+  // 否则用户开页面、看到弹窗、马上切后台 → 旧进度会被空白新局覆盖
+  if (resumePending) return;
   try {
     if (!game.current) {
       localStorage.removeItem(SAVE_KEY);
@@ -115,19 +118,26 @@ function persistSave() {
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
 
+let resumePending = false;
 const savedSnap = loadSave();
 if (savedSnap) {
-  // 暂停游戏，弹询问
+  resumePending = true;
   game.setPaused(true);
   const popup = document.getElementById('resume-popup');
   popup.classList.remove('hidden');
   document.getElementById('resume-continue').addEventListener('click', () => {
-    game.restore(savedSnap);
+    if (!game.restore(savedSnap)) {
+      // 反序列化失败：保持弹窗 + 暂停，让用户走"新开"路径
+      console.warn('restore failed, asking user to pick 新开');
+      return;
+    }
+    resumePending = false;
     popup.classList.add('hidden');
     game.setPaused(false);
   });
   document.getElementById('resume-discard').addEventListener('click', () => {
     clearSave();
+    resumePending = false;
     popup.classList.add('hidden');
     game.setPaused(false);
   });
