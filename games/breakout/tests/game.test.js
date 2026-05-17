@@ -51,3 +51,41 @@ import { SPEED_TABLE } from '../js/game.js';
   g.step(2000);
   assertEq('paused: timer unchanged', g.ballRespawnTimer, before);
 }
+
+// 球运动 + 墙壁反射
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 8, vx: 5, vy: 0 };   // 向右走，预测 200ms 后到 7.0
+  g.step(200);
+  assertTrue('ball moved right', g.balls[0].x > 6.5);
+
+  // 让球撞右墙
+  g.balls[0] = { x: 11.5, y: 8, vx: 5, vy: 0 };
+  g.step(200);
+  assertTrue('ball bounced off right wall (vx flipped)', g.balls[0].vx < 0);
+}
+
+// 顶墙反射
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 0.5, vx: 0, vy: -5 };
+  g.step(200);
+  assertTrue('ball bounced off top wall (vy flipped)', g.balls[0].vy > 0);
+}
+
+// 球掉底：combo 归 1，触发 onDrop
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.combo = 5;
+  g.balls[0] = { x: 6, y: 17.8, vx: 0, vy: 5 };
+  let dropped = 0;
+  g.onDrop(() => dropped++);
+  g.step(200);  // 200ms 后球 y=18.8，越出
+  assertEq('combo reset to 1', g.combo, 1);
+  assertEq('onDrop fired', dropped, 1);
+  assertEq('1 ball respawned', g.balls.length, 1);
+  assertTrue('respawn timer set', g.ballRespawnTimer > 0);
+}

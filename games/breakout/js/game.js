@@ -99,11 +99,7 @@ export class GameLogic {
   step(dt) {
     if (this.paused || this.gameOver) return;
 
-    // 慢球计时
-    if (this.slowRemainMs > 0) {
-      this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
-    }
-    // 板拍加宽计时
+    if (this.slowRemainMs > 0) this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
     if (this.paddle.widthRemainMs > 0) {
       this.paddle.widthRemainMs = Math.max(0, this.paddle.widthRemainMs - dt);
       if (this.paddle.widthRemainMs === 0) {
@@ -112,21 +108,59 @@ export class GameLogic {
       }
     }
 
-    // 球贴板倒计时
     if (this.ballRespawnTimer > 0) {
       this.ballRespawnTimer = Math.max(0, this.ballRespawnTimer - dt);
-      // 球贴在板拍中间
       for (const b of this.balls) {
         b.x = this.paddle.col;
         b.y = PADDLE_Y - PADDLE_HALF_HEIGHT - BALL_RADIUS - 0.05;
         b.vx = 0;
         b.vy = 0;
       }
-      if (this.ballRespawnTimer === 0) {
-        this._launchAllBalls();
-      }
+      if (this.ballRespawnTimer === 0) this._launchAllBalls();
       return;
     }
+
+    // 推进所有球
+    const dtSec = dt / 1000;
+    for (const ball of this.balls) {
+      this._stepBall(ball, dtSec);
+    }
+    // 移除掉底的球
+    const survivors = this.balls.filter((b) => b.y < ROWS);
+    if (survivors.length < this.balls.length) {
+      this.balls = survivors;
+      if (this.balls.length === 0) {
+        this._handleDrop();
+      }
+    }
+  }
+
+  _stepBall(ball, dtSec) {
+    // 子步：每帧拆 N 步，避免穿透
+    const steps = Math.max(1, Math.ceil(Math.hypot(ball.vx, ball.vy) * dtSec / 0.4));
+    const subDt = dtSec / steps;
+    for (let i = 0; i < steps; i++) {
+      let nx = ball.x + ball.vx * subDt;
+      let ny = ball.y + ball.vy * subDt;
+
+      // 左右墙
+      if (nx < BALL_RADIUS) { nx = BALL_RADIUS; ball.vx = Math.abs(ball.vx); }
+      else if (nx > COLS - BALL_RADIUS) { nx = COLS - BALL_RADIUS; ball.vx = -Math.abs(ball.vx); }
+
+      // 顶墙
+      if (ny < BALL_RADIUS) { ny = BALL_RADIUS; ball.vy = Math.abs(ball.vy); }
+
+      ball.x = nx;
+      ball.y = ny;
+    }
+  }
+
+  _handleDrop() {
+    this.combo = 1;
+    if (this._onComboChange) this._onComboChange(this.combo);
+    if (this._onDrop) this._onDrop();
+    this.balls = [this._spawnBall()];
+    this.ballRespawnTimer = 1500;
   }
 
   _launchAllBalls() {
