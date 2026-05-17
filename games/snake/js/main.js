@@ -1,5 +1,21 @@
-// main.js — 入口与主循环（后续 Task 逐步填）
-console.log('snake main loaded');
+// main.js — 入口与主循环
+import { Game } from './game.js';
+import { Renderer } from './render.js';
+
+const gameCanvas = document.getElementById('game-canvas');
+const game = new Game();
+const renderer = new Renderer(gameCanvas, null);   // effects 之后接入
+
+let lastTime = performance.now();
+function loop(now) {
+  const dt = now - lastTime;
+  lastTime = now;
+  game.step(dt);
+  renderer.draw(game, dt);
+  document.getElementById('score').textContent = game.score;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -9,3 +25,6 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+window._game = game;
+window._renderer = renderer;
