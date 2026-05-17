@@ -4,12 +4,18 @@ import { Renderer } from './render.js';
 import { Input } from './input.js';
 import { Audio } from './audio.js';
 import { Effects } from './effects.js';
+import { Settings } from './settings.js';
 
 const gameCanvas = document.getElementById('game-canvas');
 const game = new Game();
 const effects = new Effects();
 const renderer = new Renderer(gameCanvas, effects);
 const audio = new Audio();
+
+const settings = new Settings(game, audio, effects);
+settings.load();
+settings.apply();
+settings.bindUi();
 
 const input = new Input(
   gameCanvas,
@@ -27,7 +33,7 @@ input.on('pauseChange', (paused) => {
 });
 input.onFirstTouch(() => {
   audio.unlock();
-  if (audio.bgmOn) audio.startBgm();
+  if (settings.get('bgmOn')) audio.startBgm();
 });
 
 // 桌面方向板
@@ -105,7 +111,7 @@ document.addEventListener('visibilitychange', () => {
     audio.stopBgm(100);
   } else {
     if (input.fingers && input.fingers.size === 0) game.setPaused(false);
-    if (audio.bgmOn && audio.ctx) audio.startBgm();
+    if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
   }
 });
 
@@ -117,7 +123,7 @@ function setManualPause(p) {
   game.setPaused(p);
   pauseOverlay.classList.toggle('hidden', !p);
   if (p) audio.stopBgm(100);
-  else if (audio.bgmOn && audio.ctx) audio.startBgm();
+  else if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
 }
 pauseOverlay.addEventListener('click', () => setManualPause(false));
 document.getElementById('pause-btn').addEventListener('click', () => setManualPause(!manualPause));
@@ -156,7 +162,7 @@ function showClearToast(text) {
 }
 
 function vibrate(pattern) {
-  // fxLevel 控制由 H1 settings 接入后再判；这里先简单 try
+  if (settings.get('fxLevel') === 'off') return;
   if (navigator.vibrate) {
     try { navigator.vibrate(pattern); } catch (e) {}
   }
