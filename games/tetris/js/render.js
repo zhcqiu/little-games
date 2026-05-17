@@ -76,9 +76,10 @@ export class Renderer {
   _drawBoard(game) {
     const ctx = this.ctx;
     const s = this.cellSize;
-    ctx.fillStyle = '#16213e';
+    const theme = this._readTheme();
+    ctx.fillStyle = theme.canvasBg;
     ctx.fillRect(0, 0, s * BOARD_WIDTH, s * BOARD_HEIGHT);
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = theme.canvasGrid;
     ctx.lineWidth = 1;
     for (let r = 0; r <= BOARD_HEIGHT; r++) {
       ctx.beginPath();
@@ -132,6 +133,15 @@ export class Renderer {
       clearedRows: clearedRows.slice(),
       elapsed: 0,
       duration: 250,
+    };
+  }
+
+  /** 从 CSS 自定义属性读取主题相关画布颜色 */
+  _readTheme() {
+    const styles = getComputedStyle(document.body);
+    return {
+      canvasBg: styles.getPropertyValue('--canvas-bg').trim() || '#16213e',
+      canvasGrid: styles.getPropertyValue('--canvas-grid').trim() || 'rgba(255,255,255,0.04)',
     };
   }
 

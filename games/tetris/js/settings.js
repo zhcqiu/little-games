@@ -8,6 +8,7 @@ const DEFAULTS = {
   endMode: 'standard',
   sfxOn: true,
   bgmOn: true,
+  theme: 'cheery',
 };
 
 export class Settings {
@@ -51,13 +52,18 @@ export class Settings {
     this.save();
   }
 
-  /** 把 state 推到 game / audio */
+  /** 把 state 推到 game / audio / DOM */
   apply() {
     this.game.setSpeed(this.state.speed);
     this.game.setUpwardTolerance(this.state.upwardTolerance);
     this.game.setEndMode(this.state.endMode);
     this.audio.setSfxOn(this.state.sfxOn);
     this.audio.setBgmOn(this.state.bgmOn);
+    document.body.dataset.theme = this.state.theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      'content',
+      getComputedStyle(document.body).getPropertyValue('--bg-2').trim() || '#42a5f5'
+    );
 
     this._syncUi();
   }
@@ -73,6 +79,11 @@ export class Settings {
     const endSeg = document.getElementById('end-mode-seg');
     for (const btn of endSeg.querySelectorAll('button')) {
       btn.classList.toggle('active', this.state.endMode === btn.dataset.val);
+    }
+
+    const themeSeg = document.getElementById('theme-seg');
+    for (const btn of themeSeg.querySelectorAll('button')) {
+      btn.classList.toggle('active', this.state.theme === btn.dataset.val);
     }
 
     document.getElementById('sfx-toggle').classList.toggle('active', this.state.sfxOn);
@@ -98,6 +109,12 @@ export class Settings {
     document.getElementById('end-mode-seg').addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         this.set('endMode', e.target.dataset.val);
+      }
+    });
+
+    document.getElementById('theme-seg').addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        this.set('theme', e.target.dataset.val);
       }
     });
 

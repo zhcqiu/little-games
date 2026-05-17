@@ -1,4 +1,39 @@
 :root {
+  /* 默认主题 = 童趣（明快） */
+  --bg: #fff8e1;
+  --bg-2: #ff8a65;
+  --primary: #ff7043;
+  --primary-dark: #e64a19;
+  --text: #ffffff;
+  --text-dim: #ffe0b2;
+  --panel-bg: #ffecb3;
+  --panel-text: #4e342e;
+  --button-bg: #ffffff;
+  --button-bg-text: #5d4037;
+  --button-active: #ff7043;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --canvas-bg: #fff5d6;
+  --canvas-grid: rgba(255, 112, 67, 0.14);
+}
+
+body[data-theme="candy"] {
+  --bg: #fce4ec;
+  --bg-2: #ec407a;
+  --primary: #ec407a;
+  --primary-dark: #ad1457;
+  --text: #ffffff;
+  --text-dim: #f8bbd0;
+  --panel-bg: #f8bbd0;
+  --panel-text: #4a148c;
+  --button-bg: #ffffff;
+  --button-bg-text: #4a148c;
+  --button-active: #ec407a;
+  --shadow: 0 4px 16px rgba(236, 64, 122, 0.3);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(236, 64, 122, 0.16);
+}
+
+body[data-theme="night"] {
   --bg: #1a1a2e;
   --bg-2: #16213e;
   --primary: #42a5f5;
@@ -6,9 +41,13 @@
   --text: #ffffff;
   --text-dim: #b0bec5;
   --panel-bg: #263858;
+  --panel-text: #ffffff;
   --button-bg: #37475e;
+  --button-bg-text: #ffffff;
   --button-active: #42a5f5;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --canvas-bg: #16213e;
+  --canvas-grid: rgba(255, 255, 255, 0.04);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -53,7 +92,7 @@ body { display: flex; flex-direction: column; }
 
 .next-block .label { font-size: 11px; color: var(--text-dim); }
 #next-canvas {
-  background: var(--bg);
+  background: var(--canvas-bg);
   border-radius: 4px;
   margin-top: 2px;
 }
@@ -79,7 +118,7 @@ main {
 }
 
 #game-canvas {
-  background: var(--bg);
+  background: var(--canvas-bg);
   display: block;
   touch-action: none;
 }
@@ -92,6 +131,7 @@ main {
   right: 0;
   bottom: 0;
   background: var(--panel-bg);
+  color: var(--panel-text);
   z-index: 100;
   padding: 24px;
   display: flex;
@@ -108,14 +148,14 @@ main {
   align-items: center;
 }
 
-.panel h2 { margin: 0; font-size: 22px; }
+.panel h2 { margin: 0; font-size: 22px; color: var(--panel-text); }
 
 #settings-close {
   width: 44px;
   height: 44px;
   font-size: 24px;
   background: transparent;
-  color: var(--text);
+  color: var(--panel-text);
   border: none;
   cursor: pointer;
 }
@@ -128,7 +168,8 @@ main {
 
 .setting-row label {
   font-size: 16px;
-  color: var(--text-dim);
+  color: var(--panel-text);
+  opacity: 0.85;
 }
 
 .slider-row {
@@ -137,7 +178,7 @@ main {
   gap: 12px;
 }
 
-.slider-row span { font-size: 13px; color: var(--text-dim); }
+.slider-row span { font-size: 13px; color: var(--panel-text); opacity: 0.6; }
 
 #speed-slider {
   flex: 1;
@@ -186,7 +227,7 @@ main {
   flex: 1;
   min-height: 44px;
   background: var(--button-bg);
-  color: var(--text);
+  color: var(--button-bg-text);
   border: 2px solid transparent;
   border-radius: 8px;
   font-size: 16px;
@@ -194,13 +235,15 @@ main {
 }
 
 .seg button.active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--button-active);
+  color: var(--text);
+  border-color: var(--button-active);
 }
 
 .hint {
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--panel-text);
+  opacity: 0.6;
   margin: 0;
 }
 
@@ -214,7 +257,7 @@ main {
   min-width: 64px;
   min-height: 44px;
   background: var(--button-bg);
-  color: var(--text-dim);
+  color: var(--button-bg-text);
   border: 2px solid transparent;
   border-radius: 22px;
   font-size: 16px;
@@ -222,9 +265,9 @@ main {
 }
 
 .toggle.active {
-  background: var(--primary);
+  background: var(--button-active);
   color: var(--text);
-  border-color: var(--primary);
+  border-color: var(--button-active);
 }
 
 button.primary {
@@ -249,6 +292,7 @@ button.primary:active { background: var(--primary-dark); }
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--panel-bg);
+  color: var(--panel-text);
   padding: 24px;
   border-radius: 16px;
   z-index: 200;
@@ -269,14 +313,14 @@ button.primary:active { background: var(--primary-dark); }
   flex: 1;
   min-height: 48px;
   background: var(--button-bg);
-  color: var(--text);
+  color: var(--button-bg-text);
   border: none;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
 }
 
-.popup-buttons button.primary { background: var(--primary); }
+.popup-buttons button.primary { background: var(--primary); color: var(--text); }
 
 /* 游戏结束面板 */
 #gameover-panel {
