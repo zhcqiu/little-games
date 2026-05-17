@@ -178,4 +178,62 @@ export class Game {
       this.reviveInvincibleMs = Math.max(0, this.reviveInvincibleMs - dt);
     }
   }
+
+  step(dt) {
+    if (this.paused || this.dead) return;
+    this._tickInvincibility(dt);
+    this.accumulator += dt;
+    while (this.accumulator >= this.tickInterval && !this.dead) {
+      this.accumulator -= this.tickInterval;
+      this._advance();
+    }
+  }
+
+  reset() {
+    this.snake = [
+      { row: 8, col: 7 },
+      { row: 8, col: 6 },
+      { row: 8, col: 5 },
+      { row: 8, col: 4 },
+    ];
+    this.currentDirection = 'right';
+    this.nextDirection = null;
+    this.score = 0;
+    this.dead = false;
+    this.accumulator = 0;
+    this.reviveInvincibleMs = 0;
+    this.food = this._spawnFood();
+  }
+
+  serialize() {
+    return {
+      v: 1,
+      snake: this.snake.map((s) => ({ row: s.row, col: s.col })),
+      currentDirection: this.currentDirection,
+      nextDirection: this.nextDirection,
+      food: this.food ? { row: this.food.row, col: this.food.col } : null,
+      foodEmoji: this.foodEmoji,
+      score: this.score,
+      reviveInvincibleMs: this.reviveInvincibleMs,
+    };
+  }
+
+  restore(snap) {
+    if (!snap || snap.v !== 1 || !Array.isArray(snap.snake)) return false;
+    try {
+      this.snake = snap.snake.map((s) => ({ row: s.row | 0, col: s.col | 0 }));
+      this.currentDirection = snap.currentDirection || 'right';
+      this.nextDirection = snap.nextDirection || null;
+      this.food = snap.food ? { row: snap.food.row | 0, col: snap.food.col | 0 } : null;
+      this.foodEmoji = snap.foodEmoji || '🍎';
+      this.score = snap.score | 0;
+      this.dead = false;
+      this.accumulator = 0;
+      this.reviveInvincibleMs = Math.max(0, snap.reviveInvincibleMs | 0);
+      return true;
+    } catch (e) {
+      console.warn('restore failed:', e);
+      return false;
+    }
+  }
 }

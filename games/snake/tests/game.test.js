@@ -178,3 +178,70 @@ g17._tickInvincibility(500);
 assertEq('500ms 后剩 500', g17.reviveInvincibleMs, 500);
 g17._tickInvincibility(600);
 assertEq('再 600ms 后归 0', g17.reviveInvincibleMs, 0);
+
+// step 累加 dt 推进 tick
+const g18 = new Game();
+g18.food = { row: 0, col: 0 };
+g18.setSpeed(1);   // tickInterval = 400
+const before18 = g18.snake[0].col;
+g18.step(200);
+assertEq('200ms 不到一 tick，头不动', g18.snake[0].col, before18);
+g18.step(300);     // 累计 500ms，跨过 400
+assertEq('500ms 推进 1 tick', g18.snake[0].col, before18 + 1);
+
+// paused 不推进
+const g19 = new Game();
+g19.food = { row: 0, col: 0 };
+g19.setSpeed(5);   // 110ms
+const col19 = g19.snake[0].col;
+g19.setPaused(true);
+g19.step(500);
+assertEq('paused 不推进', g19.snake[0].col, col19);
+
+// dead 不推进
+const g20 = new Game();
+g20.dead = true;
+const col20 = g20.snake[0].col;
+g20.step(500);
+assertEq('dead 不推进', g20.snake[0].col, col20);
+
+// 无敌期递减
+const g21 = new Game();
+g21.reviveInvincibleMs = 1000;
+g21.food = { row: 0, col: 0 };
+g21.step(500);
+assertEq('step 500ms 无敌 -= 500', g21.reviveInvincibleMs, 500);
+
+// 序列化 + 反序列化
+const g22 = new Game();
+g22.score = 7;
+g22.snake = [{ row: 1, col: 1 }, { row: 1, col: 0 }];
+g22.currentDirection = 'down';
+g22.foodEmoji = '🍓';
+g22.food = { row: 5, col: 5 };
+const snap = g22.serialize();
+const g23 = new Game();
+const restored = g23.restore(snap);
+assertEq('restore 返回 true', restored, true);
+assertEq('恢复 score', g23.score, 7);
+assertEq('恢复 snake', g23.snake, [{ row: 1, col: 1 }, { row: 1, col: 0 }]);
+assertEq('恢复方向', g23.currentDirection, 'down');
+assertEq('恢复食物', g23.food, { row: 5, col: 5 });
+assertEq('恢复 emoji', g23.foodEmoji, '🍓');
+
+// 异常 restore
+const g24 = new Game();
+assertEq('restore 空对象失败', g24.restore({}), false);
+assertEq('restore null 失败', g24.restore(null), false);
+assertEq('restore 错版本失败', g24.restore({ v: 999 }), false);
+
+// reset
+const g25 = new Game();
+g25.score = 99;
+g25.dead = true;
+g25.snake = [{ row: 0, col: 0 }];
+g25.reset();
+assertEq('reset score=0', g25.score, 0);
+assertEq('reset 蛇长 4', g25.snake.length, 4);
+assertEq('reset 头 (8,7)', g25.snake[0], { row: 8, col: 7 });
+assertEq('reset dead=false', g25.dead, false);
