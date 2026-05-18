@@ -123,7 +123,7 @@ export class Game {
     if (this.board.countRemaining() === 0) {
       this.won = true;
       this._cb.win && this._cb.win(this.score, this.elapsedMs);
-      return { kind: 'match', a, b, path, pairScore, won: true };
+      return { kind: 'win', a, b, path, pairScore };
     }
     if (this.board.hasAnySolvable() === null) {
       const ok = this.board.reshuffle();
@@ -131,7 +131,7 @@ export class Game {
         // 兜底判赢
         this.won = true;
         this._cb.win && this._cb.win(this.score, this.elapsedMs);
-        return { kind: 'match', a, b, path, pairScore, won: true, escape: true };
+        return { kind: 'win', a, b, path, pairScore, escape: true };
       }
       this._cb.shuffle && this._cb.shuffle();
       return { kind: 'match', a, b, path, pairScore, shuffled: true };

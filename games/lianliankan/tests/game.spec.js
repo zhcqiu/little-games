@@ -57,13 +57,15 @@ import { Game } from '../js/game.js';
   }
 }
 
-// 配对成功（造一个有解棋盘）
+// 配对成功（造一个有解棋盘，多放 1 对避免消完直接 win）
 {
   const g = new Game('novice', () => 0.5);
-  // 改棋盘：清空 → 放两个相同 emoji
+  // 改棋盘：清空 → 放 2 对（消第 1 对后剩第 2 对，仍是 match 不是 win）
   g.board.data.fill(0);
   g.board.set(1, 1, 7);
   g.board.set(1, 3, 7);
+  g.board.set(4, 4, 9);
+  g.board.set(4, 6, 9);
   const r1 = g.tap(1, 1);
   assertEq('first select', r1.kind, 'select');
   const r2 = g.tap(1, 3);
@@ -74,6 +76,19 @@ import { Game } from '../js/game.js';
   assertEq('match 后 score +10', g.score, 10);
   assertEq('match 后 combo = 1', g.combo, 1);
   assertEq('match 后 selection null', g.selection, null);
+  assertEq('剩余对未消 won=false', g.won, false);
+}
+
+// 消完最后一对 → win
+{
+  const g = new Game('novice', () => 0.5);
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7);
+  g.board.set(1, 3, 7);
+  g.tap(1, 1);
+  const r = g.tap(1, 3);
+  assertEq('清空棋盘 → win', r.kind, 'win');
+  assertEq('won=true', g.won, true);
 }
 
 // 配对失败（不同 emoji）
