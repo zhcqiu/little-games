@@ -19,7 +19,10 @@ export const PADDLE_Y = 16;                // 板拍中心行（距底 2 格）
 export const PADDLE_HALF_HEIGHT = 0.25;   // cell
 export const INITIAL_BRICK_ROWS = 4;
 export const SPEED_TABLE   = [6, 8, 10, 12, 14];   // 球速 cell/s（档位 1-5）
-export const DESCENT_TABLE = [11000, 9000, 6500, 5000, 4000];  // 砖块下移间隔 ms（V1.0 太紧，整体放宽 ~30%，低速档放宽更多）
+export const DESCENT_TABLE = [20000, 15000, 12000, 10000, 9000];  // 砖块下移间隔 ms
+// 平衡推导：每个 descent 顶部生成 12 块新砖；玩家每 round-trip 平均消 ~1.5 块，
+// 平均 round-trip 距离 ≈ 20 cell。目标 6 round-trips/descent → 消 9 砖 vs 新生 12 砖，
+// 净 -3 砖/descent（轻度负反馈，挑战 endless）。descent = 6 × (20/球速)。
 
 export class GameLogic {
   constructor() {
