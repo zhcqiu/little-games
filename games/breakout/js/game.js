@@ -386,6 +386,7 @@ export class GameLogic {
     this.score = 0;
     this.combo = 1;
     this.gameOver = false;
+    this.paused = false;   // game-over 期间打开过 help/settings 面板会留下 paused=true，replay 后必须清掉
     this.board = this._newBoard();
     this._seedInitialBricks();
     this.paddle = { col: COLS / 2, widthMul: 1, widthRemainMs: 0 };

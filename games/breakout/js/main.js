@@ -92,10 +92,13 @@ game.onGameOver((mode) => {
 replayBtn.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   gameoverPanel.classList.add('hidden');
-  game.reset();
+  game.reset();   // 包含 paused=false
   resetHighScoreTracker();
   clearSave();
   updateScoreUi();
+  // 重启 BGM（之前 game-over / 设置面板可能停过 BGM）
+  audio.unlock();
+  if (!manualPaused && settings.get('bgmOn')) audio.startBgm();
 });
 
 // 输入

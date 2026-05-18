@@ -525,6 +525,19 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   eq('breakout restore combo', g2.combo, 4);
 }
 
+// reset() 应清掉 paused（regression: Codex C-2）：
+// game-over 期间打开 help/settings 再关闭会留下 paused=true，replay 后必须解锁
+{
+  const g = new BreakoutGame();
+  g.setPaused(true);
+  g.gameOver = true;
+  g.reset();
+  eq('reset clears paused', g.paused, false);
+  eq('reset clears gameOver', g.gameOver, false);
+  eq('reset clears score', g.score, 0);
+  eq('reset clears combo', g.combo, 1);
+}
+
 // 慢球叠加不应永久降速（regression: 见 code-review #1）
 {
   const g = new BreakoutGame();
