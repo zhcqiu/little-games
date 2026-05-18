@@ -9,27 +9,30 @@
   <meta name="theme-color" content="#ff7043">
   <title>小游戏乐园 · Little Games</title>
   <style>
+    /* themes.css 提供 6 主题的 --bg / --primary / --primary-dark / --bg-2 / --panel-bg / --panel-text /
+     * --button-bg / --button-bg-text / --button-active / --shadow 等。
+     * @import 必须放在所有规则之前。 */
+    @import url('./shared/themes.css');
+
     :root {
-      --bg: #fff8e1;
+      /* launcher 专属（不随主题变） */
       --card: #ffffff;
-      --primary: #ff7043;
-      --primary-dark: #e64a19;
-      --accent: #42a5f5;
-      --text: #3e2723;
-      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --card-text: #3e2723;
+      --card-text-dim: #6d4c41;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
       margin: 0;
       font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
       background: var(--bg);
-      color: var(--text);
+      color: var(--card-text);
       min-height: 100vh;
     }
 
     header {
+      position: relative;
       text-align: center;
       padding: 2.5rem 1rem 1.5rem;
     }
@@ -38,13 +41,27 @@
       font-size: clamp(2rem, 6vw, 3.5rem);
       margin: 0;
       color: var(--primary-dark);
-      text-shadow: 2px 2px 0 #ffe0b2;
     }
 
     .subtitle {
       font-size: clamp(1rem, 2.5vw, 1.25rem);
-      color: #6d4c41;
+      color: var(--card-text-dim);
       margin-top: 0.5rem;
+    }
+
+    #settings-btn {
+      position: absolute;
+      top: calc(0.75rem + env(safe-area-inset-top, 0px));
+      right: calc(0.75rem + env(safe-area-inset-right, 0px));
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+      background: var(--card);
+      color: var(--primary-dark);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: var(--shadow);
     }
 
     main {
@@ -62,11 +79,11 @@
 
     .game-card {
       background: var(--card);
+      color: var(--card-text);
       border-radius: 16px;
       padding: 1.5rem 1rem;
       text-align: center;
       text-decoration: none;
-      color: inherit;
       box-shadow: var(--shadow);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       border: 3px solid transparent;
@@ -75,7 +92,6 @@
     .game-card:hover,
     .game-card:focus {
       transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
       border-color: var(--primary);
       outline: none;
     }
@@ -95,7 +111,7 @@
 
     .game-desc {
       font-size: 0.95rem;
-      color: #6d4c41;
+      color: var(--card-text-dim);
       margin: 0;
     }
 
@@ -106,30 +122,120 @@
       margin: 0.5rem 0 0;
     }
 
-    .placeholder {
-      background: var(--card);
-      border: 3px dashed var(--accent);
-      border-radius: 16px;
-      padding: 2.5rem 1.5rem;
-      text-align: center;
-      color: #6d4c41;
-    }
-
-    .placeholder h2 {
-      color: var(--accent);
-      margin: 0 0 0.75rem;
-    }
-
     footer {
       text-align: center;
       padding: 1.5rem;
-      color: #8d6e63;
+      color: var(--card-text-dim);
       font-size: 0.9rem;
     }
 
     footer a {
-      color: var(--accent);
+      color: var(--primary-dark);
       text-decoration: none;
+    }
+
+    /* ──────── 全局设置面板 ──────── */
+
+    #settings-panel {
+      position: fixed;
+      inset: 0;
+      background: var(--panel-bg);
+      color: var(--panel-text);
+      z-index: 100;
+      padding: 1.25rem;
+      padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
+      overflow-y: auto;
+    }
+
+    #settings-panel.hidden { display: none; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--panel-text);
+    }
+
+    #settings-close {
+      width: 44px;
+      height: 44px;
+      font-size: 22px;
+      background: transparent;
+      color: var(--panel-text);
+      border: none;
+      cursor: pointer;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .row > label {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .seg {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .seg button {
+      flex: 1 1 calc((100% - 16px) / 3);
+      min-height: 44px;
+      min-width: calc((100% - 16px) / 3);
+      background: var(--button-bg);
+      color: var(--button-bg-text);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .seg button.active {
+      background: var(--button-active);
+      color: var(--text);
+      border-color: var(--button-active);
+    }
+
+    .toggle-row {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle {
+      min-width: 72px;
+      min-height: 44px;
+      background: var(--button-bg);
+      color: var(--button-bg-text);
+      border: 2px solid transparent;
+      border-radius: 22px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .toggle.active {
+      background: var(--button-active);
+      color: var(--text);
+      border-color: var(--button-active);
+    }
+
+    .hint {
+      font-size: 0.85rem;
+      color: var(--panel-text);
+      opacity: 0.7;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -137,22 +243,60 @@
   <header>
     <h1>🎮 小游戏乐园</h1>
     <p class="subtitle">为小朋友精心准备的网页小游戏</p>
+    <button id="settings-btn" aria-label="全局设置">⚙️</button>
   </header>
 
   <main>
-    <div id="games-container">
-      <div class="placeholder">
-        <h2>🌱 游戏即将上线</h2>
-        <p>第一个小游戏正在制作中，敬请期待！</p>
-      </div>
-    </div>
+    <div id="games-container"></div>
   </main>
 
   <footer>
     <p>用 ❤️ 制作 · <a href="https://github.com/zhcqiu/little-games">查看源代码</a></p>
   </footer>
 
-  <script>
+  <div id="settings-panel" class="hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>⚙️ 全局设置</h2>
+      <button id="settings-close" aria-label="关闭">✕</button>
+    </div>
+
+    <div class="row">
+      <label>🎨 主题</label>
+      <div class="seg" id="theme-seg">
+        <button data-val="cheery">🎨 童趣</button>
+        <button data-val="candy">🍬 糖果</button>
+        <button data-val="forest">🌳 森林</button>
+        <button data-val="ocean">🌊 海洋</button>
+        <button data-val="space">🚀 太空</button>
+        <button data-val="night">🌙 夜空</button>
+      </div>
+    </div>
+
+    <div class="row toggle-row">
+      <label>🎵 音乐</label>
+      <button class="toggle" id="bgm-toggle">🎵</button>
+    </div>
+
+    <div class="row toggle-row">
+      <label>🔊 音效</label>
+      <button class="toggle" id="sfx-toggle">🔊</button>
+    </div>
+
+    <div class="row">
+      <label>✨ 动效强度</label>
+      <div class="seg" id="fx-seg">
+        <button data-val="strong">✨ 强</button>
+        <button data-val="mild">🌿 弱</button>
+        <button data-val="off">🚫 关</button>
+      </div>
+    </div>
+
+    <p class="hint">这些设置对所有小游戏生效。</p>
+  </div>
+
+  <script type="module">
+    import { GlobalSettings } from './shared/global-settings.js';
+
     // 游戏列表 — 添加新游戏时，在这里加一项即可
     const games = [
       { title: "俄罗斯方块", desc: "经典玩法，单指移动 + 双指旋转", emoji: "🧱", path: "games/tetris/", highScoreKey: "tetris.highScore" },
@@ -168,26 +312,84 @@
     }
 
     const container = document.getElementById("games-container");
-    if (games.length > 0) {
-      container.innerHTML = "";
-      const grid = document.createElement("div");
-      grid.className = "games";
-      for (const g of games) {
-        const a = document.createElement("a");
-        a.className = "game-card";
-        a.href = g.path;
-        const high = g.highScoreKey ? readHighScore(g.highScoreKey) : 0;
-        const highHtml = high > 0 ? `<p class="game-high">🏆 ${high}</p>` : '';
-        a.innerHTML = `
-          <span class="game-emoji">${g.emoji}</span>
-          <div class="game-title">${g.title}</div>
-          <p class="game-desc">${g.desc}</p>
-          ${highHtml}
-        `;
-        grid.appendChild(a);
-      }
-      container.appendChild(grid);
+    const grid = document.createElement("div");
+    grid.className = "games";
+    for (const g of games) {
+      const a = document.createElement("a");
+      a.className = "game-card";
+      a.href = g.path;
+      const high = g.highScoreKey ? readHighScore(g.highScoreKey) : 0;
+      const highHtml = high > 0 ? `<p class="game-high">🏆 ${high}</p>` : '';
+      a.innerHTML = `
+        <span class="game-emoji">${g.emoji}</span>
+        <div class="game-title">${g.title}</div>
+        <p class="game-desc">${g.desc}</p>
+        ${highHtml}
+      `;
+      grid.appendChild(a);
     }
+    container.appendChild(grid);
+
+    // ──── 全局设置应用 ────
+
+    function applyTheme(name) {
+      document.body.dataset.theme = name;
+      // 同步 PWA 状态栏颜色到当前主题的 --bg-2
+      const bg2 = getComputedStyle(document.body).getPropertyValue('--bg-2').trim();
+      if (bg2) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg2);
+    }
+
+    function syncUi() {
+      const s = GlobalSettings.snapshot();
+      for (const btn of document.querySelectorAll('#theme-seg button')) {
+        btn.classList.toggle('active', btn.dataset.val === s.theme);
+      }
+      for (const btn of document.querySelectorAll('#fx-seg button')) {
+        btn.classList.toggle('active', btn.dataset.val === s.fxLevel);
+      }
+      const sfx = document.getElementById('sfx-toggle');
+      sfx.classList.toggle('active', s.sfxOn);
+      sfx.textContent = s.sfxOn ? '🔊' : '🔇';
+      const bgm = document.getElementById('bgm-toggle');
+      bgm.classList.toggle('active', s.bgmOn);
+      bgm.textContent = s.bgmOn ? '🎵' : '🔕';
+    }
+
+    // 初始应用
+    applyTheme(GlobalSettings.get('theme'));
+    syncUi();
+
+    document.getElementById('theme-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b?.dataset.val) return;
+      GlobalSettings.set('theme', b.dataset.val);
+      applyTheme(b.dataset.val);
+      syncUi();
+    });
+    document.getElementById('fx-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b?.dataset.val) return;
+      GlobalSettings.set('fxLevel', b.dataset.val);
+      syncUi();
+    });
+    document.getElementById('sfx-toggle').addEventListener('click', () => {
+      GlobalSettings.set('sfxOn', !GlobalSettings.get('sfxOn'));
+      syncUi();
+    });
+    document.getElementById('bgm-toggle').addEventListener('click', () => {
+      GlobalSettings.set('bgmOn', !GlobalSettings.get('bgmOn'));
+      syncUi();
+    });
+
+    const panel = document.getElementById('settings-panel');
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      panel.classList.remove('hidden');
+      panel.setAttribute('aria-hidden', 'false');
+    });
+    document.getElementById('settings-close').addEventListener('click', () => {
+      panel.classList.add('hidden');
+      panel.setAttribute('aria-hidden', 'true');
+    });
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
