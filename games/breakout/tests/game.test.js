@@ -213,3 +213,56 @@ import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
   assertEq('row 9..17 cleared', g.board[15][3], 0);
   assertEq('row 17 cleared',     g.board[17][3], 0);
 }
+
+// 道具掉落：强制 8% 触发（用固定 rng）
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  // 强制 rng：第一次抽道具掉落（< 0.08），第二次决定哪个 powerup
+  let calls = 0;
+  const seq = [0.05, 0.0];  // 0.05 < 0.08，触发；0.0 → wider
+  g._rng = () => seq[Math.min(calls++, seq.length - 1)];
+
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  g.board[5][6] = 1;
+  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.step(50);
+  assertTrue('powerup item spawned', g.fallingItem !== null);
+  assertEq('powerup type wider', g.fallingItem.type, 'wider');
+}
+
+// 接到加宽：板拍变宽 + 计时 12 秒
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.fallingItem = { type: 'wider', x: 6, y: PADDLE_Y - 0.5 };
+  g.paddle.col = 6;
+  let pwUp = null;
+  g.onPowerup((t) => { pwUp = t; });
+  g.step(150);  // 道具下落 ≈ 0.45 cell（半球速 / 2）
+  // 道具继续下落直到碰板拍
+  for (let i = 0; i < 200 && g.fallingItem !== null; i++) g.step(100);
+  assertEq('paddle widened',     g.paddle.widthMul, 1.6);
+  assertTrue('width timer set',  g.paddle.widthRemainMs > 0);
+  assertEq('onPowerup fired wider', pwUp, 'wider');
+}
+
+// 接到慢球：球速 × 0.7
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.fallingItem = { type: 'slow', x: g.paddle.col, y: PADDLE_Y - 0.5 };
+  g.balls[0] = { x: 6, y: 8, vx: 0, vy: -10 };
+  for (let i = 0; i < 200 && g.fallingItem !== null; i++) g.step(100);
+  assertTrue('slow remain set', g.slowRemainMs > 0);
+}
+
+// 多球分裂
+{
+  const g = new GameLogic();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 8, vx: 3, vy: -5 };
+  g.fallingItem = { type: 'multi', x: g.paddle.col, y: PADDLE_Y - 0.5 };
+  for (let i = 0; i < 200 && g.fallingItem !== null; i++) g.step(100);
+  assertEq('balls doubled', g.balls.length, 2);
+}

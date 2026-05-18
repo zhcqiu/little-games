@@ -99,7 +99,13 @@ export class GameLogic {
   step(dt) {
     if (this.paused || this.gameOver) return;
 
-    if (this.slowRemainMs > 0) this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
+    if (this.slowRemainMs > 0) {
+      this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
+      this._slowWasActive = true;
+    } else if (this._slowWasActive) {
+      for (const b of this.balls) { b.vx /= 0.7; b.vy /= 0.7; }
+      this._slowWasActive = false;
+    }
     if (this.paddle.widthRemainMs > 0) {
       this.paddle.widthRemainMs = Math.max(0, this.paddle.widthRemainMs - dt);
       if (this.paddle.widthRemainMs === 0) {
@@ -139,6 +145,24 @@ export class GameLogic {
       this.balls = survivors;
       if (this.balls.length === 0) {
         this._handleDrop();
+      }
+    }
+
+    // 道具下落（板拍接 / 漏接）
+    if (this.fallingItem) {
+      const itemSpeedY = SPEED_TABLE[this.speedLevel - 1] * 0.5 * (dt / 1000);
+      this.fallingItem.y += itemSpeedY;
+      const half = this._paddleHalfWidth();
+      const padT = PADDLE_Y - PADDLE_HALF_HEIGHT - 0.3;
+      const padB = PADDLE_Y + PADDLE_HALF_HEIGHT;
+      const padL = this.paddle.col - half;
+      const padR = this.paddle.col + half;
+      if (this.fallingItem.y >= padT && this.fallingItem.y <= padB
+          && this.fallingItem.x >= padL && this.fallingItem.x <= padR) {
+        this._applyPowerup(this.fallingItem.type);
+        this.fallingItem = null;
+      } else if (this.fallingItem.y >= ROWS) {
+        this.fallingItem = null;
       }
     }
   }
@@ -223,6 +247,37 @@ export class GameLogic {
     if (this._onScoreChange) this._onScoreChange(this.score);
     if (this._onComboChange) this._onComboChange(this.combo);
     if (this._onBrick) this._onBrick({ col, row, value });
+
+    // 8% 概率掉道具，且场上 ≤ 1
+    if (this.fallingItem === null && this._rng() < 0.08) {
+      const pool = ['wider', 'multi', 'slow'];
+      const type = pool[Math.floor(this._rng() * pool.length)];
+      this.fallingItem = { type, x: col + 0.5, y: row + 0.5 };
+    }
+  }
+
+  _applyPowerup(type) {
+    if (type === 'wider') {
+      this.paddle.widthMul = 1.6;
+      this.paddle.widthRemainMs = 12000;
+      this.setPaddleCol(this.paddle.col);
+    } else if (type === 'slow') {
+      this.slowRemainMs = 10000;
+      // 立即把现有球速 ×0.7
+      for (const b of this.balls) {
+        b.vx *= 0.7;
+        b.vy *= 0.7;
+      }
+    } else if (type === 'multi') {
+      const copies = this.balls.map((b) => ({
+        x: b.x,
+        y: b.y,
+        vx: -b.vx || (this._rng() < 0.5 ? -3 : 3),
+        vy: b.vy,
+      }));
+      this.balls = [...this.balls, ...copies];
+    }
+    if (this._onPowerup) this._onPowerup(type);
   }
 
   _handleDrop() {
