@@ -48,6 +48,8 @@ export class Game {
     this.foodEmoji = '🍎';
     this.food = this._spawnFood();
     this.headEmoji = this._pickHead();
+    this.foodSpawnAt = performance.now();   // 食物刚生成的时间戳，给 render 做弹出动画
+    this.lastEatAt = -10000;                // 上次吃食物时间，给 render 做波纹
 
     this._onEat = null;
     this._onDie = null;
@@ -65,9 +67,11 @@ export class Game {
     }
     if (empty.length === 0) {
       this.foodEmoji = null;
+      this.foodSpawnAt = performance.now();
       return null;
     }
     this.foodEmoji = FOOD_EMOJI_POOL[Math.floor(Math.random() * FOOD_EMOJI_POOL.length)];
+    this.foodSpawnAt = performance.now();
     return empty[Math.floor(Math.random() * empty.length)];
   }
 
@@ -177,6 +181,7 @@ export class Game {
     this.snake.unshift(nextHead);
     if (ate) {
       this.score += 1;
+      this.lastEatAt = performance.now();
       this.food = this._spawnFood();   // 可能 null（棋盘填满）
       if (this._onEat) this._onEat();
     } else {
