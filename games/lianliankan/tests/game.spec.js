@@ -234,6 +234,14 @@ import { Game } from '../js/game.js';
   assertEq('restore rows 不符', g.restore(snap), false);
 }
 
+// restore 失败：boardData 长度不符
+{
+  const g = new Game('novice', () => 0.5);
+  const snap = g.serialize();
+  snap.boardData = snap.boardData.slice(0, -1);  // 短一格
+  assertEq('restore boardData 长度不符', g.restore(snap), false);
+}
+
 // reset 清状态
 {
   const g = new Game('novice', () => 0.5);

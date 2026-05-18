@@ -214,7 +214,7 @@ export class Game {
       difficulty: this.difficulty,
       rows: this.board.rows,
       cols: this.board.cols,
-      boardData: Array.from(this.data || this.board.data),
+      boardData: Array.from(this.board.data),
       flippedData: this.board.flipped ? Array.from(this.board.flipped) : null,
       score: this.score,
       combo: this.combo,
