@@ -22,6 +22,11 @@ export class Settings {
     this.effects = effects;
     this.state = { ...DEFAULTS };
     this.highScore = 0;
+    this._onOpen = null;
+    this._onClose = null;
+    this._onReset = null;
+    this._onHelpOpen = null;
+    this._onHelpClose = null;
   }
 
   load() {
@@ -61,10 +66,11 @@ export class Settings {
     this.audio.setSfxOn(this.state.sfxOn);
     this.audio.setBgmOn(this.state.bgmOn);
     if (this.effects) this.effects.setIntensity(FX_INTENSITY[this.state.fxLevel] ?? 1.0);
-    this.game.setTheme(this.state.theme);
-    this.audio.setBgmTheme(this.state.theme);
+    // setTotalFood 必须在 setTheme 之前——setTheme 调 _pickHead 时会读 totalFoodEver
     this.game.setTotalFood(this.state.totalFood);
     this.game.setFoodEdgeMargin(this.state.foodEdgeMargin);
+    this.game.setTheme(this.state.theme);
+    this.audio.setBgmTheme(this.state.theme);
     document.body.dataset.theme = this.state.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',
@@ -147,13 +153,11 @@ export class Settings {
     // 帮助按钮
     document.getElementById('help-btn')?.addEventListener('click', () => {
       document.getElementById('help-panel').classList.remove('hidden');
-      this.game.setPaused(true);
-      this.audio.stopBgm(100);
+      this._onHelpOpen?.();
     });
     document.getElementById('help-close')?.addEventListener('click', () => {
       document.getElementById('help-panel').classList.add('hidden');
-      this.game.setPaused(false);
-      if (this.state.bgmOn && this.audio.ctx) this.audio.startBgm();
+      this._onHelpClose?.();
     });
 
     // 重启
@@ -171,17 +175,19 @@ export class Settings {
     });
   }
 
+  onOpen(cb) { this._onOpen = cb; }
+  onClose(cb) { this._onClose = cb; }
   onReset(cb) { this._onReset = cb; }
+  onHelpOpen(cb) { this._onHelpOpen = cb; }
+  onHelpClose(cb) { this._onHelpClose = cb; }
 
   open() {
     document.getElementById('settings-panel').classList.remove('hidden');
-    this.game.setPaused(true);
-    this.audio.stopBgm(100);
+    this._onOpen?.();
   }
 
   close() {
     document.getElementById('settings-panel').classList.add('hidden');
-    this.game.setPaused(false);
-    if (this.state.bgmOn && this.audio.ctx) this.audio.startBgm();
+    this._onClose?.();
   }
 }

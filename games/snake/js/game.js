@@ -63,12 +63,14 @@ export class Game {
     this.lastEatAt = -10000;                // 上次吃食物时间，给 render 做波纹
     this.comboCount = 0;                    // 连吃 combo 计数
     this.comboLastEatMs = -10000;           // 上次吃食物时间戳，combo 窗口判断用
+    this.gameTimeMs = 0;                    // 游戏内累计活动时间（暂停/死亡不计），combo 用
 
     this._onEat = null;
     this._onDie = null;
     this._onRevive = null;
     this._onWrap = null;
     this._onCombo = null;
+    this._onWin = null;
   }
 
   _spawnFood() {
@@ -158,6 +160,7 @@ export class Game {
   onRevive(cb) { this._onRevive = cb; }
   onWrap(cb)   { this._onWrap = cb; }
   onCombo(cb)  { this._onCombo = cb; }
+  onWin(cb)    { this._onWin = cb; }
 
   queueDirection(dir) {
     if (!DIR_VECTORS[dir]) return;
@@ -218,9 +221,12 @@ export class Game {
     }
 
     // 自撞
+    let invincibleAteOwnBody = false;
     if (this._hitSelf(nextHead)) {
       if (invincible) {
-        // 无敌期：略过判定
+        // 无敌期穿身体：把身体里跟 nextHead 重合的节段去掉，避免重叠
+        this.snake = this.snake.filter(s => !(s.row === nextHead.row && s.col === nextHead.col));
+        invincibleAteOwnBody = true;
       } else if (this.endMode === 'revive') {
         this._triggerRevive();
         return;
@@ -234,12 +240,11 @@ export class Game {
     this.snake.unshift(nextHead);
     if (ate) {
       this.score += 1;
-      const now = performance.now();
-      this.lastEatAt = now;
-      // combo: 5 秒内续吃累加，超过则重置为 1
-      if (now - this.comboLastEatMs < 5000) this.comboCount++;
+      this.lastEatAt = performance.now();
+      // combo: 5 秒（游戏内时间）内续吃累加，超过则重置为 1
+      if (this.gameTimeMs - this.comboLastEatMs < 5000) this.comboCount++;
       else this.comboCount = 1;
-      this.comboLastEatMs = now;
+      this.comboLastEatMs = this.gameTimeMs;
       this.food = this._spawnFood();   // 可能 null（棋盘填满）
       if (this._onEat) this._onEat();
       // 每 3 连吃奖励 +1 并触发 combo 回调
@@ -247,6 +252,14 @@ export class Game {
         this.score += 1;
         if (this._onCombo) this._onCombo(this.comboCount);
       }
+      // 棋盘填满 → 胜利
+      if (!this.food && this.snake.length >= BOARD_WIDTH * BOARD_HEIGHT) {
+        this.dead = true;
+        if (this._onWin) this._onWin();
+        else if (this._onDie) this._onDie();
+      }
+    } else if (invincibleAteOwnBody) {
+      // filter 已移除重合节，不再 pop（保持长度）
     } else {
       this.snake.pop();
     }
@@ -278,6 +291,7 @@ export class Game {
   step(dt) {
     if (this.paused || this.dead) return;
     this._tickInvincibility(dt);
+    this.gameTimeMs += dt;
     this.accumulator += dt;
     while (this.accumulator >= this.tickInterval && !this.dead) {
       this.accumulator -= this.tickInterval;
@@ -300,6 +314,7 @@ export class Game {
     this.reviveInvincibleMs = 0;
     this.comboCount = 0;
     this.comboLastEatMs = -10000;
+    this.gameTimeMs = 0;
     this.food = this._spawnFood();
     this.headEmoji = this._pickHead();
   }
@@ -319,6 +334,7 @@ export class Game {
       comboCount: this.comboCount,
       comboLastEatMs: this.comboLastEatMs,
       foodEdgeMargin: this.foodEdgeMargin,
+      gameTimeMs: this.gameTimeMs,
     };
   }
 
@@ -340,6 +356,9 @@ export class Game {
       this.comboLastEatMs = Number.isFinite(snap.comboLastEatMs) ? snap.comboLastEatMs : -10000;
       if (typeof snap.foodEdgeMargin === 'number') {
         this.foodEdgeMargin = Math.max(0, Math.min(3, snap.foodEdgeMargin | 0));
+      }
+      if (typeof snap.gameTimeMs === 'number' && Number.isFinite(snap.gameTimeMs)) {
+        this.gameTimeMs = Math.max(0, snap.gameTimeMs);
       }
       return true;
     } catch (e) {

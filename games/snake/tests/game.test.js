@@ -305,16 +305,17 @@ assertEq('combo 3', g32.comboCount, 3);
 assertEq('combo bonus +1', g32.score, 3 + 1);  // 3 eats × 1 + 1 bonus
 assertEq('combo cb fired with 3', comboHits, [3]);
 
-// 5s 后 combo 重置
+// 5s 后 combo 重置（使用游戏内时间）
 const g33 = new Game();
 g33.food = { row: 8, col: 8 };
 g33._advance();
 assertEq('combo 1', g33.comboCount, 1);
-g33.comboLastEatMs = performance.now() - 6000;   // 模拟 6 秒前
+// 模拟 6 秒游戏时间过去
+g33.gameTimeMs = g33.comboLastEatMs + 6000;
 g33.food = { row: 9, col: 8 };
 g33.currentDirection = 'down';
 g33._advance();
-assertEq('combo 重置为 1', g33.comboCount, 1);
+assertEq('combo 重置为 1（game time > 5s）', g33.comboCount, 1);
 
 // reset 清 combo
 const g34 = new Game();
@@ -419,3 +420,71 @@ const fmSnap = g44.serialize();
 const g45 = new Game();
 g45.restore(fmSnap);
 assertEq('restore foodEdgeMargin', g45.foodEdgeMargin, 2);
+
+// 无敌期穿身体不留重叠
+const g46 = new Game();
+g46.setEndMode('revive');
+g46.food = { row: 0, col: 0 };
+g46.snake = [
+  { row: 5, col: 5 }, { row: 5, col: 6 }, { row: 6, col: 6 },
+  { row: 6, col: 5 }, { row: 7, col: 5 }, { row: 7, col: 6 },
+];
+g46.reviveInvincibleMs = 1000;
+g46.currentDirection = 'down';   // head (5,5) → (6,5)，是身体段
+g46._advance();
+// 检查蛇身没有重复格
+const seen = new Set();
+let hasDup = false;
+for (const s of g46.snake) {
+  const key = `${s.row},${s.col}`;
+  if (seen.has(key)) { hasDup = true; break; }
+  seen.add(key);
+}
+assertEq('无敌期穿身体后无重复格', hasDup, false);
+
+// gameTimeMs 增长
+const g47 = new Game();
+g47.food = { row: 0, col: 0 };
+const t0 = g47.gameTimeMs;
+g47.step(100);
+assertEq('step 100ms gameTimeMs +100', g47.gameTimeMs, t0 + 100);
+g47.setPaused(true);
+g47.step(100);
+assertEq('paused 时 gameTimeMs 不增', g47.gameTimeMs, t0 + 100);
+
+// 全板触发 win
+const g48 = new Game();
+let wonEvents = 0;
+g48.onWin(() => wonEvents++);
+// 构造："就差一格"状态：蛇 191 节，最后一个空格就是食物
+const allCells = [];
+for (let r = 0; r < 16; r++) {
+  for (let c = 0; c < 12; c++) {
+    allCells.push({ row: r, col: c });
+  }
+}
+// 蛇占满除了 (0, 1) 之外，蛇头在 (0, 0)，朝右去吃 (0, 1) 上的食物
+g48.snake = allCells.filter(s => !(s.row === 0 && s.col === 1));
+// 把头放第一位
+const headIdx = g48.snake.findIndex(s => s.row === 0 && s.col === 0);
+const head = g48.snake.splice(headIdx, 1)[0];
+g48.snake.unshift(head);
+g48.food = { row: 0, col: 1 };
+g48.currentDirection = 'right';
+g48._advance();
+assertEq('全板触发 win', wonEvents, 1);
+assertEq('全板后 dead', g48.dead, true);
+
+// reset 清 gameTimeMs
+const g49 = new Game();
+g49.gameTimeMs = 12345;
+g49.reset();
+assertEq('reset 清 gameTimeMs', g49.gameTimeMs, 0);
+
+// serialize/restore gameTimeMs
+const g50 = new Game();
+g50.gameTimeMs = 7777;
+const snap50 = g50.serialize();
+const g51 = new Game();
+g51.restore(snap50);
+assertEq('restore gameTimeMs', g51.gameTimeMs, 7777);

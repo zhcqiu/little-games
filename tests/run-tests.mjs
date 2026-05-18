@@ -291,6 +291,81 @@ const sg19 = new SnakeGame();
 sg19.restore(fmSnapNode);
 eq('snake restore foodEdgeMargin', sg19.foodEdgeMargin, 2);
 
+// snake gameTimeMs 增长 / 暂停不增
+const sg20 = new SnakeGame();
+sg20.food = { row: 0, col: 0 };
+const t20 = sg20.gameTimeMs;
+sg20.step(100);
+eq('snake step 100ms gameTimeMs +100', sg20.gameTimeMs, t20 + 100);
+sg20.setPaused(true);
+sg20.step(100);
+eq('snake paused gameTimeMs 不增', sg20.gameTimeMs, t20 + 100);
+
+// snake reset 清 gameTimeMs
+const sg21 = new SnakeGame();
+sg21.gameTimeMs = 12345;
+sg21.reset();
+eq('snake reset gameTimeMs', sg21.gameTimeMs, 0);
+
+// snake serialize/restore gameTimeMs
+const sg22 = new SnakeGame();
+sg22.gameTimeMs = 7777;
+const gtSnap = sg22.serialize();
+const sg23 = new SnakeGame();
+sg23.restore(gtSnap);
+eq('snake restore gameTimeMs', sg23.gameTimeMs, 7777);
+
+// snake combo 5s 使用 gameTimeMs 而非 wall clock
+const sg24 = new SnakeGame();
+sg24.food = { row: 8, col: 8 };
+sg24._advance();
+eq('snake combo 1 (gt)', sg24.comboCount, 1);
+sg24.gameTimeMs = sg24.comboLastEatMs + 6000;
+sg24.food = { row: 9, col: 8 };
+sg24.currentDirection = 'down';
+sg24._advance();
+eq('snake combo reset 1 (gt > 5s)', sg24.comboCount, 1);
+
+// snake 无敌期穿身体不留重叠
+const sg25 = new SnakeGame();
+sg25.setEndMode('revive');
+sg25.food = { row: 0, col: 0 };
+sg25.snake = [
+  { row: 5, col: 5 }, { row: 5, col: 6 }, { row: 6, col: 6 },
+  { row: 6, col: 5 }, { row: 7, col: 5 }, { row: 7, col: 6 },
+];
+sg25.reviveInvincibleMs = 1000;
+sg25.currentDirection = 'down';
+sg25._advance();
+{
+  const seen = new Set();
+  let dup = false;
+  for (const s of sg25.snake) {
+    const key = `${s.row},${s.col}`;
+    if (seen.has(key)) { dup = true; break; }
+    seen.add(key);
+  }
+  eq('snake invincible no overlap', dup, false);
+}
+
+// snake 全板触发 win
+const sg26 = new SnakeGame();
+let sgWonEvents = 0;
+sg26.onWin(() => sgWonEvents++);
+const sgAll = [];
+for (let r = 0; r < SH; r++) {
+  for (let c = 0; c < SW; c++) sgAll.push({ row: r, col: c });
+}
+sg26.snake = sgAll.filter(s => !(s.row === 0 && s.col === 1));
+const sgHeadIdx = sg26.snake.findIndex(s => s.row === 0 && s.col === 0);
+const sgHead = sg26.snake.splice(sgHeadIdx, 1)[0];
+sg26.snake.unshift(sgHead);
+sg26.food = { row: 0, col: 1 };
+sg26.currentDirection = 'right';
+sg26._advance();
+eq('snake full-board win fired', sgWonEvents, 1);
+eq('snake full-board win dead', sg26.dead, true);
+
 // ───── breakout ─────
 // physics
 {

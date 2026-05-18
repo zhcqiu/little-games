@@ -16,7 +16,37 @@ const settings = new Settings(game, audio, effects);
 settings.load();
 settings.apply();
 settings.bindUi();
-settings.onReset(() => resetHighScoreTracker());
+
+// ── 暂停理由引用计数：所有"会暂停游戏"的来源都走这里，避免互相覆盖 ──
+const pauseReasons = new Set();
+function acquirePause(reason) {
+  const wasEmpty = pauseReasons.size === 0;
+  pauseReasons.add(reason);
+  if (wasEmpty) {
+    game.setPaused(true);
+    audio.stopBgm(100);
+  }
+}
+function releasePause(reason) {
+  if (!pauseReasons.has(reason)) return;
+  pauseReasons.delete(reason);
+  if (pauseReasons.size === 0) {
+    game.setPaused(false);
+    if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+  }
+}
+function hasPauseReason(reason) {
+  return pauseReasons.has(reason);
+}
+
+settings.onReset(() => {
+  cancelPendingTimers();
+  resetHighScoreTracker();
+});
+settings.onOpen(() => acquirePause('settings'));
+settings.onClose(() => releasePause('settings'));
+settings.onHelpOpen(() => acquirePause('help'));
+settings.onHelpClose(() => releasePause('help'));
 
 // 新手引导（一次性）
 const TUTORIAL_KEY = 'snake.tutorialSeen';
@@ -27,17 +57,33 @@ function maybeShowTutorial() {
   const p = document.getElementById('tutorial-popup');
   if (!p) return false;
   p.classList.remove('hidden');
-  game.setPaused(true);
+  acquirePause('tutorial');
   document.getElementById('tutorial-ok').addEventListener('click', () => {
     try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch (e) {}
     p.classList.add('hidden');
-    if (!resumePending) game.setPaused(false);
+    releasePause('tutorial');
   }, { once: true });
   return true;
 }
 
 // 续玩存盘
 const SAVE_KEY = 'snake.saveGame';
+
+// ── 延迟回调集合：onEat 里的延迟 toast 等。死亡 / 重置 / 切后台时清空 ──
+const pendingTimers = new Set();
+function safeDelay(fn, ms) {
+  const id = setTimeout(() => {
+    pendingTimers.delete(id);
+    if (game.dead || document.hidden) return;
+    fn();
+  }, ms);
+  pendingTimers.add(id);
+  return id;
+}
+function cancelPendingTimers() {
+  for (const id of pendingTimers) clearTimeout(id);
+  pendingTimers.clear();
+}
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -59,7 +105,7 @@ let resumePending = false;
 const savedSnap = loadSave();
 if (savedSnap) {
   resumePending = true;
-  game.setPaused(true);
+  acquirePause('resume');
   const popup = document.getElementById('resume-popup');
   popup.classList.remove('hidden');
   document.getElementById('resume-continue').addEventListener('click', () => {
@@ -69,13 +115,13 @@ if (savedSnap) {
     }
     resumePending = false;
     popup.classList.add('hidden');
-    game.setPaused(false);
+    releasePause('resume');
   });
   document.getElementById('resume-discard').addEventListener('click', () => {
     try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
     resumePending = false;
     popup.classList.add('hidden');
-    game.setPaused(false);
+    releasePause('resume');
   });
 }
 
@@ -84,9 +130,6 @@ if (!savedSnap) maybeShowTutorial();
 
 window.addEventListener('beforeunload', persistSave);
 window.addEventListener('pagehide', persistSave);
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) persistSave();
-});
 
 const input = new Input(
   gameCanvas,
@@ -100,7 +143,8 @@ input.on('swipe', (dir) => {
   vibrate([8]);
 });
 input.on('pauseChange', (paused) => {
-  game.setPaused(paused);
+  if (paused) acquirePause('touch');
+  else releasePause('touch');
 });
 input.onFirstTouch(() => {
   audio.unlock();
@@ -159,7 +203,7 @@ game.onEat(() => {
   settings.set('totalFood', newTotal);
   for (const threshold of [100, 500]) {
     if (prevTotal < threshold && newTotal >= threshold) {
-      setTimeout(() => {
+      safeDelay(() => {
         showClearToast('🎁 解锁新蛇头！');
         audio.playMilestone();
         vibrate([50, 30, 50, 30, 80]);
@@ -174,7 +218,7 @@ game.onEat(() => {
     if (len >= m && lastMilestone < m) {
       lastMilestone = m;
       // 延迟一帧再弹 milestone toast 避免和 ✨ 重叠
-      setTimeout(() => {
+      safeDelay(() => {
         showClearToast('🎖️' + m);
         audio.playMilestone();
         vibrate([30, 40, 50]);
@@ -196,6 +240,18 @@ game.onDie(() => {
   effects.triggerShake(14, 240);
   showClearToast('😵');
   vibrate([40, 40, 80, 40, 120]);
+  cancelPendingTimers();
+  showGameOverPanel();
+  clearSave();
+});
+game.onWin(() => {
+  audio.playHighScore();
+  showClearToast('🏆 满分！');
+  effects.spawnBurst(6, 8, renderer.cellSize,
+    ['#ff7043', '#ffeb3b', '#4caf50', '#42a5f5', '#9c27b0', '#f44336', '#ff9800'], 30, [-600, -300]);
+  effects.triggerShake(20, 400);
+  vibrate([100, 50, 100, 50, 200]);
+  cancelPendingTimers();
   showGameOverPanel();
   clearSave();
 });
@@ -226,14 +282,14 @@ if ('serviceWorker' in navigator) {
 }
 
 window._game = game;
-// 切后台暂停
+// 切后台暂停 + 持久化 + 取消延迟回调
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    game.setPaused(true);
-    audio.stopBgm(100);
+    acquirePause('visibility');
+    persistSave();
+    cancelPendingTimers();
   } else {
-    if (input.fingers && input.fingers.size === 0) game.setPaused(false);
-    if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+    releasePause('visibility');
   }
 });
 
@@ -241,11 +297,12 @@ document.addEventListener('visibilitychange', () => {
 let manualPause = false;
 const pauseOverlay = document.getElementById('pause-overlay');
 function setManualPause(p) {
-  manualPause = p;
-  game.setPaused(p);
-  pauseOverlay.classList.toggle('hidden', !p);
+  manualPause = !!p;
+  pauseOverlay.classList.toggle('hidden', !manualPause);
+  if (manualPause) acquirePause('manual');
+  else releasePause('manual');
   const extra = document.getElementById('pause-extra');
-  if (p && extra) {
+  if (manualPause && extra) {
     const score = game.score;
     const high = settings.get('highScore');
     if (score === 0) {
@@ -258,8 +315,6 @@ function setManualPause(p) {
   } else if (extra) {
     extra.textContent = '';
   }
-  if (p) audio.stopBgm(100);
-  else if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
 }
 pauseOverlay.addEventListener('click', () => setManualPause(false));
 document.getElementById('pause-btn').addEventListener('click', () => setManualPause(!manualPause));
@@ -286,8 +341,7 @@ window.addEventListener('keydown', (e) => {
     }
     if (!helpPanel.classList.contains('hidden')) {
       helpPanel.classList.add('hidden');
-      game.setPaused(false);
-      if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
+      releasePause('help');
       e.preventDefault();
       return;
     }
@@ -344,7 +398,7 @@ function vibrate(pattern) {
 }
 
 function showGameOverPanel() {
-  game.setPaused(true);
+  acquirePause('gameover');
   const panel = document.getElementById('gameover-panel');
   document.getElementById('final-score').textContent = game.score;
   document.getElementById('final-high').textContent = settings.get('highScore');
@@ -356,8 +410,9 @@ function showGameOverPanel() {
 
 document.getElementById('replay-btn').addEventListener('click', () => {
   document.getElementById('gameover-panel').classList.add('hidden');
+  releasePause('gameover');
+  cancelPendingTimers();
   game.reset();
-  game.setPaused(false);
   resetHighScoreTracker();
 });
 
