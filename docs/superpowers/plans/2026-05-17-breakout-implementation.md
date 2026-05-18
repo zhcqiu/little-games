@@ -1894,12 +1894,11 @@ git commit -m "feat(breakout): brick collision + scoring + combo"
   assertEq('endless topOut fired', topOutCalled, 1);
   assertEq('combo reset', g.combo, 1);
   assertEq('gameOver still false', g.gameOver, false);
-  // 原 row 5 的标记应该在 row 14（5 + 9）
-  assertEq('row 5 moved to row 14', g.board[14][3], 3);
-  // 下半区 row 9..17 现已经空（清掉的"下半"——按 spec 是清前 9 行 + 下半上移）
-  // 重述：清前 9 行（row 0..8），row 9..17 上移到 row 0..8，row 9..17 清空
+  // 清前 9 行（row 0..8，含原 row 5 标记）→ row 9..17 上移到 row 0..8 →
+  // row 9..17 清空。所以原 row 5 的标记被清掉，row 14 处现在为 0。
+  assertEq('row 5 marker cleared (was in upper half)', g.board[14][3], 0);
   assertEq('row 9..17 cleared', g.board[15][3], 0);
-  assertEq('row 17 cleared',     g.board[17][3], 0);
+  assertEq('row 17 cleared',    g.board[17][3], 0);
 }
 ```
 
@@ -3370,7 +3369,8 @@ import { randomBrickValue } from '../games/breakout/js/bricks.js';
   g.onTopOut(() => topOut++);
   g.step(100);
   eq('breakout endless topOut',  topOut, 1);
-  eq('breakout row 5→14 marker', g.board[14][3], 3);
+  // 清前 9 行（含 row 5 标记）+ 下半区上移到顶部：row 14 现在是空
+  eq('breakout row 5 marker cleared', g.board[14][3], 0);
   eq('breakout row 17 cleared',  g.board[17][3], 0);
 }
 
