@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>连连看测试</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .ok { color: green; } .fail { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>连连看 · 测试</h1>
+  <div id="results"></div>
+  <script>
+    let passed = 0, failed = 0;
+    const out = document.getElementById('results');
+    window.assertEq = (label, actual, expected) => {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      const div = document.createElement('div');
+      div.className = ok ? 'ok' : 'fail';
+      div.textContent = ok
+        ? '✓ ' + label
+        : `✗ ${label}  expected=${JSON.stringify(expected)}  got=${JSON.stringify(actual)}`;
+      out.appendChild(div);
+      ok ? passed++ : failed++;
+    };
+    window.assertTrue = (label, cond) => assertEq(label, !!cond, true);
+    window.addEventListener('load', () => {
+      const sum = document.createElement('h2');
+      sum.textContent = `${passed} passed, ${failed} failed`;
+      sum.className = failed === 0 ? 'ok' : 'fail';
+      out.appendChild(sum);
+    });
+  </script>
+  <script type="module" src="./tests/board.spec.js"></script>
+  <script type="module" src="./tests/game.spec.js"></script>
+  <script type="module" src="./tests/generation.spec.js"></script>
+</body>
+</html>
