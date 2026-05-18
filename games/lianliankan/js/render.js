@@ -14,6 +14,8 @@ export class Renderer {
     this.tileEls = [];  // 1D index = r * (cols+2) + c；只用内部坐标
     this.game = null;
     this._overlayDrawables = [];  // {kind:'path', vertices, startMs, durMs} 之类
+    this._onResize = () => this._resizeOverlay();
+    this._resizeBound = false;
   }
 
   mount(game) {
@@ -47,7 +49,10 @@ export class Renderer {
       }
     }
     this._resizeOverlay();
-    window.addEventListener('resize', () => this._resizeOverlay());
+    if (!this._resizeBound) {
+      window.addEventListener('resize', this._onResize);
+      this._resizeBound = true;
+    }
   }
 
   _resizeOverlay() {
@@ -154,39 +159,43 @@ export class Renderer {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.overlayEl.width, this.overlayEl.height);
 
-    const rect = this.boardEl.getBoundingClientRect();
-    const rows = this.game?.board.rows ?? 0, cols = this.game?.board.cols ?? 0;
-    if (rows === 0 || cols === 0) return;
-    const gap = 4;
-    const cellW = (rect.width - gap * (cols - 1)) / cols;
-    const cellH = (rect.height - gap * (rows - 1)) / rows;
-    const pxPerCellX = (cellW + gap) * this.dpr;
-    const pxPerCellY = (cellH + gap) * this.dpr;
-    const tileCenter = (r, c) => ({
-      x: (c - 1 + 0.5) * pxPerCellX,
-      y: (r - 1 + 0.5) * pxPerCellY,
-    });
+    // 只在有路径要画时才算坐标（避免空闲态每帧 getBoundingClientRect 触发 reflow）
+    if (this._overlayDrawables.length > 0) {
+      const rect = this.boardEl.getBoundingClientRect();
+      const rows = this.game?.board.rows ?? 0, cols = this.game?.board.cols ?? 0;
+      if (rows > 0 && cols > 0) {
+        const gap = 4;
+        const cellW = (rect.width - gap * (cols - 1)) / cols;
+        const cellH = (rect.height - gap * (rows - 1)) / rows;
+        const pxPerCellX = (cellW + gap) * this.dpr;
+        const pxPerCellY = (cellH + gap) * this.dpr;
+        const tileCenter = (r, c) => ({
+          x: (c - 1 + 0.5) * pxPerCellX,
+          y: (r - 1 + 0.5) * pxPerCellY,
+        });
 
-    this._overlayDrawables = this._overlayDrawables.filter((d) => {
-      const t = nowMs - d.startMs;
-      if (t > d.durMs) return false;
-      const alpha = 1 - t / d.durMs;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = d.color;
-      ctx.lineWidth = 8 * this.dpr;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.shadowColor = d.color;
-      ctx.shadowBlur = 20 * this.dpr;
-      ctx.beginPath();
-      d.vertices.forEach((v, i) => {
-        const p = tileCenter(v.r, v.c);
-        if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
-      });
-      ctx.stroke();
-      ctx.restore();
-      return true;
-    });
+        this._overlayDrawables = this._overlayDrawables.filter((d) => {
+          const t = nowMs - d.startMs;
+          if (t > d.durMs) return false;
+          const alpha = 1 - t / d.durMs;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = d.color;
+          ctx.lineWidth = 8 * this.dpr;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.shadowColor = d.color;
+          ctx.shadowBlur = 20 * this.dpr;
+          ctx.beginPath();
+          d.vertices.forEach((v, i) => {
+            const p = tileCenter(v.r, v.c);
+            if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+          });
+          ctx.stroke();
+          ctx.restore();
+          return true;
+        });
+      }
+    }
   }
 }
