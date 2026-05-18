@@ -352,13 +352,24 @@ export class Game {
       this.reviveInvincibleMs = Math.max(0, snap.reviveInvincibleMs | 0);
       this.theme = HEAD_POOLS[snap.theme] ? snap.theme : this.theme;
       this.headEmoji = snap.headEmoji || this._pickHead();
-      this.comboCount = Number.isFinite(snap.comboCount) ? (snap.comboCount | 0) : 0;
-      this.comboLastEatMs = Number.isFinite(snap.comboLastEatMs) ? snap.comboLastEatMs : -10000;
       if (typeof snap.foodEdgeMargin === 'number') {
         this.foodEdgeMargin = Math.max(0, Math.min(3, snap.foodEdgeMargin | 0));
       }
+      // Combo 时序：跟 gameTimeMs 是配套的，旧版本快照没有 gameTimeMs 时一并重置
+      // （否则 comboLastEatMs 保留 wall-clock，gameTimeMs=0 会导致 combo 永远不重置）
       if (typeof snap.gameTimeMs === 'number' && Number.isFinite(snap.gameTimeMs)) {
         this.gameTimeMs = Math.max(0, snap.gameTimeMs);
+        if (typeof snap.comboCount === 'number') {
+          this.comboCount = snap.comboCount | 0;
+        }
+        if (typeof snap.comboLastEatMs === 'number' && Number.isFinite(snap.comboLastEatMs)) {
+          this.comboLastEatMs = snap.comboLastEatMs;
+        }
+      } else {
+        // 旧版本快照（v1 但 pre-gameTimeMs）→ 重置 combo 状态
+        this.gameTimeMs = 0;
+        this.comboCount = 0;
+        this.comboLastEatMs = -10000;
       }
       return true;
     } catch (e) {

@@ -110,8 +110,8 @@ if (savedSnap) {
   popup.classList.remove('hidden');
   document.getElementById('resume-continue').addEventListener('click', () => {
     if (!game.restore(savedSnap)) {
-      console.warn('restore failed');
-      return;
+      console.warn('restore failed — discarding corrupt save');
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
     }
     resumePending = false;
     popup.classList.add('hidden');

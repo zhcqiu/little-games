@@ -366,6 +366,25 @@ sg26._advance();
 eq('snake full-board win fired', sgWonEvents, 1);
 eq('snake full-board win dead', sg26.dead, true);
 
+// snake restore 旧版本 snap（无 gameTimeMs）→ combo 重置
+const sg27 = new SnakeGame();
+const sg27OldSnap = {
+  v: 1,
+  snake: [{ row: 8, col: 7 }, { row: 8, col: 6 }],
+  currentDirection: 'right',
+  nextDirection: null,
+  food: { row: 0, col: 0 },
+  foodEmoji: '🍎',
+  score: 3,
+  reviveInvincibleMs: 0,
+  comboCount: 5,
+  comboLastEatMs: 99999,
+};
+sg27.restore(sg27OldSnap);
+eq('snake old-snap combo reset', sg27.comboCount, 0);
+eq('snake old-snap comboLastEatMs reset', sg27.comboLastEatMs, -10000);
+eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
+
 // ───── breakout ─────
 // physics
 {

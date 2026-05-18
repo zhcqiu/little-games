@@ -488,3 +488,42 @@ const snap50 = g50.serialize();
 const g51 = new Game();
 g51.restore(snap50);
 assertEq('restore gameTimeMs', g51.gameTimeMs, 7777);
+
+// 旧版本快照（无 gameTimeMs）restore 时 combo 应重置
+const g52 = new Game();
+g52.comboCount = 5;
+g52.comboLastEatMs = 99999;
+g52.gameTimeMs = 12345;
+const oldSnap = {
+  v: 1,
+  snake: [{ row: 8, col: 7 }, { row: 8, col: 6 }],
+  currentDirection: 'right',
+  nextDirection: null,
+  food: { row: 0, col: 0 },
+  foodEmoji: '🍎',
+  score: 3,
+  reviveInvincibleMs: 0,
+  theme: 'cheery',
+  headEmoji: '🐲',
+  comboCount: 5,
+  comboLastEatMs: 99999,
+  // 注意：故意不包含 gameTimeMs（模拟旧版本快照）
+  foodEdgeMargin: 1,
+};
+const g53 = new Game();
+g53.restore(oldSnap);
+assertEq('旧 snap restore：gameTimeMs=0', g53.gameTimeMs, 0);
+assertEq('旧 snap restore：comboCount=0', g53.comboCount, 0);
+assertEq('旧 snap restore：comboLastEatMs=-10000', g53.comboLastEatMs, -10000);
+
+// 新版本快照（含 gameTimeMs）restore 时 combo 状态保留
+const g54 = new Game();
+g54.gameTimeMs = 5000;
+g54.comboCount = 3;
+g54.comboLastEatMs = 4000;
+const newSnap = g54.serialize();
+const g55 = new Game();
+g55.restore(newSnap);
+assertEq('新 snap restore：gameTimeMs', g55.gameTimeMs, 5000);
+assertEq('新 snap restore：comboCount', g55.comboCount, 3);
+assertEq('新 snap restore：comboLastEatMs', g55.comboLastEatMs, 4000);
