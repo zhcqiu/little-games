@@ -1,10 +1,12 @@
 import { Board, DIFFICULTIES } from '../js/board.js';
 
-// 各档对数 + emoji 直方图全偶数 + 初始有解
+// 各档对数 + emoji 直方图全偶数 + 初始有解 + 棋盘形状不规整（含空格）
 for (const diff of ['beginner', 'novice', 'advanced', 'master']) {
   const b = new Board(diff);
   const innerCells = b.rows * b.cols;
-  assertEq(`${diff} 对数 = innerCells/2`, b.countRemaining(), innerCells);
+  const expectedCards = DIFFICULTIES[diff].pairs * 2;
+  assertEq(`${diff} 卡牌数 = pairs * 2`, b.countRemaining(), expectedCards);
+  assertTrue(`${diff} 留空格 ≥ 0`, innerCells - expectedCards >= 0);
 
   const hist = {};
   for (let r = 1; r <= b.rows; r++) {

@@ -2,11 +2,13 @@
 // 数据结构：Int8Array size (rows+2)*(cols+2)，外圈一圈 0 作哨兵。
 // 内部值 0=空，1..N = emoji 索引。
 
+// pairs = 棋盘要放的牌对数；emptyCells = rows*cols - pairs*2 个格子随机留空（让棋盘
+// 形状每局不规整、不再是死板的 x*x 满铺）。pairs 必须满足 pairs*2 ≤ rows*cols。
 export const DIFFICULTIES = {
-  beginner: { rows: 4,  cols: 4,  emojiTypes: 8,  memory: true,  timed: false },
-  novice:   { rows: 6,  cols: 6,  emojiTypes: 9,  memory: false, timed: false },
-  advanced: { rows: 8,  cols: 10, emojiTypes: 10, memory: false, timed: false },
-  master:   { rows: 10, cols: 12, emojiTypes: 12, memory: false, timed: true },
+  beginner: { rows: 4,  cols: 4,  emojiTypes: 6,  pairs: 6,  memory: true,  timed: false },
+  novice:   { rows: 6,  cols: 6,  emojiTypes: 9,  pairs: 16, memory: false, timed: false },
+  advanced: { rows: 8,  cols: 10, emojiTypes: 10, pairs: 36, memory: false, timed: false },
+  master:   { rows: 10, cols: 12, emojiTypes: 12, pairs: 56, memory: false, timed: true },
 };
 
 export const EMOJI_POOL = [
@@ -190,9 +192,12 @@ export class Board {
   }
 
   _generate() {
+    const d = DIFFICULTIES[this.difficulty];
     const innerCells = this.rows * this.cols;
-    const pairs = innerCells / 2;
-    if (pairs * 2 !== innerCells) throw new Error('内部格数必须是偶数');
+    // pairs 优先用 DIFFICULTIES.pairs（允许 < innerCells/2 留空格），缺省取 innerCells/2 满铺
+    const pairs = d.pairs ?? (innerCells / 2);
+    if (pairs * 2 > innerCells) throw new Error('pairs*2 超出 innerCells');
+    const emptySlots = innerCells - pairs * 2;
     const types = Math.min(this.emojiTypes, EMOJI_POOL.length);
 
     // 每种 emoji 应放对数 = floor(pairs / types)，多余对分配给前 extra 种各 1 对
@@ -207,12 +212,13 @@ export class Board {
         values.push(i + 1);
       }
     }
-    // 兜底：保证 values.length === innerCells
+    // 加入空格占位（0）让总数 = innerCells
+    for (let i = 0; i < emptySlots; i++) values.push(0);
     if (values.length !== innerCells) {
       throw new Error('生成器算错对数 ' + values.length + ' vs ' + innerCells);
     }
 
-    // 多次重洗直到有初始解
+    // 多次重洗直到有初始解（空格被洗到哪就哪个格子留空，棋盘形状每局不同）
     let attempt = 0;
     while (attempt < 20) {
       attempt++;

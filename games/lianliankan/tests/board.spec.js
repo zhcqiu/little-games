@@ -11,7 +11,8 @@ const b = new Board('novice');
 assertEq('novice rows', b.rows, 6);
 assertEq('novice cols', b.cols, 6);
 assertEq('novice data length (rows+2)*(cols+2)', b.data.length, 8 * 8);
-assertEq('novice countRemaining = 36', b.countRemaining(), 36);
+// novice: pairs=16 → 32 cards, 棋盘 6×6=36 cell，留 4 空
+assertEq('novice countRemaining = pairs * 2', b.countRemaining(), DIFFICULTIES.novice.pairs * 2);
 
 // 哨兵外圈应全 0
 const allSentinelsZero = (() => {

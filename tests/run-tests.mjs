@@ -780,7 +780,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 // Board 生成
 {
   const b = new Board('novice');
-  eq('lian novice cells', b.countRemaining(), 36);
+  eq('lian novice cells = pairs*2', b.countRemaining(), DIFFICULTIES.novice.pairs * 2);
   // 直方图全偶数
   const hist = {};
   for (let r = 1; r <= b.rows; r++) for (let c = 1; c <= b.cols; c++) {
