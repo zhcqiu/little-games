@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>连连看 · 小游戏乐园</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <meta name="theme-color" content="#ff7043">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header id="top-bar">
+    <div class="score-block">
+      <div title="本局"><span class="emoji">🎯</span> <span id="score">0</span></div>
+      <div title="连击" id="combo-block" class="hidden"><span class="emoji">🔥</span> <span id="combo">0</span>连</div>
+      <div title="用时" id="timer-block" class="hidden"><span class="emoji">⏱</span> <span id="timer">0:00</span></div>
+    </div>
+    <button id="pause-btn" aria-label="暂停">⏸</button>
+    <button id="help-btn" aria-label="帮助">？</button>
+    <button id="settings-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <main>
+    <div id="board-wrap">
+      <div id="board"></div>
+      <canvas id="overlay"></canvas>
+    </div>
+  </main>
+
+  <footer id="bottom-bar">
+    <button id="hint-btn">💡 提示</button>
+    <button id="shuffle-btn">🔀 洗牌</button>
+  </footer>
+
+  <!-- 帮助面板 -->
+  <div id="help-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>怎么玩</h2>
+      <button id="help-close" aria-label="关闭帮助">✕</button>
+    </div>
+    <div class="help-section">
+      <h3>🎮 目标</h3>
+      <p>🌱 入门档：翻 2 张相同的图案就消除！</p>
+      <p>⭐ 初级 / 🔥 进阶 / 💎 高手：用 ≤ 2 拐弯的折线连接 2 张相同图案</p>
+    </div>
+    <div class="help-section">
+      <h3>📱 手机和平板</h3>
+      <ul>
+        <li>点 1 张图 → 再点另 1 张相同的</li>
+        <li><b>💡 提示</b> — 高亮一对可消的（无限次）</li>
+        <li><b>🔀 洗牌</b> — 重排剩下的图案（无限次）</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>🌈 设置里有啥</h3>
+      <ul>
+        <li>难度 / 计时</li>
+        <li>🎨 主题 / 🔊 音效 / 🎵 音乐 / 🎬 动效请在主菜单 ⚙️ 里设置</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 设置面板 -->
+  <div id="settings-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>设置</h2>
+      <button id="settings-close" aria-label="关闭设置">✕</button>
+    </div>
+    <div class="setting-row">
+      <label>🎯 难度</label>
+      <div class="seg" id="difficulty-seg">
+        <button data-val="beginner">🌱 入门</button>
+        <button data-val="novice">⭐ 初级</button>
+        <button data-val="advanced">🔥 进阶</button>
+        <button data-val="master">💎 高手</button>
+      </div>
+    </div>
+    <div class="setting-row toggle-row" id="timed-row">
+      <label>⏱ 计时模式</label>
+      <button class="toggle" id="timed-toggle">⏱</button>
+    </div>
+    <p class="hint">🎨 主题 / 🔊 音效 / 🎵 音乐 / 🎬 动效请在主菜单 ⚙️ 里设置</p>
+    <button id="restart-btn" class="primary">🔄 重新开始</button>
+  </div>
+
+  <!-- 续玩气泡 -->
+  <div id="resume-popup" class="popup hidden">
+    <p>📋 上次玩到一半，继续吗？</p>
+    <div class="popup-buttons">
+      <button id="resume-discard">🆕 新开</button>
+      <button id="resume-continue" class="primary">▶️ 继续</button>
+    </div>
+  </div>
+
+  <!-- 新手引导气泡 -->
+  <div id="tutorial-popup" class="popup hidden">
+    <p style="font-size: 20px; margin: 0 0 12px;">👋 嗨！欢迎玩连连看</p>
+    <p style="margin: 0 0 8px;">👆 <b>点 2 张相同图案</b></p>
+    <p style="margin: 0 0 16px;">⭐ 全部消掉就赢了！</p>
+    <div class="popup-buttons">
+      <button id="tutorial-ok" class="primary">✅ 开始玩</button>
+    </div>
+  </div>
+
+  <!-- 重启确认 -->
+  <div id="restart-confirm" class="popup hidden">
+    <p>⚠️ 当前进度会丢失</p>
+    <div class="popup-buttons">
+      <button id="restart-cancel">❌ 取消</button>
+      <button id="restart-ok" class="primary">✅ 确认</button>
+    </div>
+  </div>
+
+  <!-- 游戏结束 -->
+  <div id="gameover-panel" class="panel hidden">
+    <div class="gameover-emoji" id="gameover-emoji">🏆</div>
+    <p class="gameover-stat">🎯 <span id="final-score">0</span></p>
+    <p class="gameover-stat" id="final-time-row">⏱ <span id="final-time">0:00</span></p>
+    <button id="replay-btn" class="primary">▶️ 再玩一局</button>
+    <button id="share-btn" class="secondary hidden">📤 分享成绩</button>
+  </div>
+
+  <!-- 浮字 toast -->
+  <div id="event-toast" class="toast hidden">✨</div>
+  <div id="clear-toast" class="clear-toast hidden">✨</div>
+
+  <!-- 暂停 overlay -->
+  <div id="pause-overlay" class="pause-overlay hidden">
+    <div class="pause-icon">⏸</div>
+    <div class="pause-hint">点屏幕 / 按 P 继续</div>
+  </div>
+
+  <div id="version-tag" class="version-tag">v1.0</div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
