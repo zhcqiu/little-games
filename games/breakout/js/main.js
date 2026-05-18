@@ -37,15 +37,20 @@ function updateScoreUi() {
 }
 
 // 事件接线
-game.onPaddleHit(() => { audio.playPaddle(); vibrate([15]); });
+game.onPaddleHit((offset) => {
+  audio.playPaddle();
+  effects.spawnPaddleHit(offset);
+  vibrate([15]);
+});
 game.onBrick(({ col, row, value, killed }) => {
   if (killed) {
     audio.playBrick(value);
     const cssVar = brickCssVar(value);
     const color = getComputedStyle(document.body).getPropertyValue(cssVar).trim() || '#fff';
     effects.spawnBrickParticles(col, row, color);
+    effects.spawnBrickBreak(col, row, color);
   } else {
-    // 砖块只是磕到了没碎：用 wall 短音 + 少量粒子
+    // 砖块只是磕到了没碎：用 wall 短音
     audio.playWall();
   }
   updateScoreUi();

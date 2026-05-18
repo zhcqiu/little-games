@@ -259,7 +259,7 @@ export class GameLogic {
           ball.vx = r.vx;
           ball.vy = r.vy;
           ball.y = padT - BALL_RADIUS - 0.01;
-          if (this._onPaddleHit) this._onPaddleHit();
+          if (this._onPaddleHit) this._onPaddleHit(hitOffset);
         }
       }
     }

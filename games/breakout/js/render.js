@@ -119,8 +119,9 @@ export class Renderer {
       ctx.fillText(String(sec), game.paddle.col * this.cellSize, (PADDLE_Y - 2) * this.cellSize);
     }
 
-    // 特效层（粒子 + 闪烁）
+    // 特效层（砖块碎裂 / 粒子 / 闪烁）— 顺序：砖块碎裂在粒子下层避免被遮挡
     if (this.effects) {
+      this.effects.drawBrickBreaks(ctx, this.cellSize);
       this.effects.drawParticles(ctx, this.cellSize);
       this.effects.drawFlashes(ctx, w, h);
     }
@@ -168,15 +169,36 @@ export class Renderer {
   _drawPaddle(game) {
     const ctx = this.ctx;
     const halfW = (3 * game.paddle.widthMul) / 2;
-    const x = (game.paddle.col - halfW) * this.cellSize;
-    const y = (PADDLE_Y - PADDLE_HALF_HEIGHT) * this.cellSize;
+    const baseX = (game.paddle.col - halfW) * this.cellSize;
+    const baseY = (PADDLE_Y - PADDLE_HALF_HEIGHT) * this.cellSize;
     const w = 2 * halfW * this.cellSize;
     const h = 2 * PADDLE_HALF_HEIGHT * this.cellSize;
-    ctx.fillStyle = this._theme.paddle;
-    ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2);
-    else ctx.rect(x, y, w, h);
-    ctx.fill();
+
+    // 命中点压扁动画：squish 0..0.35，offset -1..1 决定哪一端压得多
+    const deform = this.effects && this.effects.getPaddleHitDeform();
+    if (deform) {
+      // 压扁：板拍高度按 1-squish 缩，命中端缩得更多（双线性插值视觉效果）
+      const dy = h * deform.squish * 0.7;          // 整体下沉
+      const heightShrink = h * deform.squish * 0.5; // 高度变扁
+      const y = baseY + dy;
+      const drawH = h - heightShrink;
+      const leftDrop = deform.offset > 0 ? heightShrink * 0.6 : 0;
+      const rightDrop = deform.offset < 0 ? heightShrink * 0.6 : 0;
+      ctx.fillStyle = this._theme.paddle;
+      ctx.beginPath();
+      ctx.moveTo(baseX, y + leftDrop);
+      ctx.lineTo(baseX + w, y + rightDrop);
+      ctx.lineTo(baseX + w, y + drawH);
+      ctx.lineTo(baseX, y + drawH);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillStyle = this._theme.paddle;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(baseX, baseY, w, h, h / 2);
+      else ctx.rect(baseX, baseY, w, h);
+      ctx.fill();
+    }
   }
 
   _drawBall(ball) {
@@ -184,6 +206,33 @@ export class Renderer {
     const r = BALL_RADIUS * this.cellSize;
     const cx = ball.x * this.cellSize;
     const cy = ball.y * this.cellSize;
+
+    // 速度驱动的"拖尾"：朝速度反方向画一段渐变线 — 球小且飞快时帮助目视
+    const speed = Math.hypot(ball.vx, ball.vy);
+    if (speed > 0.5) {
+      const tailLen = Math.min(2.2, speed * 0.12) * this.cellSize;
+      const dirX = -ball.vx / speed;
+      const dirY = -ball.vy / speed;
+      const tailX = cx + dirX * tailLen;
+      const tailY = cy + dirY * tailLen;
+      // 末端透明：用 8 位 hex 加 '00'（现代浏览器支持）；若颜色非 6 位 hex 则降级到 globalAlpha
+      const ballColor = this._theme.ball;
+      const grad = ctx.createLinearGradient(cx, cy, tailX, tailY);
+      grad.addColorStop(0, ballColor);
+      if (/^#[0-9a-fA-F]{6}$/.test(ballColor)) {
+        grad.addColorStop(1, ballColor + '00');
+      } else {
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+      }
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = r * 1.3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+    }
+
     // 投影增加立体感
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 4;

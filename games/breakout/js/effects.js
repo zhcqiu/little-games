@@ -6,6 +6,8 @@ export class Effects {
     this.particles = [];
     this.shake = null;            // { amp, dur, t }
     this.flashes = [];            // [{ color, alpha, life, dur }]
+    this.brickBreaks = [];        // [{ col, row, color, t, dur }] — 砖块碎裂膨胀消散
+    this.paddleHit = null;        // { t, dur, offset } — 板拍压扁短动画
   }
 
   setIntensity(v) { this.intensity = v; }
@@ -28,6 +30,34 @@ export class Effects {
 
     for (const f of this.flashes) f.life -= dt;
     this.flashes = this.flashes.filter((f) => f.life > 0);
+
+    for (const b of this.brickBreaks) b.t += dt;
+    this.brickBreaks = this.brickBreaks.filter((b) => b.t < b.dur);
+
+    if (this.paddleHit) {
+      this.paddleHit.t += dt;
+      if (this.paddleHit.t >= this.paddleHit.dur) this.paddleHit = null;
+    }
+  }
+
+  spawnBrickBreak(col, row, color) {
+    if (this.intensity === 0) return;
+    this.brickBreaks.push({ col, row, color, t: 0, dur: 180 });
+  }
+
+  spawnPaddleHit(offset) {
+    if (this.intensity === 0) return;
+    this.paddleHit = { t: 0, dur: 140, offset: Math.max(-1, Math.min(1, offset || 0)) };
+  }
+
+  /** 返回当前板拍压扁状态 {squish: 0..0.4, offset: -1..1}，未触发返回 null */
+  getPaddleHitDeform() {
+    if (!this.paddleHit) return null;
+    const phase = this.paddleHit.t / this.paddleHit.dur;
+    return {
+      squish: Math.sin(phase * Math.PI) * 0.35 * this.intensity,
+      offset: this.paddleHit.offset,
+    };
   }
 
   spawnBrickParticles(col, row, color) {
@@ -91,6 +121,33 @@ export class Effects {
       ctx.globalAlpha = f.alpha * (f.life / f.dur);
       ctx.fillStyle = f.color;
       ctx.fillRect(0, 0, w, h);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  drawBrickBreaks(ctx, cellSize) {
+    for (const b of this.brickBreaks) {
+      const phase = b.t / b.dur;            // 0 → 1
+      const scale = 1 + phase * 0.4;        // 砖块膨胀到 1.4×
+      const alpha = 1 - phase;
+      const wobble = (b.col % 2 === 0 ? 1 : -1) * phase * 0.6;   // 小扰动旋转 ~ ±34°
+      const cx = (b.col + 0.5) * cellSize;
+      const cy = (b.row + 0.5) * cellSize;
+      const s = cellSize - 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(wobble);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = b.color;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-s / 2, -s / 2, s, s, 4);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-s / 2, -s / 2, s, s);
+      }
+      ctx.restore();
     }
     ctx.globalAlpha = 1;
   }
