@@ -31,6 +31,7 @@ export class Game {
 
     this.flippedFirst = null;
     this._pendingMismatch = null;
+    this.relaxed = false;  // 宽松模式：任意 2 张同 emoji 都可消，忽略路径
   }
 
   // 事件订阅
@@ -95,14 +96,20 @@ export class Game {
       this._cb.mismatch && this._cb.mismatch(prev, b);
       return { kind: 'mismatch', prev, current: b };
     }
-    const path = this.board.findPath(a, b);
-    if (!path) {
-      // 同 emoji 但不可达
-      this.combo = 0;
-      const prev = this.selection;
-      this.selection = b;
-      this._cb.mismatch && this._cb.mismatch(prev, b);
-      return { kind: 'mismatch', prev, current: b };
+    let path;
+    if (this.relaxed) {
+      // 宽松模式：忽略路径与障碍，直接画 a→b 直线
+      path = [a, b];
+    } else {
+      path = this.board.findPath(a, b);
+      if (!path) {
+        // 同 emoji 但不可达
+        this.combo = 0;
+        const prev = this.selection;
+        this.selection = b;
+        this._cb.mismatch && this._cb.mismatch(prev, b);
+        return { kind: 'mismatch', prev, current: b };
+      }
     }
     // 配对成功
     this.board.set(a.r, a.c, 0);
@@ -125,7 +132,8 @@ export class Game {
       this._cb.win && this._cb.win(this.score, this.elapsedMs);
       return { kind: 'win', a, b, path, pairScore };
     }
-    if (this.board.hasAnySolvable() === null) {
+    // 宽松模式下"无解"等价于"剩单只 emoji"，不会触发 reshuffle 路径
+    if (!this.relaxed && this.board.hasAnySolvable() === null) {
       const ok = this.board.reshuffle();
       if (!ok) {
         // 兜底判赢
@@ -195,7 +203,7 @@ export class Game {
 
   /** 找一对可消的，触发 hint 事件，返回 {a, b, path} 或 null */
   useHint() {
-    const sol = this.board.hasAnySolvable();
+    const sol = this.relaxed ? this.board.findAnySamePair() : this.board.hasAnySolvable();
     if (!sol) return null;
     this._cb.hint && this._cb.hint(sol.a, sol.b, sol.path);
     return sol;
@@ -221,6 +229,7 @@ export class Game {
       elapsedMs: this.elapsedMs,
       lastMatchAtMs: this.lastMatchAtMs,
       timed: this.timed,
+      relaxed: this.relaxed,
     };
   }
 
@@ -236,6 +245,7 @@ export class Game {
     this.memory = d.memory;
     // 优先用 snap.timed（用户偏好），缺失则用档默认。master 永远 timed=true。
     this.timed = d.timed || (snap.timed ?? false);
+    this.relaxed = snap.relaxed ?? false;
     this.board = new Board(snap.difficulty, this.rng);  // 重建以取尺寸
     for (let i = 0; i < snap.boardData.length; i++) this.board.data[i] = snap.boardData[i];
     if (this.board.flipped && Array.isArray(snap.flippedData)) {

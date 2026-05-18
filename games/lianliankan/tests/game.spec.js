@@ -297,3 +297,60 @@ import { DIFFICULTIES } from '../js/board.js';
   g2.restore(snap);
   assertEq('restore 恢复 timed=true', g2.timed, true);
 }
+
+// ───── C7：宽松模式 ─────
+// 关键语义：findPath 返 null 也仍 match；path 是直线 2 顶点（a→b）
+{
+  const g = new Game('novice', () => 0.5);
+  g.relaxed = true;
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7);
+  g.board.set(5, 5, 7);   // 远距离
+  g.board.set(2, 2, 9);   // 再放 1 对其它 emoji，避免消完触发 win
+  g.board.set(2, 3, 9);
+  g.tap(1, 1);
+  const r = g.tap(5, 5);
+  assertEq('宽松 远距离 match', r.kind, 'match');
+  assertEq('宽松 path = 2 顶点直线', r.path.length, 2);
+  assertEq('两格已清 (1,1)', g.board.get(1, 1), 0);
+  assertEq('两格已清 (5,5)', g.board.get(5, 5), 0);
+  assertEq('combo = 1', g.combo, 1);
+  assertEq('score +10', g.score, 10);
+}
+
+// 宽松模式下 mismatch 仍按"不同 emoji"判
+{
+  const g = new Game('novice', () => 0.5);
+  g.relaxed = true;
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7);
+  g.board.set(1, 3, 9);
+  g.tap(1, 1);
+  const r = g.tap(1, 3);
+  assertEq('宽松 不同 emoji 仍 mismatch', r.kind, 'mismatch');
+}
+
+// 宽松模式 useHint 用 findAnySamePair
+{
+  const g = new Game('novice', () => 0.5);
+  g.relaxed = true;
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7);
+  g.board.set(5, 5, 7);  // 远距离同 emoji
+  // 普通模式 hasAnySolvable 应能找到（这里中间没东西）；测宽松 findAnySamePair 也找得到
+  const sol = g.useHint();
+  assertTrue('宽松 hint 找到一对', sol !== null);
+  assertEq('宽松 hint a', sol.a, {r:1, c:1});
+  assertEq('宽松 hint b', sol.b, {r:5, c:5});
+}
+
+// serialize/restore 保留 relaxed
+{
+  const g = new Game('novice', () => 0.5);
+  g.relaxed = true;
+  const snap = g.serialize();
+  assertEq('snap.relaxed = true', snap.relaxed, true);
+  const g2 = new Game('novice', () => 0.5);
+  g2.restore(snap);
+  assertEq('restore 恢复 relaxed=true', g2.relaxed, true);
+}

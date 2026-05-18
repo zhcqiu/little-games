@@ -159,6 +159,26 @@ export class Board {
   }
 
   /**
+   * 宽松模式用：忽略路径，返回任意 2 个同 emoji 的格。
+   * 返回 { a, b, path: [a, b] }（path 是直线供画线动画用）或 null。
+   */
+  findAnySamePair() {
+    const groups = new Map();
+    for (let r = 1; r <= this.rows; r++) {
+      for (let c = 1; c <= this.cols; c++) {
+        const v = this.get(r, c);
+        if (v === 0) continue;
+        if (!groups.has(v)) groups.set(v, []);
+        groups.get(v).push({r, c});
+      }
+    }
+    for (const cells of groups.values()) {
+      if (cells.length >= 2) return { a: cells[0], b: cells[1], path: [cells[0], cells[1]] };
+    }
+    return null;
+  }
+
+  /**
    * 原地 Fisher-Yates 洗剩余非空格的 emoji，最多重试 5 次直到 hasAnySolvable。
    * 返回 true 表示成功（含"剩 ≤ 1 对跳过"）；false 表示 5 次后仍无解。
    */

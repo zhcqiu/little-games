@@ -33,10 +33,17 @@ const settings = new Settings(game, audio, effects, {
     // 计时切换实时生效到当前 game（master 永远 timed=true，不受 toggle 影响）
     game.timed = DIFFICULTIES[game.difficulty].timed || timed;
   },
+  onRelaxedChange: (relaxed) => {
+    // 宽松模式实时生效
+    game.relaxed = !!relaxed;
+  },
 });
 settings.load();
 settings.apply();
 settings.bindUi();
+// 把 load 后的 timed/relaxed 同步到当前 game（game 在 settings.load 前实例化的）
+game.timed = settings.state.timed || DIFFICULTIES[game.difficulty].timed;
+game.relaxed = !!settings.state.relaxed;
 
 // 暂停理由计数
 const pauseReasons = new Set();
@@ -332,6 +339,7 @@ function askDifficultyChange(newDiff) {
 function restartGame(difficulty) {
   game = new Game(difficulty);
   game.timed = settings.state.timed || DIFFICULTIES[difficulty].timed;
+  game.relaxed = !!settings.state.relaxed;
   game.onLose(showLosePanel);  // 新 Game 实例需要重新挂回调
   renderer.mount(game);
   syncBottomBar();

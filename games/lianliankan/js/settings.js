@@ -8,6 +8,7 @@ const KEY_HIGH = 'lianliankan.highScore';
 const DEFAULTS = {
   difficulty: 'novice',
   timed: false,
+  relaxed: false,
 };
 
 const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
@@ -107,6 +108,15 @@ export class Settings {
       timedBtn.textContent = on ? '⏱' : '⏱️ 关';
       timedBtn.disabled = isMaster;
     }
+    // relaxed toggle 只在连线 3 档（非 beginner）显示——翻牌档无路径概念
+    const relaxedRow = document.getElementById('relaxed-row');
+    if (relaxedRow) relaxedRow.style.display = this.state.difficulty === 'beginner' ? 'none' : '';
+    const relaxedBtn = document.getElementById('relaxed-toggle');
+    if (relaxedBtn) {
+      const on = !!this.state.relaxed;
+      relaxedBtn.classList.toggle('active', on);
+      relaxedBtn.textContent = on ? '🆓 开' : '🆓 关';
+    }
   }
 
   bindUi() {
@@ -121,6 +131,10 @@ export class Settings {
     document.getElementById('timed-toggle')?.addEventListener('click', () => {
       this.set('timed', !this.state.timed);
       this._cb.onTimedChange?.(this.state.timed);
+    });
+    document.getElementById('relaxed-toggle')?.addEventListener('click', () => {
+      this.set('relaxed', !this.state.relaxed);
+      this._cb.onRelaxedChange?.(this.state.relaxed);
     });
     document.getElementById('restart-btn')?.addEventListener('click', () => {
       this._cb.onRestart?.();
