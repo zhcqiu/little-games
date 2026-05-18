@@ -266,3 +266,37 @@ import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
   for (let i = 0; i < 200 && g.fallingItem !== null; i++) g.step(100);
   assertEq('balls doubled', g.balls.length, 2);
 }
+
+// 序列化 / 反序列化
+{
+  const g = new GameLogic();
+  g.score = 1234;
+  g.combo = 5;
+  g.endMode = 'standard';
+  g.speedLevel = 4;
+  g.paddle.col = 7.2;
+  g.paddle.widthMul = 1.6;
+  g.paddle.widthRemainMs = 5000;
+  g.slowRemainMs = 3000;
+  g.brickDescentTimer = 2222;
+  g.ballRespawnTimer = 333;
+  g.balls = [{ x: 4, y: 5, vx: -3, vy: 2 }, { x: 6, y: 7, vx: 1, vy: -4 }];
+  g.fallingItem = { type: 'multi', x: 5, y: 5 };
+
+  const snap = g.serialize();
+  const g2 = new GameLogic();
+  g2.restore(snap);
+  assertEq('restored score',           g2.score, 1234);
+  assertEq('restored combo',           g2.combo, 5);
+  assertEq('restored endMode',         g2.endMode, 'standard');
+  assertEq('restored speedLevel',      g2.speedLevel, 4);
+  assertEq('restored paddle.col',      g2.paddle.col, 7.2);
+  assertEq('restored paddle.widthMul', g2.paddle.widthMul, 1.6);
+  assertEq('restored widthRemain',     g2.paddle.widthRemainMs, 5000);
+  assertEq('restored slowRemain',      g2.slowRemainMs, 3000);
+  assertEq('restored descent timer',   g2.brickDescentTimer, 2222);
+  assertEq('restored respawn timer',   g2.ballRespawnTimer, 333);
+  assertEq('restored balls count',     g2.balls.length, 2);
+  assertEq('restored fallingItem',     g2.fallingItem.type, 'multi');
+  assertEq('restored board[0][0]',     g2.board[0][0], g.board[0][0]);
+}

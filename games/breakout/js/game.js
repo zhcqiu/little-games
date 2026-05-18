@@ -337,6 +337,77 @@ export class GameLogic {
     }
   }
 
+  serialize() {
+    return {
+      v: 1,
+      score: this.score,
+      combo: this.combo,
+      endMode: this.endMode,
+      speedLevel: this.speedLevel,
+      board: this.board.map((row) => row.slice()),
+      paddle: { ...this.paddle },
+      balls: this.balls.map((b) => ({ ...b })),
+      fallingItem: this.fallingItem ? { ...this.fallingItem } : null,
+      brickDescentTimer: this.brickDescentTimer,
+      ballRespawnTimer: this.ballRespawnTimer,
+      slowRemainMs: this.slowRemainMs,
+      gameOver: this.gameOver,
+    };
+  }
+
+  restore(snap) {
+    if (!snap || snap.v !== 1) return false;
+    this.score = snap.score;
+    this.combo = snap.combo;
+    this.endMode = snap.endMode;
+    this.speedLevel = snap.speedLevel;
+    this.board = snap.board.map((row) => row.slice());
+    this.paddle = { ...snap.paddle };
+    this.balls = snap.balls.map((b) => ({ ...b }));
+    this.fallingItem = snap.fallingItem ? { ...snap.fallingItem } : null;
+    this.brickDescentTimer = snap.brickDescentTimer;
+    this.ballRespawnTimer = snap.ballRespawnTimer;
+    this.slowRemainMs = snap.slowRemainMs;
+    this.gameOver = !!snap.gameOver;
+    this._slowWasActive = this.slowRemainMs > 0;
+    return true;
+  }
+
+  reset() {
+    this.score = 0;
+    this.combo = 1;
+    this.gameOver = false;
+    this.board = this._newBoard();
+    this._seedInitialBricks();
+    this.paddle = { col: COLS / 2, widthMul: 1, widthRemainMs: 0 };
+    this.balls = [this._spawnBall()];
+    this.ballRespawnTimer = 1500;
+    this.brickDescentTimer = DESCENT_TABLE[this.speedLevel - 1];
+    this.slowRemainMs = 0;
+    this._slowWasActive = false;
+    this.fallingItem = null;
+  }
+
+  setSpeedLevel(level) {
+    const newLevel = Math.max(1, Math.min(5, level | 0));
+    if (newLevel !== this.speedLevel) {
+      // 按比例换速；下移定时器按比例缩放
+      const oldDescent = DESCENT_TABLE[this.speedLevel - 1];
+      const newDescent = DESCENT_TABLE[newLevel - 1];
+      this.brickDescentTimer *= newDescent / oldDescent;
+      // 球速也按档位重新算
+      const oldSp = SPEED_TABLE[this.speedLevel - 1] * (this.slowRemainMs > 0 ? 0.7 : 1);
+      const newSp = SPEED_TABLE[newLevel - 1] * (this.slowRemainMs > 0 ? 0.7 : 1);
+      const ratio = newSp / oldSp;
+      for (const b of this.balls) { b.vx *= ratio; b.vy *= ratio; }
+      this.speedLevel = newLevel;
+    }
+  }
+
+  setEndMode(mode) {
+    if (mode === 'standard' || mode === 'endless') this.endMode = mode;
+  }
+
   // 事件钩子
   onLock(fn)        { this._onLock = fn; }
   onBrick(fn)       { this._onBrick = fn; }
