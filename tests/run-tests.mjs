@@ -253,6 +253,17 @@ sg14.restore(snap2);
 eq('snake restore combo', sg14.comboCount, 4);
 eq('snake restore comboLastEatMs', sg14.comboLastEatMs, 999);
 
+// snake unlock heads
+const sg15 = new SnakeGame();
+sg15.setTotalFood(150);
+const t2pool = ['🐲', '🐯', '🦁', '🐹', '🐵'];
+let allInT2 = true;
+for (let i = 0; i < 30; i++) {
+  sg15.reset();
+  if (!t2pool.includes(sg15.headEmoji)) { allInT2 = false; break; }
+}
+truthy('snake t2 unlock', allInT2);
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

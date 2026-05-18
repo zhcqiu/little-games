@@ -1,11 +1,84 @@
 // audio.js — 贪吃蛇音效
 import { AudioEngine } from '../../../shared/audio-engine.js';
 
+const BGM_THEMES = {
+  cheery: {
+    // 童趣 — 暖暖明亮 C 大调五声音阶
+    melody: [
+      261.63, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63,
+      261.63, 329.63, 261.63, 196.00, 220.00, 261.63, 329.63, 392.00,
+    ],
+    bass: [130.81, 130.81, 174.61, 174.61, 196.00, 196.00, 130.81, 130.81],
+    beatMs: 700, melodyType: 'triangle', bassType: 'sine',
+  },
+  candy: {
+    // 糖果 — 软糯 A 小调五声音阶
+    melody: [
+      440.00, 523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25,
+      440.00, 523.25, 440.00, 392.00, 440.00, 523.25, 587.33, 659.25,
+    ],
+    bass: [220.00, 220.00, 261.63, 261.63, 293.66, 293.66, 220.00, 196.00],
+    beatMs: 700, melodyType: 'triangle', bassType: 'sine',
+  },
+  forest: {
+    // 森林 — 民谣感 D 多利亚
+    melody: [
+      293.66, 349.23, 392.00, 440.00, 493.88, 440.00, 392.00, 349.23,
+      293.66, 349.23, 293.66, 261.63, 293.66, 349.23, 392.00, 440.00,
+    ],
+    bass: [146.83, 146.83, 196.00, 196.00, 174.61, 174.61, 146.83, 146.83],
+    beatMs: 750, melodyType: 'triangle', bassType: 'sine',
+  },
+  ocean: {
+    // 海洋 — 慵懒 G 米索利底亚
+    melody: [
+      392.00, 440.00, 493.88, 523.25, 587.33, 523.25, 493.88, 440.00,
+      392.00, 440.00, 392.00, 349.23, 392.00, 440.00, 493.88, 523.25,
+    ],
+    bass: [196.00, 196.00, 261.63, 261.63, 220.00, 220.00, 196.00, 196.00],
+    beatMs: 800, melodyType: 'sine', bassType: 'sine',
+  },
+  space: {
+    // 太空 — 神秘 E 弗里几亚
+    melody: [
+      329.63, 349.23, 392.00, 440.00, 493.88, 440.00, 392.00, 349.23,
+      329.63, 349.23, 329.63, 293.66, 329.63, 349.23, 392.00, 440.00,
+    ],
+    bass: [164.81, 164.81, 196.00, 196.00, 174.61, 174.61, 164.81, 164.81],
+    beatMs: 850, melodyType: 'sawtooth', bassType: 'triangle',
+  },
+  night: {
+    // 夜空 — 柔和 A 自然小调
+    melody: [
+      440.00, 493.88, 523.25, 587.33, 659.25, 587.33, 523.25, 493.88,
+      440.00, 493.88, 440.00, 392.00, 440.00, 493.88, 523.25, 587.33,
+    ],
+    bass: [220.00, 220.00, 261.63, 261.63, 293.66, 293.66, 220.00, 196.00],
+    beatMs: 900, melodyType: 'triangle', bassType: 'sine',
+  },
+};
+
 export class Audio extends AudioEngine {
   constructor() {
     super();
     this.bgmOn = true;
     this.bgmController = null;
+    this.bgmTheme = 'cheery';
+  }
+
+  setBgmTheme(themeName) {
+    if (!BGM_THEMES[themeName]) return;
+    if (this.bgmTheme === themeName) return;
+    this.bgmTheme = themeName;
+    // 若正在放，重启以使用新主题
+    if (this.bgmController) {
+      this.stopBgm(200);
+      if (this.bgmOn && this.ctx) {
+        setTimeout(() => {
+          if (this.bgmOn && this.ctx && !this.bgmController) this._startBgm();
+        }, 250);
+      }
+    }
   }
 
   setBgmOn(on) {
@@ -130,17 +203,13 @@ export class Audio extends AudioEngine {
   _startBgm() {
     if (!this.ctx) return;
     const ctx = this.ctx;
-    // 8 小节 C 大调五声音阶，节奏比 Tetris 慢（beat=700ms）
-    const melody = [
-      261.63, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63,
-      261.63, 329.63, 261.63, 196.00, 220.00, 261.63, 329.63, 392.00,
-    ];
-    const bass = [
-      130.81, 130.81, 174.61, 174.61,
-      196.00, 196.00, 130.81, 130.81,
-    ];
+    const theme = BGM_THEMES[this.bgmTheme] || BGM_THEMES.cheery;
+    const melody = theme.melody;
+    const bass = theme.bass;
+    const beatMs = theme.beatMs;
+    const melodyType = theme.melodyType;
+    const bassType = theme.bassType;
 
-    const beatMs = 700;
     const totalDuration = (melody.length * beatMs) / 1000;
 
     const bgmGain = ctx.createGain();
@@ -155,31 +224,31 @@ export class Audio extends AudioEngine {
         const t = loopStart + (i * beatMs) / 1000;
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
-        osc.type = 'triangle';
+        osc.type = melodyType;
         osc.frequency.value = melody[i];
         g.gain.setValueAtTime(0, t);
         g.gain.linearRampToValueAtTime(0.45, t + 0.02);
         g.gain.linearRampToValueAtTime(0.3, t + 0.15);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+        g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(0.4, beatMs / 1000 * 0.9));
         osc.connect(g);
         g.connect(bgmGain);
         osc.start(t);
-        osc.stop(t + 0.7);
+        osc.stop(t + Math.max(0.5, beatMs / 1000));
       }
       for (let i = 0; i < bass.length; i++) {
         const t = loopStart + (i * 2 * beatMs) / 1000;
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
-        osc.type = 'sine';
+        osc.type = bassType;
         osc.frequency.value = bass[i];
         g.gain.setValueAtTime(0, t);
         g.gain.linearRampToValueAtTime(0.35, t + 0.05);
         g.gain.linearRampToValueAtTime(0.18, t + 0.25);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+        g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(1.0, beatMs / 1000 * 1.6));
         osc.connect(g);
         g.connect(bgmGain);
         osc.start(t);
-        osc.stop(t + 1.3);
+        osc.stop(t + Math.max(1.1, beatMs / 1000 * 1.7));
       }
     };
 

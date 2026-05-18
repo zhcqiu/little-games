@@ -18,6 +18,24 @@ settings.apply();
 settings.bindUi();
 settings.onReset(() => resetHighScoreTracker());
 
+// 新手引导（一次性）
+const TUTORIAL_KEY = 'snake.tutorialSeen';
+function maybeShowTutorial() {
+  try {
+    if (localStorage.getItem(TUTORIAL_KEY) === '1') return false;
+  } catch (e) { return false; }
+  const p = document.getElementById('tutorial-popup');
+  if (!p) return false;
+  p.classList.remove('hidden');
+  game.setPaused(true);
+  document.getElementById('tutorial-ok').addEventListener('click', () => {
+    try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch (e) {}
+    p.classList.add('hidden');
+    if (!resumePending) game.setPaused(false);
+  }, { once: true });
+  return true;
+}
+
 // 续玩存盘
 const SAVE_KEY = 'snake.saveGame';
 function loadSave() {
@@ -60,6 +78,9 @@ if (savedSnap) {
     game.setPaused(false);
   });
 }
+
+// 第一次玩 → 弹引导（如果没有要恢复的存档）
+if (!savedSnap) maybeShowTutorial();
 
 window.addEventListener('beforeunload', persistSave);
 window.addEventListener('pagehide', persistSave);
@@ -131,6 +152,21 @@ game.onEat(() => {
   effects.triggerShake(3, 80);
   showClearToast('✨');
   vibrate([15]);
+
+  // 累计食物 + 解锁判定
+  const prevTotal = settings.get('totalFood');
+  const newTotal = prevTotal + 1;
+  settings.set('totalFood', newTotal);
+  for (const threshold of [100, 500]) {
+    if (prevTotal < threshold && newTotal >= threshold) {
+      setTimeout(() => {
+        showClearToast('🎁 解锁新蛇头！');
+        audio.playMilestone();
+        vibrate([50, 30, 50, 30, 80]);
+      }, 1200);
+      break;
+    }
+  }
 
   // 里程碑检测
   const len = game.snake.length;

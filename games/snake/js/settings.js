@@ -9,6 +9,7 @@ const DEFAULTS = {
   bgmOn: true,
   theme: 'cheery',
   fxLevel: 'strong',
+  totalFood: 0,    // 累计吃食物数（解锁额外蛇头用）
 };
 
 const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
@@ -60,6 +61,8 @@ export class Settings {
     this.audio.setBgmOn(this.state.bgmOn);
     if (this.effects) this.effects.setIntensity(FX_INTENSITY[this.state.fxLevel] ?? 1.0);
     this.game.setTheme(this.state.theme);
+    this.audio.setBgmTheme(this.state.theme);
+    this.game.setTotalFood(this.state.totalFood);
     document.body.dataset.theme = this.state.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',

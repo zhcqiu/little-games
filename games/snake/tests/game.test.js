@@ -332,3 +332,34 @@ const g36 = new Game();
 g36.restore(comboSnap);
 assertEq('restore combo', g36.comboCount, 4);
 assertEq('restore comboLastEatMs', g36.comboLastEatMs, 12345);
+
+// 解锁层
+const g37 = new Game();
+g37.setTotalFood(50);
+// 50 < 100, 应只在 base 池
+const base = ['🐲', '🐯', '🦁', '🐹'];
+g37.reset();
+assertTrue('50 食物时 head 仍在 base 池', base.includes(g37.headEmoji));
+
+// 100+：base ∪ tier2
+const g38 = new Game();
+g38.setTotalFood(150);
+const cheeryT2 = ['🐲', '🐯', '🦁', '🐹', '🐵'];
+// 抽 30 次，至少能验证 head 来自 base+tier2 池
+let allFromT2Pool = true;
+for (let i = 0; i < 30; i++) {
+  g38.reset();
+  if (!cheeryT2.includes(g38.headEmoji)) { allFromT2Pool = false; break; }
+}
+assertTrue('150 食物时 head 来自 base+tier2 池', allFromT2Pool);
+
+// 500+：base ∪ tier2 ∪ tier3
+const g39 = new Game();
+g39.setTotalFood(600);
+const cheeryT3 = ['🐲', '🐯', '🦁', '🐹', '🐵', '🐴'];
+let allFromT3Pool = true;
+for (let i = 0; i < 30; i++) {
+  g39.reset();
+  if (!cheeryT3.includes(g39.headEmoji)) { allFromT3Pool = false; break; }
+}
+assertTrue('600 食物时 head 来自 base+tier2+tier3 池', allFromT3Pool);

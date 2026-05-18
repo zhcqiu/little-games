@@ -14,6 +14,15 @@ const HEAD_POOLS = {
   night:  ['🦇', '🦉', '👻', '🐺'],
 };
 
+const HEAD_POOLS_TIER2 = {  // ≥100 eats
+  cheery: ['🐵'], candy: ['🐶'], forest: ['🦝'],
+  ocean:  ['🐳'], space: ['🐍'], night: ['🐈‍⬛'],
+};
+const HEAD_POOLS_TIER3 = {  // ≥500 eats
+  cheery: ['🐴'], candy: ['🐨'], forest: ['🐢'],
+  ocean:  ['🦞'], space: ['🌚'], night: ['🦡'],
+};
+
 const TICK_INTERVALS = [400, 300, 220, 160, 110];  // 5 档
 
 const DIR_VECTORS = {
@@ -42,6 +51,7 @@ export class Game {
     this.paused = false;
     this.endMode = 'standard';     // standard | wrap | revive
     this.theme = 'cheery';
+    this.totalFoodEver = 0;
     this.tickInterval = TICK_INTERVALS[0];
     this.accumulator = 0;
     this.reviveInvincibleMs = 0;   // > 0 表示无敌期内
@@ -79,8 +89,20 @@ export class Game {
   }
 
   _pickHead() {
-    const pool = HEAD_POOLS[this.theme] || HEAD_POOLS.cheery;
+    const base = HEAD_POOLS[this.theme] || HEAD_POOLS.cheery;
+    let pool = base.slice();
+    const total = this.totalFoodEver || 0;
+    if (total >= 100 && HEAD_POOLS_TIER2[this.theme]) {
+      pool = pool.concat(HEAD_POOLS_TIER2[this.theme]);
+    }
+    if (total >= 500 && HEAD_POOLS_TIER3[this.theme]) {
+      pool = pool.concat(HEAD_POOLS_TIER3[this.theme]);
+    }
     return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  setTotalFood(n) {
+    this.totalFoodEver = Math.max(0, n | 0);
   }
 
   setTheme(theme) {
