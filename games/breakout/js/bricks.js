@@ -4,11 +4,11 @@
 // CSS variable key 由 render 读 --brick-{value}
 
 // 权重设计：因为多血砖 (HP=2/3) 在场上停留更久，"视觉占比" = weight × HP / sum(weight × HP)。
-// 目标视觉占比上限：黄 ≤ 25%、红 ≤ 10%。
-// weight [14, 9, 3, 1] → spawn 比 52/33/11/4 → 视觉比 44/28/19/9.4 (红 9.4% 黄 19%，都达标)
+// 目标视觉占比上限：黄 ≤ 10%、红 ≤ 5%。
+// weight [33, 21, 3, 1] → spawn 比 57/36/5/2 → 视觉比 52/33/9.5/4.8 (红黄都达标)
 export const BRICK_DEFS = [
-  { value: 1, weight: 14, cssVar: '--brick-1', hp: 1 },
-  { value: 2, weight:  9, cssVar: '--brick-2', hp: 1 },
+  { value: 1, weight: 33, cssVar: '--brick-1', hp: 1 },
+  { value: 2, weight: 21, cssVar: '--brick-2', hp: 1 },
   { value: 3, weight:  3, cssVar: '--brick-3', hp: 2 },
   { value: 5, weight:  1, cssVar: '--brick-5', hp: 3 },
 ];
