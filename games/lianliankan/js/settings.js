@@ -29,6 +29,17 @@ export class Settings {
       if (raw) this.state = { ...DEFAULTS, ...JSON.parse(raw) };
       const rawHi = localStorage.getItem(KEY_HIGH);
       if (rawHi) this.highScore = { ...this.highScore, ...JSON.parse(rawHi) };
+      this._syncScalarHigh();  // 兜底：旧版本升级时只有嵌套 highScore 没有 .scalar
+    } catch (e) {}
+  }
+
+  _syncScalarHigh() {
+    try {
+      let max = 0;
+      for (const d of Object.keys(this.highScore)) {
+        if (this.highScore[d].bestScore > max) max = this.highScore[d].bestScore;
+      }
+      localStorage.setItem('lianliankan.highScore.scalar', String(max));
     } catch (e) {}
   }
 
@@ -74,15 +85,10 @@ export class Settings {
       cur.fastestMs = elapsedMs; changed = true;
     }
     this.highScore[difficulty] = cur;
-    if (changed) this.save();
-    // 给首页卡片用：所有档的 bestScore 之最大值（标量）
-    try {
-      let max = 0;
-      for (const d of Object.keys(this.highScore)) {
-        if (this.highScore[d].bestScore > max) max = this.highScore[d].bestScore;
-      }
-      localStorage.setItem('lianliankan.highScore.scalar', String(max));
-    } catch (e) {}
+    if (changed) {
+      this.save();
+      this._syncScalarHigh();  // 标量给首页卡片用
+    }
     return changed;
   }
 
