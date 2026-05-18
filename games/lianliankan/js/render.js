@@ -5,8 +5,9 @@ export class Renderer {
   /**
    * @param {HTMLElement} boardEl - #board (CSS grid)
    * @param {HTMLCanvasElement} overlayEl - #overlay
+   * @param {object} [effects] - 可选 Effects 实例（粒子）
    */
-  constructor(boardEl, overlayEl) {
+  constructor(boardEl, overlayEl, effects) {
     this.boardEl = boardEl;
     this.overlayEl = overlayEl;
     this.ctx = overlayEl.getContext('2d');
@@ -14,6 +15,7 @@ export class Renderer {
     this.tileEls = [];  // 1D index = r * (cols+2) + c；只用内部坐标
     this.game = null;
     this._overlayDrawables = [];  // {kind:'path', vertices, startMs, durMs} 之类
+    this.effects = effects;
     this._onResize = () => this._resizeOverlay();
     this._resizeBound = false;
   }
@@ -196,6 +198,11 @@ export class Renderer {
           return true;
         });
       }
+    }
+
+    // 粒子（放在守卫块之外，无路径但有粒子时也能画）
+    if (this.effects) {
+      this.effects.draw(this.ctx, this.dpr);
     }
   }
 }
