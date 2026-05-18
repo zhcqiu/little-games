@@ -90,25 +90,6 @@ export class Settings {
     for (const btn of endSeg.querySelectorAll('button')) {
       btn.classList.toggle('active', this.state.endMode === btn.dataset.val);
     }
-
-    const themeSeg = document.getElementById('theme-seg');
-    for (const btn of themeSeg.querySelectorAll('button')) {
-      btn.classList.toggle('active', this.state.theme === btn.dataset.val);
-    }
-
-    const fxSeg = document.getElementById('fx-seg');
-    if (fxSeg) {
-      for (const btn of fxSeg.querySelectorAll('button')) {
-        btn.classList.toggle('active', this.state.fxLevel === btn.dataset.val);
-      }
-    }
-
-    const sfxBtn = document.getElementById('sfx-toggle');
-    sfxBtn.classList.toggle('active', this.state.sfxOn);
-    sfxBtn.textContent = this.state.sfxOn ? '🔊' : '🔇';
-    const bgmBtn = document.getElementById('bgm-toggle');
-    bgmBtn.classList.toggle('active', this.state.bgmOn);
-    bgmBtn.textContent = this.state.bgmOn ? '🎵' : '🔕';
   }
 
   bindUi() {
@@ -129,29 +110,6 @@ export class Settings {
       if (e.target.tagName === 'BUTTON') {
         this.set('endMode', e.target.dataset.val);
       }
-    });
-
-    document.getElementById('theme-seg').addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') {
-        this.set('theme', e.target.dataset.val);
-      }
-    });
-
-    const fxSeg = document.getElementById('fx-seg');
-    if (fxSeg) {
-      fxSeg.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
-          this.set('fxLevel', e.target.dataset.val);
-        }
-      });
-    }
-
-    document.getElementById('sfx-toggle').addEventListener('click', () => {
-      this.set('sfxOn', !this.state.sfxOn);
-    });
-
-    document.getElementById('bgm-toggle').addEventListener('click', () => {
-      this.set('bgmOn', !this.state.bgmOn);
     });
 
     document.getElementById('restart-btn').addEventListener('click', () => {

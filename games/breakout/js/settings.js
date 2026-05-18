@@ -73,20 +73,12 @@ export class Settings {
   }
 
   _syncUi() {
-    document.querySelectorAll('#theme-seg button').forEach((b) =>
-      b.classList.toggle('active', b.dataset.val === this.state.theme));
     document.querySelectorAll('#end-mode-seg button').forEach((b) =>
       b.classList.toggle('active', b.dataset.val === this.state.endMode));
-    document.querySelectorAll('#fx-seg button').forEach((b) =>
-      b.classList.toggle('active', b.dataset.val === this.state.fxLevel));
     document.querySelectorAll('#descent-rate-seg button').forEach((b) =>
       b.classList.toggle('active', b.dataset.val === this.state.descentRate));
     const speedSlider = document.getElementById('speed-slider');
     if (speedSlider) speedSlider.value = String(this.state.speed);
-    const sfx = document.getElementById('sfx-toggle');
-    if (sfx) { sfx.classList.toggle('active', this.state.sfxOn); sfx.textContent = this.state.sfxOn ? '🔊' : '🔇'; }
-    const bgm = document.getElementById('bgm-toggle');
-    if (bgm) { bgm.classList.toggle('active', this.state.bgmOn); bgm.textContent = this.state.bgmOn ? '🎵' : '🔕'; }
   }
 
   bindUi() {
@@ -98,9 +90,7 @@ export class Settings {
         });
       });
     };
-    wireSeg('theme-seg', 'theme');
     wireSeg('end-mode-seg', 'endMode');
-    wireSeg('fx-seg', 'fxLevel');
     wireSeg('descent-rate-seg', 'descentRate');
 
     const slider = document.getElementById('speed-slider');
@@ -109,16 +99,5 @@ export class Settings {
         this.set('speed', parseInt(slider.value, 10));
       });
     }
-
-    const sfx = document.getElementById('sfx-toggle');
-    if (sfx) sfx.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      this.set('sfxOn', !this.state.sfxOn);
-    });
-    const bgm = document.getElementById('bgm-toggle');
-    if (bgm) bgm.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      this.set('bgmOn', !this.state.bgmOn);
-    });
   }
 }

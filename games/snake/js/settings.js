@@ -95,31 +95,11 @@ export class Settings {
         btn.classList.toggle('active', btn.dataset.val === String(val));
       }
     };
-    setSeg('theme-seg',    this.state.theme);
     setSeg('end-mode-seg', this.state.endMode);
-    setSeg('fx-seg',       this.state.fxLevel);
     setSeg('food-edge-seg', this.state.foodEdgeMargin);
-
-    const sfxBtn = document.getElementById('sfx-toggle');
-    if (sfxBtn) {
-      sfxBtn.classList.toggle('active', this.state.sfxOn);
-      sfxBtn.textContent = this.state.sfxOn ? '🔊' : '🔇';
-    }
-    const bgmBtn = document.getElementById('bgm-toggle');
-    if (bgmBtn) {
-      bgmBtn.classList.toggle('active', this.state.bgmOn);
-      bgmBtn.textContent = this.state.bgmOn ? '🎵' : '🔕';
-    }
   }
 
   bindUi() {
-    // 主题
-    const themeSeg = document.getElementById('theme-seg');
-    themeSeg?.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (btn?.dataset.val) this.set('theme', btn.dataset.val);
-    });
-
     // 速度
     document.getElementById('speed-slider')?.addEventListener('input', (e) => {
       this.set('speed', parseInt(e.target.value, 10) || 1);
@@ -135,20 +115,6 @@ export class Settings {
     document.getElementById('food-edge-seg')?.addEventListener('click', (e) => {
       const btn = e.target.closest('button');
       if (btn?.dataset.val !== undefined) this.set('foodEdgeMargin', parseInt(btn.dataset.val, 10) || 0);
-    });
-
-    // 音效 / BGM
-    document.getElementById('sfx-toggle')?.addEventListener('click', () => {
-      this.set('sfxOn', !this.state.sfxOn);
-    });
-    document.getElementById('bgm-toggle')?.addEventListener('click', () => {
-      this.set('bgmOn', !this.state.bgmOn);
-    });
-
-    // 动效强度
-    document.getElementById('fx-seg')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (btn?.dataset.val) this.set('fxLevel', btn.dataset.val);
     });
 
     // 打开 / 关闭
