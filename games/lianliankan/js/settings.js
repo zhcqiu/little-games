@@ -120,6 +120,7 @@ export class Settings {
     });
     document.getElementById('timed-toggle')?.addEventListener('click', () => {
       this.set('timed', !this.state.timed);
+      this._cb.onTimedChange?.(this.state.timed);
     });
     document.getElementById('restart-btn')?.addEventListener('click', () => {
       this._cb.onRestart?.();

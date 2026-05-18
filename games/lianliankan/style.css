@@ -31,6 +31,11 @@ body {
 .score-block { display: flex; gap: 14px; font-weight: bold; font-size: 18px; }
 .score-block .emoji { margin-right: 2px; }
 .score-block .hidden { display: none; }
+.score-block #timer-block.warn { color: #ff5252; animation: timer-warn-pulse 1s ease-in-out infinite; }
+@keyframes timer-warn-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
 #top-bar button {
   width: 44px; height: 44px; margin-left: 4px;
   background: var(--button-bg); color: var(--button-bg-text);
@@ -116,6 +121,7 @@ main {
   font-size: 16px; cursor: pointer;
 }
 #bottom-bar button.hidden { display: none; }
+#bottom-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ───── 面板 ───── */
 .panel {

@@ -220,6 +220,7 @@ export class Game {
       combo: this.combo,
       elapsedMs: this.elapsedMs,
       lastMatchAtMs: this.lastMatchAtMs,
+      timed: this.timed,
     };
   }
 
@@ -233,7 +234,8 @@ export class Game {
 
     this.difficulty = snap.difficulty;
     this.memory = d.memory;
-    this.timed = d.timed;
+    // 优先用 snap.timed（用户偏好），缺失则用档默认。master 永远 timed=true。
+    this.timed = d.timed || (snap.timed ?? false);
     this.board = new Board(snap.difficulty, this.rng);  // 重建以取尺寸
     for (let i = 0; i < snap.boardData.length; i++) this.board.data[i] = snap.boardData[i];
     if (this.board.flipped && Array.isArray(snap.flippedData)) {

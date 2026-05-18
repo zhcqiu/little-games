@@ -29,6 +29,10 @@ const settings = new Settings(game, audio, effects, {
   onHelpClose: () => releasePause('help'),
   onRestart: askRestart,
   onDifficultyChange: askDifficultyChange,
+  onTimedChange: (timed) => {
+    // 计时切换实时生效到当前 game（master 永远 timed=true，不受 toggle 影响）
+    game.timed = DIFFICULTIES[game.difficulty].timed || timed;
+  },
 });
 settings.load();
 settings.apply();
@@ -237,20 +241,31 @@ function syncComboUi() {
 }
 
 function syncTimerUi() {
-  if (!game.timed && game.difficulty !== 'master' && !settings.get('timed')) {
+  if (!game.timed) {
     timerBlock.classList.add('hidden');
+    timerBlock.classList.remove('warn');
     return;
   }
   timerBlock.classList.remove('hidden');
-  const sec = Math.max(0, Math.floor(game.elapsedMs / 1000));
+  // 计时模式显示倒计时（剩余），不显示已用时间——对小朋友更直观
+  const limitMs = game._timeLimitMs();
+  const remainMs = Math.max(0, limitMs - game.elapsedMs);
+  const sec = Math.ceil(remainMs / 1000);
   const min = Math.floor(sec / 60);
   const ss = String(sec % 60).padStart(2, '0');
   timerEl.textContent = `${min}:${ss}`;
+  // 最后 30s 变红警示
+  timerBlock.classList.toggle('warn', remainMs <= 30_000 && remainMs > 0);
 }
 
 // 提示 / 洗牌
-document.getElementById('hint-btn').addEventListener('click', () => {
+const HINT_COOLDOWN_MS = 4000;
+let hintCooldownUntil = 0;
+const hintBtn = document.getElementById('hint-btn');
+hintBtn.addEventListener('click', () => {
   if (game.memory) return;  // 入门档不显示但兜底
+  const now = performance.now();
+  if (now < hintCooldownUntil) return;  // 冷却中
   audio.unlock();
   const sol = game.useHint();
   if (sol) {
@@ -258,6 +273,10 @@ document.getElementById('hint-btn').addEventListener('click', () => {
     renderer.clearHint();
     renderer.applyHint(sol.a, sol.b);
     setTimeout(() => renderer.clearHint(), 800);
+    // 启动冷却：按钮变灰 + 不可点 4s
+    hintCooldownUntil = now + HINT_COOLDOWN_MS;
+    hintBtn.disabled = true;
+    setTimeout(() => { hintBtn.disabled = false; }, HINT_COOLDOWN_MS);
   }
 });
 document.getElementById('shuffle-btn').addEventListener('click', () => {

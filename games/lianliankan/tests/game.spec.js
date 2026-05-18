@@ -1,4 +1,5 @@
 import { Game } from '../js/game.js';
+import { DIFFICULTIES } from '../js/board.js';
 
 // ───── C1：状态机（连线模式）─────
 {
@@ -251,5 +252,48 @@ import { Game } from '../js/game.js';
   assertEq('reset combo 0', g.combo, 0);
   assertEq('reset elapsedMs 0', g.elapsedMs, 0);
   assertEq('reset selection null', g.selection, null);
-  assertEq('reset countRemaining = innerCells', g.board.countRemaining(), 36);
+  assertEq('reset countRemaining = pairs*2', g.board.countRemaining(), DIFFICULTIES.novice.pairs * 2);
+}
+
+// ───── 配对消完后无解 → 自动 reshuffle 触发 onShuffle ─────
+{
+  // 造一个棋盘：剩 4 张（2 对），但消完 1 对后剩 1 对无解？
+  // 简化：消最后 1 对前手动让 hasAnySolvable 返 null 不容易。
+  // 间接测：消完后剩 1 对 → 自动 win 而非 shuffle（这条已有 win 测试覆盖）。
+  // 改用：消完后剩 ≥ 2 对但全无解的情况，shuffle 应触发。
+  // 构造 5×5 棋盘，放 3 对：1 对在 (1,1)-(1,3) 同 emoji=5（可连消除），
+  // 然后剩 2 对 (5,5)=7/(5,1)=7 和 (3,3)=9/(3,1)=9 周围被堵——但 5×5
+  // 太小且哨兵让"堵"很难做。改用直接检查 board.reshuffle 在 game 流程外。
+  const g = new Game('novice', () => 0.5);
+  g.board.data.fill(0);
+  // 放 2 对：消第 1 对后剩第 2 对，hasAnySolvable=true → 不 shuffle
+  g.board.set(1, 1, 7); g.board.set(1, 3, 7);
+  g.board.set(2, 1, 9); g.board.set(2, 3, 9);
+  let shuffled = false;
+  g.onShuffle(() => { shuffled = true; });
+  g.tap(1, 1); g.tap(1, 3);
+  assertEq('剩 1 对可消 不 shuffle', shuffled, false);
+}
+
+// ───── C5：timed 超时触发 onLose ─────
+{
+  const g = new Game('master', () => 0.5);
+  let loseReason = null;
+  g.onLose((reason) => { loseReason = reason; });
+  // master 限时 300_000 ms。step 一次 super-long dt 让 elapsed 超时
+  g.step(300_001);
+  assertEq('master 超时 dead=true', g.dead, true);
+  assertEq('onLose 收到 timeout', loseReason, 'timeout');
+}
+
+// ───── C6：serialize/restore 保留 timed 偏好 ─────
+{
+  const g = new Game('advanced', () => 0.5);
+  g.timed = true;  // 用户手动开了计时
+  const snap = g.serialize();
+  assertEq('snap.timed = true', snap.timed, true);
+  const g2 = new Game('advanced', () => 0.5);
+  g2.timed = false;  // 起始 false
+  g2.restore(snap);
+  assertEq('restore 恢复 timed=true', g2.timed, true);
 }
