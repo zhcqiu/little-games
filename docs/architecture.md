@@ -217,6 +217,37 @@ export class Audio extends AudioEngine {
 
 详细 API 见源码内 JSDoc 注释。
 
+### 4.3 `themes.css` — 6 主题 CSS 变量
+
+包含 `:root`（默认童趣）和 5 个 `body[data-theme="..."]` 块，定义 16 个共享 CSS 变量（`--bg`、`--primary`、`--canvas-bg`、`--canvas-border` 等）。
+
+**用法**：游戏的 `style.css` 第一行：
+
+```css
+@import url('../../shared/themes.css');
+```
+
+之后正常用 `var(--primary)` 即可。需要添加游戏专属变量（如 breakout 的 `--brick-1`）的话，直接在自家 style.css 里追加 `body[data-theme="X"] { --brick-1: ... }` 即可，CSS 后定义优先。
+
+### 4.4 `bgm-themes.js` — 6 主题 BGM 配置
+
+每主题一段独立旋律：melody/bass/beat/wave-type，对应 CSS 主题色调。
+
+**用法**：
+
+```js
+import { BGM_THEMES, THEME_NAMES } from '../../../shared/bgm-themes.js';
+
+// 在 audio.js 里：
+_startBgm() {
+  const cfg = BGM_THEMES[this.bgmTheme] || BGM_THEMES.cheery;
+  // 用 cfg.melody / cfg.bass / cfg.beatMs / cfg.melodyType / cfg.bassType
+  // 详见 games/snake/js/audio.js 实现
+}
+```
+
+加新主题：在 `bgm-themes.js` 加键，并在 `shared/themes.css` 加对应 `body[data-theme="X"]` 块。
+
 ## 5. PWA 与离线策略
 
 ### 5.1 根 Service Worker

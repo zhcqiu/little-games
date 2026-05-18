@@ -1,0 +1,129 @@
+/* shared/themes.css — 6 主题色彩变量
+ *
+ * 由 games/<name>/style.css 通过 @import 引用。
+ * 每个主题定义 16 个 CSS variables：
+ *   --bg, --bg-2, --primary, --primary-dark,
+ *   --text, --text-dim, --panel-bg, --panel-text,
+ *   --button-bg, --button-bg-text, --button-active,
+ *   --shadow, --canvas-bg, --canvas-grid, --canvas-border
+ *
+ * 6 个主题：cheery（默认）/ candy / forest / ocean / space / night
+ *
+ * 游戏想加专属变量（如 breakout 的 --brick-1）：
+ *   1) 不要改这里
+ *   2) 在自家 style.css 里 @import 这个文件后，再写 `body[data-theme="X"] { --brick-1: ... }` 追加
+ */
+
+:root {
+  /* 默认主题 = 童趣（明快） */
+  --bg: #fff8e1;
+  --bg-2: #ff8a65;
+  --primary: #ff7043;
+  --primary-dark: #e64a19;
+  --text: #ffffff;
+  --text-dim: #ffe0b2;
+  --panel-bg: #ffecb3;
+  --panel-text: #4e342e;
+  --button-bg: #ffffff;
+  --button-bg-text: #5d4037;
+  --button-active: #ff7043;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(255, 112, 67, 0.16);
+  --canvas-border: #ff7043;
+}
+
+body[data-theme="candy"] {
+  --bg: #fce4ec;
+  --bg-2: #ec407a;
+  --primary: #ec407a;
+  --primary-dark: #ad1457;
+  --text: #ffffff;
+  --text-dim: #f8bbd0;
+  --panel-bg: #f8bbd0;
+  --panel-text: #4a148c;
+  --button-bg: #ffffff;
+  --button-bg-text: #4a148c;
+  --button-active: #ec407a;
+  --shadow: 0 4px 16px rgba(236, 64, 122, 0.3);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(236, 64, 122, 0.16);
+  --canvas-border: #ec407a;
+}
+
+body[data-theme="forest"] {
+  --bg: #e8f5e9;
+  --bg-2: #43a047;
+  --primary: #2e7d32;
+  --primary-dark: #1b5e20;
+  --text: #ffffff;
+  --text-dim: #c8e6c9;
+  --panel-bg: #c8e6c9;
+  --panel-text: #1b5e20;
+  --button-bg: #ffffff;
+  --button-bg-text: #1b5e20;
+  --button-active: #43a047;
+  --shadow: 0 4px 16px rgba(46, 125, 50, 0.25);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(46, 125, 50, 0.16);
+  --canvas-border: #43a047;
+}
+
+body[data-theme="ocean"] {
+  --bg: #e0f7fa;
+  --bg-2: #00acc1;
+  --primary: #0097a7;
+  --primary-dark: #006064;
+  --text: #ffffff;
+  --text-dim: #b2ebf2;
+  --panel-bg: #b2ebf2;
+  --panel-text: #006064;
+  --button-bg: #ffffff;
+  --button-bg-text: #006064;
+  --button-active: #00acc1;
+  --shadow: 0 4px 16px rgba(0, 151, 167, 0.25);
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(0, 151, 167, 0.16);
+  --canvas-border: #00acc1;
+}
+
+body[data-theme="space"] {
+  --bg: #311b92;
+  --bg-2: #5e35b1;
+  --primary: #b388ff;
+  --primary-dark: #7c4dff;
+  --text: #ffffff;
+  --text-dim: #d1c4e9;
+  --panel-bg: #4527a0;
+  --panel-text: #ffffff;
+  --button-bg: #5e35b1;
+  --button-bg-text: #ffffff;
+  --button-active: #b388ff;
+  --shadow: 0 4px 20px rgba(179, 136, 255, 0.4);
+  --canvas-bg: #1a0a4a;
+  --canvas-grid: rgba(179, 136, 255, 0.12);
+  --canvas-border: #b388ff;
+}
+
+body[data-theme="night"] {
+  --bg: #1a1a2e;
+  --bg-2: #16213e;
+  --primary: #42a5f5;
+  --primary-dark: #1976d2;
+  --text: #ffffff;
+  --text-dim: #b0bec5;
+  --panel-bg: #263858;
+  --panel-text: #ffffff;
+  --button-bg: #37475e;
+  --button-bg-text: #ffffff;
+  --button-active: #42a5f5;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --canvas-bg: #16213e;
+  --canvas-grid: rgba(255, 255, 255, 0.04);
+  --canvas-border: #42a5f5;
+}
+
+/* 暗色主题（night, space）补：help-section 半透明白卡片不够亮 */
+body[data-theme="space"] .help-section {
+  background: rgba(255, 255, 255, 0.06);
+}
