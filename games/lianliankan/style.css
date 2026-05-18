@@ -81,10 +81,8 @@ main {
 .tile.hint { animation: hint-pulse 800ms ease-in-out infinite; }
 .tile.miss { animation: miss-flash 200ms ease; }
 .tile.clearing { transform: scale(0.2); opacity: 0; pointer-events: none; }
-.tile.face-down { background: var(--primary); color: var(--text); }
-.tile.face-down::after { content: "❓"; }
-.tile.face-down { font-size: 0; }
-.tile.face-down::after { font-size: clamp(20px, 6vmin, 56px); }
+.tile.face-down { background: var(--primary); color: var(--text); font-size: 0; }
+.tile.face-down::after { content: "❓"; font-size: clamp(20px, 6vmin, 56px); }
 
 @keyframes hint-pulse {
   0%, 100% { background: var(--canvas-bg); }
