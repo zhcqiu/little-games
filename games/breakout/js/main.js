@@ -250,7 +250,17 @@ if (snap && snap.score > 0) {
   resumePopup.classList.remove('hidden');
   document.getElementById('resume-continue').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (!game.restore(snap)) return;
+    if (!game.restore(snap)) {
+      // 存档损坏（手动改 localStorage / 跨版本不兼容）→ 当作新开
+      clearSave();
+      resumePopup.classList.add('hidden');
+      resumePending = false;
+      resetHighScoreTracker();
+      audio.unlock();
+      if (settings.get('bgmOn')) audio.startBgm();
+      if (!manualPaused) game.setPaused(false);
+      return;
+    }
     resumePopup.classList.add('hidden');
     resumePending = false;
     resetHighScoreTracker();

@@ -366,10 +366,15 @@ export class GameLogic {
 
   restore(snap) {
     if (!snap || snap.v !== 1) return false;
+    // 维度校验：corrupt 存档（手改 localStorage / 跨版本不兼容）不应让游戏崩
+    if (!Array.isArray(snap.board) || snap.board.length !== ROWS) return false;
+    if (!snap.board.every((row) => Array.isArray(row) && row.length === COLS)) return false;
+    if (!Array.isArray(snap.balls) || snap.balls.length === 0) return false;
+    if (!snap.paddle || typeof snap.paddle.col !== 'number') return false;
     this.score = snap.score;
     this.combo = snap.combo;
-    this.endMode = snap.endMode;
-    this.speedLevel = snap.speedLevel;
+    this.endMode = snap.endMode === 'standard' ? 'standard' : 'endless';
+    this.speedLevel = Math.max(1, Math.min(5, snap.speedLevel | 0)) || 2;
     this.board = snap.board.map((row) => row.slice());
     this.paddle = { ...snap.paddle };
     this.balls = snap.balls.map((b) => ({ ...b }));

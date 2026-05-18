@@ -525,6 +525,31 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   eq('breakout restore combo', g2.combo, 4);
 }
 
+// restore() 维度校验（regression: Codex I-2）：
+{
+  const g = new BreakoutGame();
+  // 缺 v
+  truthy('restore null returns false',      g.restore(null) === false);
+  truthy('restore wrong version returns false', g.restore({ v: 99 }) === false);
+  // board 行数错（10 行而非 18）
+  const badBoard = {
+    v: 1,
+    score: 0, combo: 1, endMode: 'endless', speedLevel: 2,
+    board: Array.from({ length: 10 }, () => Array(12).fill(0)),
+    paddle: { col: 6, widthMul: 1, widthRemainMs: 0 },
+    balls: [{ x: 6, y: 10, vx: 0, vy: 0 }],
+    fallingItem: null, brickDescentTimer: 1000, ballRespawnTimer: 0,
+    slowRemainMs: 0, gameOver: false,
+  };
+  truthy('restore wrong row count returns false', g.restore(badBoard) === false);
+  // board 列数错
+  const badCols = { ...badBoard, board: Array.from({ length: 18 }, () => Array(8).fill(0)) };
+  truthy('restore wrong col count returns false', g.restore(badCols) === false);
+  // balls 空
+  const noBalls = { ...badBoard, board: Array.from({ length: 18 }, () => Array(12).fill(0)), balls: [] };
+  truthy('restore empty balls returns false', g.restore(noBalls) === false);
+}
+
 // reset() 应清掉 paused（regression: Codex C-2）：
 // game-over 期间打开 help/settings 再关闭会留下 paused=true，replay 后必须解锁
 {
