@@ -542,6 +542,25 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   truthy('slow descent: ~3500 left after 5s', Math.abs(g2.brickDescentTimer - 3500) < 50);
 }
 
+// 红/黄砖初始保底（regression: 用户反馈"低比重导致部分场景没有红黄"）
+{
+  let withRed = 0, withYellow = 0;
+  for (let i = 0; i < 50; i++) {
+    const g = new BreakoutGame();
+    let r = 0, y = 0;
+    for (let row = 0; row < 4; row++) {
+      for (let c = 0; c < 12; c++) {
+        if (g.board[row][c] === 5) r++;
+        if (g.board[row][c] === 3) y++;
+      }
+    }
+    if (r >= 1) withRed++;
+    if (y >= 2) withYellow++;
+  }
+  eq('initial: all 50 sessions have ≥1 red', withRed, 50);
+  eq('initial: all 50 sessions have ≥2 yellow', withYellow, 50);
+}
+
 // 稀疏行：初始 4 行各 7-9 砖（不再满 12）
 {
   const g = new BreakoutGame();

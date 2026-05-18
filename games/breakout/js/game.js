@@ -56,6 +56,8 @@ export class GameLogic {
     this.comboDecayTimer = 0;        // > 0 时倒计时；归零自动 combo→1（防"闲"）
     this.bricksSinceLastPowerup = 0; // 自适应道具触发器（无道具时累计；满 22 强制掉）
     this._aimRefCol = null;          // 倒计时开始时板拍位置；离基准越远，发射角越偏
+    this._rowsSinceYellow = 0;       // 连续没出现黄砖 (value=3) 的行数；超阈值则下一行强制塞
+    this._rowsSinceRed = 0;          // 同上，红砖 (value=5)
 
     this._onBrick = null;
     this._onDrop = null;
@@ -95,6 +97,48 @@ export class GameLogic {
       const row = this._makeSparseRow();
       this.board[r] = row.values;
       this.brickHp[r] = row.hps;
+    }
+    // 保底：初始 4 行至少 2 黄 + 1 红，让每个场景开局都有视觉变化
+    this._ensureMinBricks(0, INITIAL_BRICK_ROWS, { 3: 2, 5: 1 });
+    this._rowsSinceYellow = 0;
+    this._rowsSinceRed = 0;
+  }
+
+  /**
+   * 在 [rowStart, rowEnd) 行范围内保证某些 value 的砖块最少出现 N 次。
+   * 不够时把随机 1/2 分蓝绿砖转换为目标砖（更新 board + brickHp 同步）。
+   */
+  _ensureMinBricks(rowStart, rowEnd, minCounts) {
+    const counts = {};
+    for (let r = rowStart; r < rowEnd; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const v = this.board[r][c];
+        if (v > 0) counts[v] = (counts[v] || 0) + 1;
+      }
+    }
+    for (const [valStr, needed] of Object.entries(minCounts)) {
+      const val = parseInt(valStr, 10);
+      const shortfall = needed - (counts[val] || 0);
+      if (shortfall <= 0) continue;
+      // 找 1/2 分砖作为候选（不动同等或更高的）
+      const candidates = [];
+      for (let r = rowStart; r < rowEnd; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (this.board[r][c] === 1 || this.board[r][c] === 2) {
+            candidates.push({ r, c });
+          }
+        }
+      }
+      // Fisher-Yates 抽 shortfall 个
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(this._rng() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      for (let i = 0; i < shortfall && i < candidates.length; i++) {
+        const { r, c } = candidates[i];
+        this.board[r][c] = val;
+        this.brickHp[r][c] = brickMaxHp(val);
+      }
     }
   }
 
@@ -391,6 +435,19 @@ export class GameLogic {
     const newRow = this._makeSparseRow();
     this.board[0] = newRow.values;
     this.brickHp[0] = newRow.hps;
+    // 保底：太多行没出现黄/红就强塞一个，避免长局看不到高价值砖
+    const hasYellow = newRow.values.includes(3);
+    const hasRed = newRow.values.includes(5);
+    this._rowsSinceYellow = hasYellow ? 0 : this._rowsSinceYellow + 1;
+    this._rowsSinceRed = hasRed ? 0 : this._rowsSinceRed + 1;
+    const forced = {};
+    if (this._rowsSinceYellow >= 4) forced[3] = 1;   // 黄至少每 4 行 1 个
+    if (this._rowsSinceRed >= 6) forced[5] = 1;      // 红至少每 6 行 1 个
+    if (Object.keys(forced).length > 0) {
+      this._ensureMinBricks(0, 1, forced);
+      if (forced[3]) this._rowsSinceYellow = 0;
+      if (forced[5]) this._rowsSinceRed = 0;
+    }
   }
 
   _handleTopOut() {
@@ -505,6 +562,8 @@ export class GameLogic {
     this.comboDecayTimer = 0;
     this.bricksSinceLastPowerup = 0;
     this._aimRefCol = null;
+    this._rowsSinceYellow = 0;
+    this._rowsSinceRed = 0;
   }
 
   setSpeedLevel(level) {

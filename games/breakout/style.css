@@ -15,41 +15,45 @@
   --ball-stroke: #ffffff;
 }
 
+/* 单色系主题里，brick-3 (黄/2击) 和 brick-5 (红/3击) 改用 accent 色让玩家
+ * 一眼看出"高价值砖"。Brick-1/2 仍跟主题同色系（都是 1 击碎，差异不重要）。
+ */
+
 body[data-theme="candy"] {
-  --brick-1: #f8bbd0;
-  --brick-2: #f48fb1;
-  --brick-3: #f06292;
-  --brick-5: #c2185b;
+  --brick-1: #f8bbd0;       /* 浅粉 */
+  --brick-2: #f06292;       /* 玫红 */
+  --brick-3: #ffb74d;       /* 暖橙（跳出粉色系）*/
+  --brick-5: #c62828;       /* 深红（VIP）*/
   --paddle: #ec407a;
   --ball: #4a148c;          /* 粉背景：深紫球 */
   --ball-stroke: #ffffff;
 }
 
 body[data-theme="forest"] {
-  --brick-1: #aed581;
-  --brick-2: #81c784;
-  --brick-3: #66bb6a;
-  --brick-5: #2e7d32;
+  --brick-1: #aed581;       /* 浅绿 */
+  --brick-2: #66bb6a;       /* 中绿 */
+  --brick-3: #ffeb3b;       /* 鲜黄（跳出绿色系）*/
+  --brick-5: #d84315;       /* 橙红（VIP）*/
   --paddle: #43a047;
   --ball: #1b5e20;          /* 浅绿背景：深绿球 */
   --ball-stroke: #ffffff;
 }
 
 body[data-theme="ocean"] {
-  --brick-1: #80deea;
-  --brick-2: #4dd0e1;
-  --brick-3: #26c6da;
-  --brick-5: #00838f;
+  --brick-1: #80deea;       /* 浅青 */
+  --brick-2: #26c6da;       /* 中青 */
+  --brick-3: #ffd54f;       /* 黄（跳出青色系）*/
+  --brick-5: #ff5722;       /* 橘红（VIP）*/
   --paddle: #00acc1;
   --ball: #01579b;          /* 浅青背景：深蓝球 */
   --ball-stroke: #ffffff;
 }
 
 body[data-theme="space"] {
-  --brick-1: #9575cd;
-  --brick-2: #7e57c2;
-  --brick-3: #b388ff;
-  --brick-5: #ff80ab;
+  --brick-1: #9575cd;       /* 浅紫 */
+  --brick-2: #b388ff;       /* 亮紫 */
+  --brick-3: #ffd600;       /* 金（深紫底大对比）*/
+  --brick-5: #ff1744;       /* 鲜红（VIP）*/
   --paddle: #b388ff;
   --ball: #ffeb3b;          /* 深紫背景：亮黄球 */
   --ball-stroke: #311b92;
