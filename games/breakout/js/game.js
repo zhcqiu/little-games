@@ -34,6 +34,7 @@ export class GameLogic {
     this.gameOver = false;
     this.endMode = 'endless';     // 'standard' | 'endless'
     this.speedLevel = 2;
+    this._rng = Math.random;     // 必须在 _seedInitialBricks 之前——后者会用
 
     this.board = this._newBoard();
     this._seedInitialBricks();
@@ -50,6 +51,9 @@ export class GameLogic {
     this.descentRateMul = 1.0;   // settings 可调（默认 1.0；UI 默认设 0.6 让初次体验更友好）
     this.slowRemainMs = 0;
     this.fallingItem = null;
+    this.sessionSpeedBonus = 1.0;   // 本局得分驱动的球速倍率（1.0 → 1.4 渐增）
+    this.comboDecayTimer = 0;        // > 0 时倒计时；归零自动 combo→1（防"闲"）
+    this.bricksSinceLastPowerup = 0; // 自适应道具触发器（无道具时累计；满 22 强制掉）
 
     this._onBrick = null;
     this._onDrop = null;
@@ -59,19 +63,31 @@ export class GameLogic {
     this._onTopOut = null;
     this._onScoreChange = null;
     this._onComboChange = null;
-
-    this._rng = Math.random;
   }
 
   _newBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   }
 
+  /** 稀疏的一行：12 列里随机 7-9 个填砖，其余空格。让玩家有"喘息列"。 */
+  _makeSparseRow() {
+    const count = 7 + Math.floor(this._rng() * 3);   // 7..9
+    const positions = Array.from({ length: COLS }, (_, i) => i);
+    // Fisher-Yates 随机抽 count 个位置
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(this._rng() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+    const row = Array(COLS).fill(0);
+    for (let i = 0; i < count; i++) {
+      row[positions[i]] = randomBrickValue(this._rng);
+    }
+    return row;
+  }
+
   _seedInitialBricks() {
     for (let r = 0; r < INITIAL_BRICK_ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        this.board[r][c] = randomBrickValue(this._rng);
-      }
+      this.board[r] = this._makeSparseRow();
     }
   }
 
@@ -120,6 +136,15 @@ export class GameLogic {
       if (this.paddle.widthRemainMs === 0) {
         this.paddle.widthMul = 1;
         this.setPaddleCol(this.paddle.col);
+      }
+    }
+
+    // Combo 衰减：超过 4s 没击中砖 → combo 归 1（防玩家"闲游"刷高 combo）
+    if (this.comboDecayTimer > 0 && this.combo > 1) {
+      this.comboDecayTimer -= dt;
+      if (this.comboDecayTimer <= 0) {
+        this.combo = 1;
+        if (this._onComboChange) this._onComboChange(this.combo);
       }
     }
 
@@ -258,15 +283,29 @@ export class GameLogic {
     this.board[row][col] = 0;
     this.score += value * this.combo;
     if (this.combo < 10) this.combo++;
+    this.comboDecayTimer = 4000;   // 4s 无击中砖则 combo 归 1
     if (this._onScoreChange) this._onScoreChange(this.score);
     if (this._onComboChange) this._onComboChange(this.combo);
     if (this._onBrick) this._onBrick({ col, row, value });
 
-    // 8% 概率掉道具，且场上 ≤ 1
-    if (this.fallingItem === null && this._rng() < 0.08) {
-      const pool = ['wider', 'multi', 'slow'];
-      const type = pool[Math.floor(this._rng() * pool.length)];
-      this.fallingItem = { type, x: col + 0.5, y: row + 0.5 };
+    // 球速本局内随得分缓慢爬升（避免长局机械感）：每 300 分 +5%，上限 1.4×
+    const targetBonus = Math.min(1.4, 1 + Math.floor(this.score / 300) * 0.05);
+    if (targetBonus !== this.sessionSpeedBonus) {
+      const ratio = targetBonus / this.sessionSpeedBonus;
+      for (const b of this.balls) { b.vx *= ratio; b.vy *= ratio; }
+      this.sessionSpeedBonus = targetBonus;
+    }
+
+    // 道具掉落：基础 8% 概率；连续 22 砖没掉过道具时强制掉一个（自适应保底）
+    this.bricksSinceLastPowerup++;
+    if (this.fallingItem === null) {
+      const forced = this.bricksSinceLastPowerup >= 22;
+      if (forced || this._rng() < 0.08) {
+        const pool = ['wider', 'multi', 'slow'];
+        const type = pool[Math.floor(this._rng() * pool.length)];
+        this.fallingItem = { type, x: col + 0.5, y: row + 0.5 };
+        this.bricksSinceLastPowerup = 0;
+      }
     }
   }
 
@@ -300,6 +339,7 @@ export class GameLogic {
 
   _handleDrop() {
     this.combo = 1;
+    this.comboDecayTimer = 0;
     if (this._onComboChange) this._onComboChange(this.combo);
     if (this._onDrop) this._onDrop();
     this.balls = [this._spawnBall()];
@@ -319,11 +359,11 @@ export class GameLogic {
       this._handleTopOut();
       return;
     }
-    // 安全：所有砖下移 1 行 + 顶部新生成一行
+    // 安全：所有砖下移 1 行 + 顶部新生成一行（稀疏）
     for (let r = ROWS - 1; r > 0; r--) {
       for (let c = 0; c < COLS; c++) this.board[r][c] = this.board[r - 1][c];
     }
-    for (let c = 0; c < COLS; c++) this.board[0][c] = randomBrickValue(this._rng);
+    this.board[0] = this._makeSparseRow();
   }
 
   _handleTopOut() {
@@ -337,6 +377,7 @@ export class GameLogic {
     const empty = Array.from({ length: 9 }, () => Array(COLS).fill(0));
     this.board = [...upper, ...empty];
     this.combo = 1;
+    this.comboDecayTimer = 0;
     this.balls = [this._spawnBall()];
     this.ballRespawnTimer = 1500;
     if (this._onComboChange) this._onComboChange(this.combo);
@@ -349,7 +390,7 @@ export class GameLogic {
     for (const b of this.balls) {
       // 向上 ±45° 随机
       const angle = (this._rng() * 90 - 45) * Math.PI / 180;
-      const sp = baseSpeed * mul;
+      const sp = baseSpeed * mul * this.sessionSpeedBonus;
       b.vx = sp * Math.sin(angle);
       b.vy = -sp * Math.cos(angle);
     }
@@ -370,6 +411,9 @@ export class GameLogic {
       ballRespawnTimer: this.ballRespawnTimer,
       slowRemainMs: this.slowRemainMs,
       gameOver: this.gameOver,
+      sessionSpeedBonus: this.sessionSpeedBonus,
+      comboDecayTimer: this.comboDecayTimer,
+      bricksSinceLastPowerup: this.bricksSinceLastPowerup,
     };
   }
 
@@ -392,6 +436,9 @@ export class GameLogic {
     this.ballRespawnTimer = snap.ballRespawnTimer;
     this.slowRemainMs = snap.slowRemainMs;
     this.gameOver = !!snap.gameOver;
+    this.sessionSpeedBonus = snap.sessionSpeedBonus || 1.0;
+    this.comboDecayTimer = snap.comboDecayTimer || 0;
+    this.bricksSinceLastPowerup = snap.bricksSinceLastPowerup || 0;
     this._slowWasActive = this.slowRemainMs > 0;
     return true;
   }
@@ -410,6 +457,9 @@ export class GameLogic {
     this.slowRemainMs = 0;
     this._slowWasActive = false;
     this.fallingItem = null;
+    this.sessionSpeedBonus = 1.0;
+    this.comboDecayTimer = 0;
+    this.bricksSinceLastPowerup = 0;
   }
 
   setSpeedLevel(level) {

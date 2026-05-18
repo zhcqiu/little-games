@@ -96,6 +96,17 @@ export class Renderer {
     // 道具
     if (game.fallingItem) this._drawFallingItem(game.fallingItem);
 
+    // ⚠️ 砖块下移预警：descent timer 进入最后 600ms 时顶部闪 ⚠️，让玩家心理预期
+    if (game.brickDescentTimer > 0 && game.brickDescentTimer < 600) {
+      const t = (600 - game.brickDescentTimer) / 600;   // 0 → 1 越来越急
+      ctx.globalAlpha = 0.55 + 0.35 * Math.sin(t * Math.PI * 6);
+      ctx.font = `${this.cellSize * 0.9}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('⚠️', w / 2, 4);
+      ctx.globalAlpha = 1;
+    }
+
     // 球贴板倒计时数字
     if (game.ballRespawnTimer > 0) {
       const sec = Math.ceil(game.ballRespawnTimer / 1000);

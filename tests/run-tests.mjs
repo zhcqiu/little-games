@@ -542,6 +542,74 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   truthy('slow descent: ~3500 left after 5s', Math.abs(g2.brickDescentTimer - 3500) < 50);
 }
 
+// 稀疏行：初始 4 行各 7-9 砖（不再满 12）
+{
+  const g = new BreakoutGame();
+  for (let r = 0; r < 4; r++) {
+    const count = g.board[r].filter((v) => v > 0).length;
+    truthy(`row ${r} sparse (7-9 bricks)`, count >= 7 && count <= 9);
+  }
+  // row 4+ 应空
+  for (let r = 4; r < g.rows; r++) {
+    truthy(`row ${r} empty`, g.board[r].every((v) => v === 0));
+  }
+}
+
+// Combo 衰减：4s 不击中砖 → combo→1
+{
+  const g = new BreakoutGame();
+  g.combo = 5;
+  g.comboDecayTimer = 4000;
+  g.ballRespawnTimer = 0;
+  g.step(2000);
+  eq('combo not decayed yet at 2s', g.combo, 5);
+  g.step(2100);
+  eq('combo decayed at 4s', g.combo, 1);
+}
+
+// 球速升级：每 300 分 +5%，上限 1.4×
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  // 直接调内部函数，避开 sweep 物理（已被其他 test 覆盖）
+  g.combo = 10;
+  g.board[5][6] = 5;
+  g._onBrickDestroyed(6, 5);
+  eq('score 50 → bonus 1.0', g.sessionSpeedBonus, 1.0);
+  g.score = 300;
+  g.board[5][6] = 1;
+  g._onBrickDestroyed(6, 5);
+  // score = 300 + 1*10 = 310 → floor(310/300)=1 → bonus = 1.05
+  truthy('score 310 → bonus 1.05', Math.abs(g.sessionSpeedBonus - 1.05) < 0.001);
+  // 验证球速被乘了 1.05
+  g.score = 8000;
+  g.board[5][6] = 1;
+  g._onBrickDestroyed(6, 5);
+  // floor(8010/300)=26, 1 + 26*0.05 = 2.3, 但封顶 1.4
+  eq('score 8000+ → bonus capped at 1.4', g.sessionSpeedBonus, 1.4);
+}
+
+// 自适应道具：连续 22 砖未掉道具时强制掉
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  // 强制 rng 让正常路径永不触发 (>= 0.08)
+  g._rng = () => 0.5;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+
+  // 21 次击中：不应掉
+  for (let i = 0; i < 21; i++) {
+    g._onBrickDestroyed(0, 0);
+  }
+  truthy('21 bricks: no powerup yet', g.fallingItem === null);
+  truthy('counter at 21', g.bricksSinceLastPowerup === 21);
+  // 22 次击中：强制掉
+  g._onBrickDestroyed(0, 0);
+  truthy('22 bricks: powerup forced', g.fallingItem !== null);
+  truthy('counter reset to 0', g.bricksSinceLastPowerup === 0);
+}
+
 // descentRateMul：settings 可手调的"下移速度"独立倍率
 {
   const g = new BreakoutGame();
