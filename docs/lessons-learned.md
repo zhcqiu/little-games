@@ -260,7 +260,35 @@ self.addEventListener('activate', (event) => {
 
 ---
 
-### 8. CSS `box-sizing: border-box` 让 canvas 边框侵蚀绘图区
+### 8. 修改已有游戏的代码忘了 bump SW CACHE_NAME
+
+**症状**：连连看 v1 发布后两天里给它做了一波优化（宽松模式 toggle / 倒计时 / 提示冷却 / 棋盘形状不规整 / 多次 UI bug 修复），每次都 git push 上线，CI 全绿，Pages 也部署成功。但用户在无痕模式打开看不到新加的"🆓 宽松模式" toggle —— 仿佛设置面板还是旧的。
+
+**Root cause**：Service Worker 是 **cache-first** 策略，第一次访问写 cache，之后所有刷新都直接走 cache 不查 network。**修改既有资源（HTML / CSS / JS）后**：
+
+- 老用户（之前访问过）：浏览器里的 SW 永远从旧 cache 返回老资源
+- 新用户（首次访问）：第一次走 network 拿到新版本，但只要他在同一会话刷一次，SW 已 install 并写 cache，第二次刷新就拿旧版（因为 install 时缓存了刚加载的版本）
+
+也就是说**只要资源进过 cache 就再也"自动更新"不了**，除非 SW 主动清。`activate` 阶段清旧缓存的条件是 `CACHE_NAME` 改变。
+
+[docs/architecture.md §5.1](./architecture.md) 之前写"加新游戏不用改 sw.js"，是对的（runtime caching 自动覆盖新文件），但**容易被误读为"任何 push 都不用改 sw.js"** —— 修改既有文件时这条不成立。
+
+**修复**：每次 git push 前问自己：
+
+```
+本次提交是不是只新增了全新文件（新游戏目录 / 新 shared 模块）？
+  是 → 不用动 sw.js
+  否（修改了已有 HTML / CSS / JS / manifest）→ bump CACHE_NAME
+```
+
+**通用教训**：
+1. cache-first SW 与"持续小步迭代"的开发风格天然冲突 —— 每次发布都要记得 bump 缓存号
+2. 文档措辞要明确分场景（新增 vs 修改），否则容易被未来的自己 / 协作者误用
+3. 调试此类"看到旧版本"问题：DevTools → Application → Service Workers → Unregister + 硬刷（Ctrl+Shift+R）是最快的本地解药；发布到线上则必须 bump 版本
+
+---
+
+### 9. CSS `box-sizing: border-box` 让 canvas 边框侵蚀绘图区
 
 **症状**：给 canvas 加 `border: 3px solid` 后，画面看起来略微缩小、cell 不对齐。
 

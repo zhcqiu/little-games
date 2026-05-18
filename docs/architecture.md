@@ -256,8 +256,9 @@ _startBgm() {
 
 - `install`：预缓存首页核心资源（`/`、`/index.html`、`/icon.svg`、`/manifest.json`）。
 - `fetch`：同源 GET 请求 → 先查缓存，命中返回；未命中走网络，成功后写入缓存。
-- 加新游戏**不用改 sw.js** —— runtime caching 自动把第一次访问到的资源缓存进去。
-- 想强制老用户更新 → 改 `CACHE_NAME = 'little-games-vN'`，activate 时旧缓存被清掉。
+- 加**全新游戏 / 全新文件**不用改 sw.js —— runtime caching 自动把第一次访问到的资源缓存进去。
+- **修改任何已存在的资源**（HTML / CSS / JS / manifest）都必须 bump `CACHE_NAME = 'little-games-vN'`，否则 cache-first 策略会让老访客永远拿到旧版本。详见 [docs/lessons-learned.md §9](./lessons-learned.md)。
+- activate 阶段会自动清理与 `CACHE_NAME` 不符的旧缓存。
 
 ### 5.2 PWA Manifest 双层
 
