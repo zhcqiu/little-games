@@ -249,6 +249,9 @@ if (snap && snap.score > 0) {
     resumePending = false;
     resetHighScoreTracker();
     updateScoreUi();
+    // 续玩按钮本身就是首个用户手势 — 趁机解锁音频 + 起 BGM
+    audio.unlock();
+    if (settings.get('bgmOn')) audio.startBgm();
     if (!manualPaused) game.setPaused(false);
   });
   document.getElementById('resume-discard').addEventListener('pointerdown', (e) => {
@@ -256,6 +259,8 @@ if (snap && snap.score > 0) {
     clearSave();
     resumePopup.classList.add('hidden');
     resumePending = false;
+    audio.unlock();
+    if (settings.get('bgmOn')) audio.startBgm();
     if (!manualPaused) game.setPaused(false);
   });
 }

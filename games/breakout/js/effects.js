@@ -50,7 +50,8 @@ export class Effects {
 
   spawnPaddleGlow() {
     if (this.intensity === 0) return;
-    this.flashes.push({ kind: 'paddle', color: '#ffffff', alpha: 0.6, life: 500, dur: 500 });
+    // 接道具时一道柔和的全屏白闪 — 用现有 'screen' flash 通道，避免引入需要 game 状态的特殊渲染
+    this.flashes.push({ kind: 'screen', color: '#ffffff', alpha: 0.25 * this.intensity, life: 400, dur: 400 });
   }
 
   triggerShake(amp = 6, dur = 240) {

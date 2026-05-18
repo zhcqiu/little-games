@@ -47,7 +47,6 @@ export class GameLogic {
     this.slowRemainMs = 0;
     this.fallingItem = null;
 
-    this._onLock = null;
     this._onBrick = null;
     this._onDrop = null;
     this._onGameOver = null;
@@ -102,7 +101,13 @@ export class GameLogic {
     if (this.slowRemainMs > 0) {
       this.slowRemainMs = Math.max(0, this.slowRemainMs - dt);
       this._slowWasActive = true;
+      if (this.slowRemainMs === 0) {
+        // 同帧恢复，避免下一帧才除回去导致一帧仍是慢速
+        for (const b of this.balls) { b.vx /= 0.7; b.vy /= 0.7; }
+        this._slowWasActive = false;
+      }
     } else if (this._slowWasActive) {
+      // 兜底：restore() 之类外部直接清 slowRemainMs 时也能恢复
       for (const b of this.balls) { b.vx /= 0.7; b.vy /= 0.7; }
       this._slowWasActive = false;
     }
@@ -262,11 +267,15 @@ export class GameLogic {
       this.paddle.widthRemainMs = 12000;
       this.setPaddleCol(this.paddle.col);
     } else if (type === 'slow') {
+      // 若已经在慢球状态，只延长计时，不二次降速（防止叠加后永久 0.49×）
+      const wasActive = this.slowRemainMs > 0;
       this.slowRemainMs = 10000;
-      // 立即把现有球速 ×0.7
-      for (const b of this.balls) {
-        b.vx *= 0.7;
-        b.vy *= 0.7;
+      if (!wasActive) {
+        for (const b of this.balls) {
+          b.vx *= 0.7;
+          b.vy *= 0.7;
+        }
+        this._slowWasActive = true;
       }
     } else if (type === 'multi') {
       const copies = this.balls.map((b) => ({
@@ -409,7 +418,6 @@ export class GameLogic {
   }
 
   // 事件钩子
-  onLock(fn)        { this._onLock = fn; }
   onBrick(fn)       { this._onBrick = fn; }
   onDrop(fn)        { this._onDrop = fn; }
   onPaddleHit(fn)   { this._onPaddleHit = fn; }

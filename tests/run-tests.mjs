@@ -411,6 +411,26 @@ eq('snake restore foodEdgeMargin', sg19.foodEdgeMargin, 2);
   eq('breakout restore combo', g2.combo, 4);
 }
 
+// 慢球叠加不应永久降速（regression: 见 code-review #1）
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 8, vx: 0, vy: -10 };
+  const sp0 = Math.hypot(g.balls[0].vx, g.balls[0].vy);
+  // 第一次接 🐌
+  g._applyPowerup('slow');
+  const sp1 = Math.hypot(g.balls[0].vx, g.balls[0].vy);
+  truthy('slow #1: ball ~0.7×', Math.abs(sp1 / sp0 - 0.7) < 0.01);
+  // 在仍激活时再接 🐌（应仅延长计时，不再二次降速）
+  g._applyPowerup('slow');
+  const sp2 = Math.hypot(g.balls[0].vx, g.balls[0].vy);
+  truthy('slow #2 stack: ball still ~0.7×', Math.abs(sp2 / sp0 - 0.7) < 0.01);
+  // 让计时器走完
+  while (g.slowRemainMs > 0) g.step(500);
+  const sp3 = Math.hypot(g.balls[0].vx, g.balls[0].vy);
+  truthy('slow expire: ball back to 1×', Math.abs(sp3 / sp0 - 1.0) < 0.01);
+}
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
