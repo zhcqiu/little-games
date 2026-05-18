@@ -143,15 +143,16 @@ game.onDie(() => {
 game.onRevive(() => {
   audio.playRevive();
   const head = game.snake[0];
+  // 警告色（橙红灰），不再用治愈系粉紫蓝
   effects.spawnRadial(head.col, head.row, renderer.cellSize,
-    ['#ec407a', '#b388ff', '#42a5f5'], 12, 180);
+    ['#ff9800', '#f44336', '#9e9e9e'], 12, 180);
   effects.triggerShake(8, 180);
-  showClearToast('💖');
-  vibrate([20, 30, 60]);
+  showClearToast('🩹');           // 绷带：受伤但已处理（之前是 💖 爱心 = 奖励）
+  vibrate([80, 50, 30]);          // 下降型：事故后缓和（之前是上升）
 });
 game.onWrap(() => {
   audio.playWrap();
-  showToast('✨');
+  showToast('💫');     // 转点点：中性"传送"，避开 ✨ 跟吃食物奖励重叠
 });
 
 requestAnimationFrame(loop);

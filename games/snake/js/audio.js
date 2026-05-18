@@ -62,14 +62,30 @@ export class Audio extends AudioEngine {
     }
   }
 
-  /** 复活：上行琶音 G4→C5→E5→G5 */
+  /** 复活：警告低音（"完了"）+ 短促回血"叮"（"缓过来了"） */
   playRevive() {
     if (!this.sfxOn || !this.ctx) return;
     const t0 = this.ctx.currentTime;
-    const notes = [392.00, 523.25, 659.25, 783.99];
-    for (let i = 0; i < notes.length; i++) {
-      this.scheduleNote(notes[i], t0 + i * 0.08, 80, 0.35, 'triangle');
-    }
+
+    // 第一段：低沉警告（A3 方波 + 低通滤波）
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1200;
+    const g = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 220;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.3, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+    osc.connect(filter);
+    filter.connect(g);
+    g.connect(this.master);
+    osc.start(t0);
+    osc.stop(t0 + 0.22);
+
+    // 第二段：250ms 后一声"叮"，告诉玩家被救回来（中音 E5）
+    this.scheduleNote(659.25, t0 + 0.25, 150, 0.25, 'triangle');
   }
 
   /** 穿墙：短促噪声扫频 */
