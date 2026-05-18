@@ -87,6 +87,7 @@ game.onGameOver((mode) => {
   finalScoreEl.textContent = String(game.score);
   finalHighEl.textContent = String(settings.get('highScore'));
   gameoverPanel.classList.remove('hidden');
+  audio.stopBgm(300);   // 结束面板期间不要继续 loop
 });
 
 replayBtn.addEventListener('pointerdown', (e) => {

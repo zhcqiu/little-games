@@ -31,10 +31,9 @@ export class Settings {
   }
 
   save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(this.state));
-      localStorage.setItem(KEY_HIGH, String(this.highScore));
-    } catch (e) {}
+    // 拆两个 try：settings 写失败（配额满）时高分仍能存
+    try { localStorage.setItem(KEY, JSON.stringify(this.state)); } catch (e) {}
+    try { localStorage.setItem(KEY_HIGH, String(this.highScore)); } catch (e) {}
   }
 
   get(key) {

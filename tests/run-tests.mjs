@@ -525,6 +525,37 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   eq('breakout restore combo', g2.combo, 4);
 }
 
+// 道具效果（coverage gap）：multi / wider 应用后状态正确
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 8, vx: 3, vy: -5 };
+  g._applyPowerup('multi');
+  eq('multi: balls doubled', g.balls.length, 2);
+  truthy('multi: clone vx opposite', g.balls[1].vx === -g.balls[0].vx);
+}
+{
+  const g = new BreakoutGame();
+  g._applyPowerup('wider');
+  eq('wider: widthMul = 1.6', g.paddle.widthMul, 1.6);
+  truthy('wider: timer > 0', g.paddle.widthRemainMs > 0);
+}
+
+// 慢球状态下的 serialize/restore 往返（coverage gap）
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.balls[0] = { x: 6, y: 8, vx: 0, vy: -10 };
+  g._applyPowerup('slow');
+  const snap = g.serialize();
+  const g2 = new BreakoutGame();
+  g2.restore(snap);
+  truthy('slow restore: _slowWasActive flag set', g2._slowWasActive === true);
+  eq('slow restore: slowRemainMs preserved', g2.slowRemainMs, g.slowRemainMs);
+  truthy('slow restore: ball speed preserved',
+    Math.abs(Math.hypot(g2.balls[0].vx, g2.balls[0].vy) - 7) < 0.01);
+}
+
 // restore() 维度校验（regression: Codex I-2）：
 {
   const g = new BreakoutGame();
