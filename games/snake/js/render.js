@@ -127,7 +127,7 @@ export class Renderer {
       ctx.textBaseline = 'middle';
       // 用一个朝右的表情；旋转后自然朝任意方向
       // 注：emoji 在不同平台渲染略有差，可换为 😋 / 🙂 / 🐲
-      ctx.fillText('🐍', 0, 0);
+      ctx.fillText(game.headEmoji || '🐍', 0, 0);
       ctx.restore();
     }
   }

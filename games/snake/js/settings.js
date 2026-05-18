@@ -59,6 +59,7 @@ export class Settings {
     this.audio.setSfxOn(this.state.sfxOn);
     this.audio.setBgmOn(this.state.bgmOn);
     if (this.effects) this.effects.setIntensity(FX_INTENSITY[this.state.fxLevel] ?? 1.0);
+    this.game.setTheme(this.state.theme);
     document.body.dataset.theme = this.state.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',

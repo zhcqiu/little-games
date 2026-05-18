@@ -5,6 +5,15 @@ export const BOARD_HEIGHT = 16;
 
 const FOOD_EMOJI_POOL = ['🍎', '🍓', '🍒', '🍇', '🍌', '🍑', '🥕', '🌽', '🍄'];
 
+const HEAD_POOLS = {
+  cheery: ['🐲', '🐯', '🦁', '🐹'],
+  candy:  ['🐷', '🐱', '🐰', '🦄'],
+  forest: ['🐸', '🐻', '🦊', '🐗'],
+  ocean:  ['🐙', '🦀', '🐡', '🐬'],
+  space:  ['👽', '🤖', '👾', '🛸'],
+  night:  ['🦇', '🦉', '👻', '🐺'],
+};
+
 const TICK_INTERVALS = [400, 300, 220, 160, 110];  // 5 档
 
 const DIR_VECTORS = {
@@ -32,11 +41,13 @@ export class Game {
     this.dead = false;
     this.paused = false;
     this.endMode = 'standard';     // standard | wrap | revive
+    this.theme = 'cheery';
     this.tickInterval = TICK_INTERVALS[0];
     this.accumulator = 0;
     this.reviveInvincibleMs = 0;   // > 0 表示无敌期内
     this.foodEmoji = '🍎';
     this.food = this._spawnFood();
+    this.headEmoji = this._pickHead();
 
     this._onEat = null;
     this._onDie = null;
@@ -58,6 +69,23 @@ export class Game {
     }
     this.foodEmoji = FOOD_EMOJI_POOL[Math.floor(Math.random() * FOOD_EMOJI_POOL.length)];
     return empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  _pickHead() {
+    const pool = HEAD_POOLS[this.theme] || HEAD_POOLS.cheery;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  setTheme(theme) {
+    if (!HEAD_POOLS[theme]) return;
+    const themeChanged = this.theme !== theme;
+    this.theme = theme;
+    // 仅当"无进度初始状态"时切主题才换头（开局前）；
+    // 否则等下次 reset() 再洗，避免玩家中途切主题时蛇头突变
+    if (themeChanged && this.score === 0 && this.snake.length === 4
+        && this.snake[0].row === 8 && this.snake[0].col === 7) {
+      this.headEmoji = this._pickHead();
+    }
   }
 
   setSpeed(level) {
@@ -203,6 +231,7 @@ export class Game {
     this.accumulator = 0;
     this.reviveInvincibleMs = 0;
     this.food = this._spawnFood();
+    this.headEmoji = this._pickHead();
   }
 
   serialize() {
@@ -215,6 +244,8 @@ export class Game {
       foodEmoji: this.foodEmoji,
       score: this.score,
       reviveInvincibleMs: this.reviveInvincibleMs,
+      theme: this.theme,
+      headEmoji: this.headEmoji,
     };
   }
 
@@ -230,6 +261,8 @@ export class Game {
       this.dead = false;
       this.accumulator = 0;
       this.reviveInvincibleMs = Math.max(0, snap.reviveInvincibleMs | 0);
+      this.theme = HEAD_POOLS[snap.theme] ? snap.theme : this.theme;
+      this.headEmoji = snap.headEmoji || this._pickHead();
       return true;
     } catch (e) {
       console.warn('restore failed:', e);

@@ -245,3 +245,46 @@ assertEq('reset score=0', g25.score, 0);
 assertEq('reset 蛇长 4', g25.snake.length, 4);
 assertEq('reset 头 (8,7)', g25.snake[0], { row: 8, col: 7 });
 assertEq('reset dead=false', g25.dead, false);
+
+// 蛇头池
+const g26 = new Game();
+assertTrue('初始 headEmoji 存在', typeof g26.headEmoji === 'string' && g26.headEmoji.length > 0);
+const cheeryPool = ['🐲', '🐯', '🦁', '🐹'];
+assertTrue('初始 head 来自 cheery 池', cheeryPool.includes(g26.headEmoji));
+assertEq('初始 theme cheery', g26.theme, 'cheery');
+
+// setTheme 在初始状态会换头
+const g27 = new Game();
+g27.setTheme('night');
+const NIGHT = ['🦇', '🦉', '👻', '🐺'];
+assertTrue('setTheme 后 head 来自 night 池', NIGHT.includes(g27.headEmoji));
+assertEq('theme=night', g27.theme, 'night');
+
+// 中途切主题不换头
+const g28 = new Game();
+const head28 = g28.headEmoji;
+g28.snake.unshift({ row: 8, col: 8 });   // 模拟"走了一步"
+g28.snake.pop();
+g28.setTheme('night');
+assertEq('中途切主题不换头', g28.headEmoji, head28);
+assertEq('theme 仍更新', g28.theme, 'night');
+
+// reset 在新主题下重新抽
+const g29 = new Game();
+g29.setTheme('forest');
+g29.snake.unshift({ row: 8, col: 8 });
+g29.snake.pop();
+g29.reset();
+const FOREST = ['🐸', '🐻', '🦊', '🐗'];
+assertTrue('reset 后 head 来自 forest 池', FOREST.includes(g29.headEmoji));
+
+// 序列化保留头
+const g30 = new Game();
+g30.setTheme('space');
+g30.reset();
+const oldHead = g30.headEmoji;
+const snapHead = g30.serialize();
+const g31 = new Game();
+assertEq('restore ok', g31.restore(snapHead), true);
+assertEq('restore 恢复 head', g31.headEmoji, oldHead);
+assertEq('restore 恢复 theme', g31.theme, 'space');

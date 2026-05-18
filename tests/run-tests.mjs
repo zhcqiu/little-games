@@ -208,6 +208,25 @@ eq('snake restore dir', sg8.currentDirection, 'down');
 eq('snake restore emoji', sg8.foodEmoji, '🍓');
 eq('snake restore invalid', sg8.restore({}), false);
 
+// snake heads
+const sg9 = new SnakeGame();
+truthy('snake init head exists', typeof sg9.headEmoji === 'string' && sg9.headEmoji.length > 0);
+eq('snake init theme cheery', sg9.theme, 'cheery');
+
+sg9.setTheme('night');
+const NIGHT_POOL = ['🦇', '🦉', '👻', '🐺'];
+truthy('snake night head from pool', NIGHT_POOL.includes(sg9.headEmoji));
+
+// 序列化保留
+sg9.setTheme('forest');
+sg9.reset();
+const oldH = sg9.headEmoji;
+const headSnap = sg9.serialize();
+const sg10 = new SnakeGame();
+sg10.restore(headSnap);
+eq('snake restore preserves head', sg10.headEmoji, oldH);
+eq('snake restore preserves theme', sg10.theme, 'forest');
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
