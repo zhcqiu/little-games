@@ -195,7 +195,7 @@ export class Board {
     if (pairs * 2 !== innerCells) throw new Error('内部格数必须是偶数');
     const types = Math.min(this.emojiTypes, EMOJI_POOL.length);
 
-    // 每种 emoji 应放对数 = floor(pairs / types)，多余对随机分配 1 对
+    // 每种 emoji 应放对数 = floor(pairs / types)，多余对分配给前 extra 种各 1 对
     const perType = Math.floor(pairs / types);
     let extra = pairs - perType * types;
 
@@ -228,6 +228,7 @@ export class Board {
       }
       if (this.hasAnySolvable() !== null) return;
     }
-    // 20 次仍失败几乎不可能；不抛，让 caller 用 reshuffle 兜
+    // 20 次仍失败几乎不可能；不抛让 caller 用 reshuffle 兜，但留个信号便于排查
+    console.warn('[lianliankan] _generate 20 attempts no solvable board, leaving as-is');
   }
 }
