@@ -1,5 +1,5 @@
 // render.js — Canvas 绘制
-import { brickCssVar } from './bricks.js';
+import { brickCssVar, brickMaxHp } from './bricks.js';
 import {
   COLS, ROWS, BALL_RADIUS,
   PADDLE_Y, PADDLE_HALF_HEIGHT,
@@ -83,7 +83,9 @@ export class Renderer {
         if (v === 0) continue;
         const key = brickCssVar(v);
         const color = this._cssVarValue(key) || this._theme.brick1;
-        this._drawBrick(c, r, color);
+        const maxHp = brickMaxHp(v);
+        const curHp = (game.brickHp && game.brickHp[r]) ? game.brickHp[r][c] : maxHp;
+        this._drawBrick(c, r, color, maxHp, curHp);
       }
     }
 
@@ -126,7 +128,7 @@ export class Renderer {
     ctx.restore();
   }
 
-  _drawBrick(col, row, color) {
+  _drawBrick(col, row, color, maxHp = 1, curHp = 1) {
     const ctx = this.ctx;
     const x = col * this.cellSize + 1;
     const y = row * this.cellSize + 1;
@@ -139,6 +141,28 @@ export class Renderer {
     // 高光
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.fillRect(x + 2, y + 2, s - 4, 3);
+    // 多血砖裂纹：每损 1 HP 加一道斜线
+    const damage = maxHp - curHp;
+    if (damage > 0) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx.lineWidth = Math.max(1, this.cellSize * 0.05);
+      ctx.lineCap = 'round';
+      // damage=1: 单斜线；damage=2: X 交叉
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.2, y + s * 0.25);
+      ctx.lineTo(x + s * 0.55, y + s * 0.75);
+      ctx.moveTo(x + s * 0.55, y + s * 0.75);
+      ctx.lineTo(x + s * 0.45, y + s * 0.5);
+      ctx.lineTo(x + s * 0.7, y + s * 0.65);
+      ctx.stroke();
+      if (damage >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(x + s * 0.8, y + s * 0.25);
+        ctx.lineTo(x + s * 0.5, y + s * 0.55);
+        ctx.lineTo(x + s * 0.3, y + s * 0.85);
+        ctx.stroke();
+      }
+    }
   }
 
   _drawPaddle(game) {

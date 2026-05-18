@@ -567,30 +567,58 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   eq('combo decayed at 4s', g.combo, 1);
 }
 
-// 球速升级：每 300 分 +5%，上限 1.4×
+// 球速升级：每 300 分 +5%，上限 1.4×（每次手动设置 brickHp=1 以单击 kill）
 {
   const g = new BreakoutGame();
   g.ballRespawnTimer = 0;
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
-  // 直接调内部函数，避开 sweep 物理（已被其他 test 覆盖）
   g.combo = 10;
-  g.board[5][6] = 5;
-  g._onBrickDestroyed(6, 5);
+  g.board[5][6] = 5; g.brickHp[5][6] = 1;
+  g._onBrickHit(6, 5);
   eq('score 50 → bonus 1.0', g.sessionSpeedBonus, 1.0);
   g.score = 300;
-  g.board[5][6] = 1;
-  g._onBrickDestroyed(6, 5);
-  // score = 300 + 1*10 = 310 → floor(310/300)=1 → bonus = 1.05
+  g.board[5][6] = 1; g.brickHp[5][6] = 1;
+  g._onBrickHit(6, 5);
   truthy('score 310 → bonus 1.05', Math.abs(g.sessionSpeedBonus - 1.05) < 0.001);
-  // 验证球速被乘了 1.05
   g.score = 8000;
-  g.board[5][6] = 1;
-  g._onBrickDestroyed(6, 5);
-  // floor(8010/300)=26, 1 + 26*0.05 = 2.3, 但封顶 1.4
+  g.board[5][6] = 1; g.brickHp[5][6] = 1;
+  g._onBrickHit(6, 5);
   eq('score 8000+ → bonus capped at 1.4', g.sessionSpeedBonus, 1.4);
 }
 
-// 自适应道具：连续 22 砖未掉道具时强制掉
+// 多血砖：黄 (value=3) 需 2 击 / 红 (value=5) 需 3 击
+{
+  const g = new BreakoutGame();
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+
+  // 黄砖：3 分，2 HP
+  g.board[5][6] = 3; g.brickHp[5][6] = 2;
+  g._onBrickHit(6, 5);
+  eq('yellow brick first hit: still alive', g.board[5][6], 3);
+  eq('yellow brick HP→1', g.brickHp[5][6], 1);
+  eq('yellow brick: no score yet', g.score, 0);
+  g._onBrickHit(6, 5);
+  eq('yellow brick second hit: cleared', g.board[5][6], 0);
+  eq('yellow brick: score +3', g.score, 3);
+
+  // 红砖：5 分，3 HP
+  g.score = 0; g.combo = 1;
+  g.board[5][6] = 5; g.brickHp[5][6] = 3;
+  g._onBrickHit(6, 5);
+  g._onBrickHit(6, 5);
+  eq('red brick 2 hits: still alive', g.board[5][6], 5);
+  eq('red brick HP→1', g.brickHp[5][6], 1);
+  g._onBrickHit(6, 5);
+  eq('red brick 3 hits: cleared', g.board[5][6], 0);
+  eq('red brick: score +5', g.score, 5);
+
+  // 已清空格不应再触发计分（双击防护）
+  g.score = 100;
+  g._onBrickHit(6, 5);
+  eq('cleared cell: no score change', g.score, 100);
+}
+
+// 自适应道具：连续 22 砖击碎未掉道具时强制掉（每次都重置 board / brickHp）
 {
   const g = new BreakoutGame();
   g.ballRespawnTimer = 0;
@@ -598,14 +626,15 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   g._rng = () => 0.5;
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
 
-  // 21 次击中：不应掉
   for (let i = 0; i < 21; i++) {
-    g._onBrickDestroyed(0, 0);
+    g.board[0][0] = 1; g.brickHp[0][0] = 1;
+    g._onBrickHit(0, 0);
   }
   truthy('21 bricks: no powerup yet', g.fallingItem === null);
   truthy('counter at 21', g.bricksSinceLastPowerup === 21);
-  // 22 次击中：强制掉
-  g._onBrickDestroyed(0, 0);
+  // 22 次击碎：强制掉
+  g.board[0][0] = 1; g.brickHp[0][0] = 1;
+  g._onBrickHit(0, 0);
   truthy('22 bricks: powerup forced', g.fallingItem !== null);
   truthy('counter reset to 0', g.bricksSinceLastPowerup === 0);
 }

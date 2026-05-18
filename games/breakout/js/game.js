@@ -4,7 +4,7 @@
 // 球：{x, y, vx, vy} 浮点 cell。
 // 板拍：{ col: 中心列(浮点), widthMul, widthRemainMs }
 
-import { randomBrickValue } from './bricks.js';
+import { randomBrickValue, brickMaxHp } from './bricks.js';
 import {
   reflectFromBrick,
   paddleReflectionAngle,
@@ -37,6 +37,7 @@ export class GameLogic {
     this._rng = Math.random;     // 必须在 _seedInitialBricks 之前——后者会用
 
     this.board = this._newBoard();
+    this.brickHp = this._newBoard();   // 与 board 同形，存当前 HP（0 = 空 / 已破）
     this._seedInitialBricks();
 
     this.paddle = {
@@ -69,7 +70,7 @@ export class GameLogic {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   }
 
-  /** 稀疏的一行：12 列里随机 7-9 个填砖，其余空格。让玩家有"喘息列"。 */
+  /** 稀疏的一行：12 列里随机 7-9 个填砖，其余空格。返回 { values, hps } 同步对。 */
   _makeSparseRow() {
     const count = 7 + Math.floor(this._rng() * 3);   // 7..9
     const positions = Array.from({ length: COLS }, (_, i) => i);
@@ -78,16 +79,21 @@ export class GameLogic {
       const j = Math.floor(this._rng() * (i + 1));
       [positions[i], positions[j]] = [positions[j], positions[i]];
     }
-    const row = Array(COLS).fill(0);
+    const values = Array(COLS).fill(0);
+    const hps = Array(COLS).fill(0);
     for (let i = 0; i < count; i++) {
-      row[positions[i]] = randomBrickValue(this._rng);
+      const v = randomBrickValue(this._rng);
+      values[positions[i]] = v;
+      hps[positions[i]] = brickMaxHp(v);
     }
-    return row;
+    return { values, hps };
   }
 
   _seedInitialBricks() {
     for (let r = 0; r < INITIAL_BRICK_ROWS; r++) {
-      this.board[r] = this._makeSparseRow();
+      const row = this._makeSparseRow();
+      this.board[r] = row.values;
+      this.brickHp[r] = row.hps;
     }
   }
 
@@ -224,7 +230,7 @@ export class GameLogic {
         ball.vy = r.vy;
         ball.x = brickHit.contactX;
         ball.y = brickHit.contactY;
-        this._onBrickDestroyed(brickHit.col, brickHit.row);
+        this._onBrickHit(brickHit.col, brickHit.row);
         continue;   // 这一子步消耗在砖上，直接进下一子步
       }
 
@@ -278,15 +284,28 @@ export class GameLogic {
     return best;
   }
 
-  _onBrickDestroyed(col, row) {
+  _onBrickHit(col, row) {
     const value = this.board[row][col];
+    if (value === 0) return;   // 已被清空的格不算命中（防 race）
+    // HP -1
+    this.brickHp[row][col] = Math.max(0, (this.brickHp[row][col] || 1) - 1);
+    const killed = this.brickHp[row][col] === 0;
+
+    if (!killed) {
+      // 只是磕了一下，没碎：通知，给一点 combo（不归零，但也不进）
+      this.comboDecayTimer = 4000;   // 命中算"还在玩"，重置 combo 衰减
+      if (this._onBrick) this._onBrick({ col, row, value, killed: false });
+      return;
+    }
+
+    // killed：与 V1 一致的全套结算
     this.board[row][col] = 0;
     this.score += value * this.combo;
     if (this.combo < 10) this.combo++;
-    this.comboDecayTimer = 4000;   // 4s 无击中砖则 combo 归 1
+    this.comboDecayTimer = 4000;
     if (this._onScoreChange) this._onScoreChange(this.score);
     if (this._onComboChange) this._onComboChange(this.combo);
-    if (this._onBrick) this._onBrick({ col, row, value });
+    if (this._onBrick) this._onBrick({ col, row, value, killed: true });
 
     // 球速本局内随得分缓慢爬升（避免长局机械感）：每 300 分 +5%，上限 1.4×
     const targetBonus = Math.min(1.4, 1 + Math.floor(this.score / 300) * 0.05);
@@ -359,11 +378,16 @@ export class GameLogic {
       this._handleTopOut();
       return;
     }
-    // 安全：所有砖下移 1 行 + 顶部新生成一行（稀疏）
+    // 安全：所有砖（含 HP）下移 1 行 + 顶部新生成一行（稀疏）
     for (let r = ROWS - 1; r > 0; r--) {
-      for (let c = 0; c < COLS; c++) this.board[r][c] = this.board[r - 1][c];
+      for (let c = 0; c < COLS; c++) {
+        this.board[r][c] = this.board[r - 1][c];
+        this.brickHp[r][c] = this.brickHp[r - 1][c];
+      }
     }
-    this.board[0] = this._makeSparseRow();
+    const newRow = this._makeSparseRow();
+    this.board[0] = newRow.values;
+    this.brickHp[0] = newRow.hps;
   }
 
   _handleTopOut() {
@@ -372,10 +396,13 @@ export class GameLogic {
       if (this._onGameOver) this._onGameOver('standard');
       return;
     }
-    // endless：清前 9 行，row 9..17 → row 0..8，row 9..17 清空
+    // endless：清前 9 行，row 9..17 → row 0..8，row 9..17 清空（含 HP 同步）
     const upper = this.board.slice(9, ROWS).map((row) => row.slice());
+    const upperHp = this.brickHp.slice(9, ROWS).map((row) => row.slice());
     const empty = Array.from({ length: 9 }, () => Array(COLS).fill(0));
+    const emptyHp = Array.from({ length: 9 }, () => Array(COLS).fill(0));
     this.board = [...upper, ...empty];
+    this.brickHp = [...upperHp, ...emptyHp];
     this.combo = 1;
     this.comboDecayTimer = 0;
     this.balls = [this._spawnBall()];
@@ -414,6 +441,7 @@ export class GameLogic {
       sessionSpeedBonus: this.sessionSpeedBonus,
       comboDecayTimer: this.comboDecayTimer,
       bricksSinceLastPowerup: this.bricksSinceLastPowerup,
+      brickHp: this.brickHp.map((row) => row.slice()),
     };
   }
 
@@ -439,6 +467,12 @@ export class GameLogic {
     this.sessionSpeedBonus = snap.sessionSpeedBonus || 1.0;
     this.comboDecayTimer = snap.comboDecayTimer || 0;
     this.bricksSinceLastPowerup = snap.bricksSinceLastPowerup || 0;
+    // brickHp 在 V1 存档里不存在；缺失时从 board 推算（按 brickMaxHp）兜底
+    if (Array.isArray(snap.brickHp) && snap.brickHp.length === ROWS) {
+      this.brickHp = snap.brickHp.map((row) => row.slice());
+    } else {
+      this.brickHp = this.board.map((row) => row.map((v) => v > 0 ? brickMaxHp(v) : 0));
+    }
     this._slowWasActive = this.slowRemainMs > 0;
     return true;
   }
@@ -449,6 +483,7 @@ export class GameLogic {
     this.gameOver = false;
     this.paused = false;   // game-over 期间打开过 help/settings 面板会留下 paused=true，replay 后必须清掉
     this.board = this._newBoard();
+    this.brickHp = this._newBoard();
     this._seedInitialBricks();
     this.paddle = { col: COLS / 2, widthMul: 1, widthRemainMs: 0 };
     this.balls = [this._spawnBall()];
