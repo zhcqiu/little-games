@@ -2,6 +2,9 @@
 // 跑各游戏的纯函数测试断言。浏览器侧另有 tests.html 包同样断言。
 import { PIECE_TYPES, getCells, getPieceWidth, PIECES } from '../games/tetris/js/pieces.js';
 import { Game, createBag } from '../games/tetris/js/game.js';
+import { GameLogic as BreakoutGame, COLS as BR_COLS, ROWS as BR_ROWS } from '../games/breakout/js/game.js';
+import { reflectFromBrick, paddleReflectionAngle, sweepAgainstBrick } from '../games/breakout/js/physics.js';
+import { randomBrickValue } from '../games/breakout/js/bricks.js';
 
 let passed = 0;
 let failed = 0;
@@ -287,6 +290,126 @@ const fmSnapNode = sg18.serialize();
 const sg19 = new SnakeGame();
 sg19.restore(fmSnapNode);
 eq('snake restore foodEdgeMargin', sg19.foodEdgeMargin, 2);
+
+// ───── breakout ─────
+// physics
+{
+  const r = reflectFromBrick({ vx: 0.3, vy: -0.5 }, 'top');
+  eq('breakout reflect top vx', r.vx, 0.3);
+  eq('breakout reflect top vy', r.vy, 0.5);
+}
+{
+  const r = paddleReflectionAngle({ vx: 0, vy: 5 }, 0);
+  truthy('breakout paddle center vx≈0', Math.abs(r.vx) < 0.01);
+  truthy('breakout paddle center vy<0', r.vy < 0);
+}
+{
+  const right = paddleReflectionAngle({ vx: 0, vy: 5 }, 1);
+  truthy('breakout paddle right vx>0', right.vx > 0);
+}
+{
+  const ball = { x: 4.5, y: 6 };
+  const next = { x: 4.5, y: 5 };
+  const hit = sweepAgainstBrick(ball, next, 4, 5, 0.3);
+  truthy('breakout sweep top hit', hit !== null && hit.side === 'bottom');
+}
+{
+  const noHit = sweepAgainstBrick({ x: 1, y: 1 }, { x: 1.2, y: 1.2 }, 4, 5, 0.3);
+  eq('breakout sweep no hit', noHit, null);
+}
+
+// bricks
+{
+  let sum = 0;
+  for (let i = 0; i < 100; i++) sum += randomBrickValue();
+  truthy('breakout bricks return value > 0', sum > 0);
+}
+
+// game initial
+{
+  const g = new BreakoutGame();
+  eq('breakout score=0',     g.score, 0);
+  eq('breakout combo=1',     g.combo, 1);
+  eq('breakout cols',        g.cols, BR_COLS);
+  eq('breakout rows',        g.rows, BR_ROWS);
+  eq('breakout 1 ball',      g.balls.length, 1);
+  truthy('breakout ball glued', g.balls[0].vy === 0);
+}
+
+// 球发射
+{
+  const g = new BreakoutGame();
+  g.step(1600);
+  truthy('breakout ball launched', g.balls[0].vy !== 0 && g.balls[0].vy < 0);
+}
+
+// 砖块命中 + 计分
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.combo = 3;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
+  g.board[5][6] = 2;
+  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.step(50);
+  eq('breakout brick cleared', g.board[5][6], 0);
+  eq('breakout score = value × combo', g.score, 6);
+  eq('breakout combo +1', g.combo, 4);
+}
+
+// 掉球归 combo
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.combo = 7;
+  g.balls[0] = { x: 6, y: 17.8, vx: 0, vy: 5 };
+  g.step(200);
+  eq('breakout drop reset combo', g.combo, 1);
+  eq('breakout respawned 1 ball', g.balls.length, 1);
+}
+
+// 无尽压顶
+{
+  const g = new BreakoutGame();
+  g.endMode = 'endless';
+  g.ballRespawnTimer = 0;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 1;
+  for (let c = 0; c < g.cols; c++) g.board[5][c] = 3;
+  g.brickDescentTimer = 1;
+  let topOut = 0;
+  g.onTopOut(() => topOut++);
+  g.step(100);
+  eq('breakout endless topOut',  topOut, 1);
+  // 清前 9 行（含 row 5 标记）+ 下半区上移：原 row 5 标记被清掉
+  eq('breakout row 5 marker cleared', g.board[14][3], 0);
+  eq('breakout row 17 cleared',  g.board[17][3], 0);
+}
+
+// 标准压顶
+{
+  const g = new BreakoutGame();
+  g.endMode = 'standard';
+  g.ballRespawnTimer = 0;
+  for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 1;
+  g.brickDescentTimer = 1;
+  let mode = null;
+  g.onGameOver((m) => { mode = m; });
+  g.step(100);
+  eq('breakout standard game over', mode, 'standard');
+  eq('breakout gameOver flag',      g.gameOver, true);
+}
+
+// 序列化
+{
+  const g = new BreakoutGame();
+  g.score = 999;
+  g.combo = 4;
+  const snap = g.serialize();
+  const g2 = new BreakoutGame();
+  g2.restore(snap);
+  eq('breakout restore score', g2.score, 999);
+  eq('breakout restore combo', g2.combo, 4);
+}
 
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
