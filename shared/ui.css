@@ -1,0 +1,558 @@
+/* shared/ui.css — 跨游戏 UI 骨架
+ *
+ * 由 games/<name>/style.css 通过 @import 引用（在 themes.css 之后）。
+ * 覆盖范围：reset、html/body 布局、顶栏、面板、popup、toast、pause overlay、
+ * settings 行 / seg / toggle / 各种 button、help-section、version-tag、
+ * gameover 面板、clear-toast。
+ *
+ * 游戏要自定的内容（仍写在自家 style.css）：
+ *   - .score-block 内部布局（如果跟默认不同）
+ *   - 顶栏除 #pause/#help/#settings 之外的额外按钮
+ *   - #game-canvas（多数游戏复用本文件的默认即可）
+ *   - #control-pad 容器形状（display: flex / grid 的选择 + 子键位置 + 数量）
+ *   - 游戏专属的 CSS variables / 主题覆盖
+ *
+ * 用法示意：
+ *   @import url('../../shared/themes.css');
+ *   @import url('../../shared/ui.css');
+ *   // 游戏专属内容
+ */
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+body { display: flex; flex-direction: column; }
+
+/* ──────── 顶栏 ──────── */
+
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+  padding-left: calc(12px + env(safe-area-inset-left, 0px));
+  padding-right: calc(12px + env(safe-area-inset-right, 0px));
+  background: var(--bg-2);
+  min-height: 56px;
+  flex-shrink: 0;
+}
+
+.score-block {
+  font-size: 18px;
+  line-height: 1.4;
+  flex: 1;
+  font-weight: bold;
+}
+
+.score-block .emoji {
+  font-size: 20px;
+  margin-right: 2px;
+}
+
+#settings-btn,
+#help-btn,
+#pause-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  cursor: pointer;
+}
+
+#pause-btn { margin-right: 4px; }
+
+#help-btn {
+  font-weight: bold;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+/* ──────── 主区 ──────── */
+
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+
+#game-canvas {
+  background: var(--canvas-bg);
+  display: block;
+  touch-action: none;
+  outline: 3px solid var(--canvas-border);
+  outline-offset: 0;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* ──────── 桌面方向板（只在鼠标 / 精细指针设备显示） ──────── */
+/* 容器形状（display / 子键位置）由各游戏自定；本文件只管按钮外观。 */
+
+#control-pad {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+#control-pad button {
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--primary);
+  border-radius: 14px;
+  background: var(--button-bg);
+  color: var(--primary-dark);
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.05s ease, background 0.1s ease;
+}
+
+#control-pad button:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+#control-pad button:active {
+  transform: translateY(2px) scale(0.96);
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+/* ──────── 面板（设置 / 帮助 / 游戏结束 全屏） ──────── */
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  z-index: 100;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.panel.hidden { display: none; }
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--panel-text);
+}
+
+#settings-close,
+#help-close {
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  background: transparent;
+  color: var(--panel-text);
+  border: none;
+  cursor: pointer;
+}
+
+/* ──────── 设置行 + 控件 ──────── */
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setting-row label {
+  font-size: 16px;
+  color: var(--panel-text);
+  font-weight: 600;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-row span {
+  font-size: 13px;
+  color: var(--panel-text);
+  opacity: 0.6;
+}
+
+#speed-slider {
+  flex: 1;
+  height: 44px;
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+#speed-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--button-bg);
+  border-radius: 3px;
+}
+
+#speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-top: -11px;
+  cursor: pointer;
+}
+
+#speed-slider::-moz-range-track {
+  height: 6px;
+  background: var(--button-bg);
+  border-radius: 3px;
+}
+
+#speed-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+
+.seg {
+  display: flex;
+  gap: 8px;
+}
+
+.seg button {
+  flex: 1;
+  min-height: 44px;
+  background: var(--button-bg);
+  color: var(--button-bg-text);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.seg-narrow button {
+  padding: 0;
+  min-width: 44px;
+}
+
+.seg-wrap {
+  flex-wrap: wrap;
+}
+
+.seg-wrap button {
+  flex: 1 1 calc((100% - 24px) / 3);
+  min-width: calc((100% - 24px) / 3);
+}
+
+.seg button.active {
+  background: var(--button-active);
+  color: var(--text);
+  border-color: var(--button-active);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--panel-text);
+  opacity: 0.6;
+  margin: 0;
+}
+
+.toggle-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle {
+  min-width: 64px;
+  min-height: 44px;
+  background: var(--button-bg);
+  color: var(--button-bg-text);
+  border: 2px solid transparent;
+  border-radius: 22px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.toggle.active {
+  background: var(--button-active);
+  color: var(--text);
+  border-color: var(--button-active);
+}
+
+button.primary {
+  min-height: 56px;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: auto;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+button.primary:active { background: var(--primary-dark); }
+
+button.secondary {
+  margin-top: 12px;
+  min-height: 48px;
+  min-width: 200px;
+  background: var(--button-bg);
+  color: var(--button-bg-text);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.secondary.hidden { display: none; }
+
+/* ──────── 帮助面板 sections ──────── */
+
+.help-section {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 4px;
+}
+
+body[data-theme="night"] .help-section,
+body[data-theme="space"] .help-section {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.help-section h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--panel-text);
+}
+
+.help-section p,
+.help-section li {
+  margin: 4px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--panel-text);
+}
+
+.help-section ul {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}
+
+.help-section b {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+/* ──────── 重启 / 续玩 等确认气泡 ──────── */
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  padding: 24px;
+  border-radius: 16px;
+  z-index: 200;
+  box-shadow: var(--shadow);
+  min-width: 280px;
+  text-align: center;
+}
+
+.popup.hidden { display: none; }
+.popup p { margin: 0 0 20px; font-size: 16px; }
+
+.popup-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.popup-buttons button {
+  flex: 1;
+  min-height: 48px;
+  background: var(--button-bg);
+  color: var(--button-bg-text);
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.popup-buttons button.primary { background: var(--primary); color: var(--text); }
+
+/* ──────── 游戏结束面板 ──────── */
+
+#gameover-panel {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.gameover-emoji {
+  font-size: 120px;
+  line-height: 1;
+  margin-bottom: 24px;
+  animation: gameoverBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes gameoverBounce {
+  0%   { transform: scale(0.3) rotate(-30deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.gameover-stat {
+  font-size: 28px;
+  margin: 6px 0;
+  font-weight: bold;
+  color: var(--panel-text);
+}
+
+#gameover-panel button.primary {
+  margin-top: 32px;
+  min-width: 200px;
+  font-size: 22px;
+}
+
+/* ──────── 浮字 toast（无尽鼓励、压顶提示等） ──────── */
+
+.toast {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 96px;
+  line-height: 1;
+  z-index: 150;
+  animation: toastFade 1s ease forwards;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+}
+
+.toast.hidden { display: none; }
+
+@keyframes toastFade {
+  0%   { opacity: 0; transform: translate(-50%, -40%); }
+  20%  { opacity: 1; transform: translate(-50%, -50%); }
+  80%  { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -60%); }
+}
+
+/* 消行 / 大动作欢呼浮字 — emoji 大字向上漂浮，自带光晕 */
+
+.clear-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  font-size: 128px;
+  line-height: 1;
+  z-index: 150;
+  animation: clearToastPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+}
+
+.clear-toast.hidden { display: none; }
+
+@keyframes clearToastPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-12deg); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.3) rotate(6deg); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
+  60%  { opacity: 1; transform: translate(-50%, -60%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -85%) scale(0.9); }
+}
+
+/* ──────── 暂停 overlay ──────── */
+
+.pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: white;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.pause-overlay.hidden { display: none; }
+
+.pause-overlay .pause-icon {
+  font-size: 144px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  animation: pausePulse 1.5s ease-in-out infinite;
+}
+
+.pause-overlay .pause-hint {
+  font-size: 18px;
+  opacity: 0.85;
+}
+
+.pause-overlay .pause-extra {
+  font-size: 16px;
+  opacity: 0.95;
+  margin-top: 4px;
+  color: var(--text-dim, #ffe0b2);
+}
+
+@keyframes pausePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+/* ──────── 角落版本号 ──────── */
+
+.version-tag {
+  position: fixed;
+  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+  right: calc(6px + env(safe-area-inset-right, 0px));
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 50;
+  font-family: monospace;
+}
