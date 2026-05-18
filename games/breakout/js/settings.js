@@ -9,9 +9,11 @@ const DEFAULTS = {
   sfxOn: true,
   bgmOn: true,
   fxLevel: 'strong',
+  descentRate: 'slow',   // 砖块下移速度：'slow' / 'normal' / 'fast'（默认慢，照顾低龄玩家）
 };
 
 const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
+const DESCENT_RATE_MUL = { slow: 0.6, normal: 1.0, fast: 1.5 };
 
 export class Settings {
   constructor(game, audio, effects) {
@@ -54,6 +56,7 @@ export class Settings {
     this.effects.setIntensity(FX_INTENSITY[this.state.fxLevel] ?? 1.0);
     this.game.setSpeedLevel(this.state.speed);
     this.game.setEndMode(this.state.endMode);
+    this.game.setDescentRateMul(DESCENT_RATE_MUL[this.state.descentRate] ?? 1.0);
     document.body.dataset.theme = this.state.theme;
     this._syncUi();
   }
@@ -65,6 +68,8 @@ export class Settings {
       b.classList.toggle('active', b.dataset.val === this.state.endMode));
     document.querySelectorAll('#fx-seg button').forEach((b) =>
       b.classList.toggle('active', b.dataset.val === this.state.fxLevel));
+    document.querySelectorAll('#descent-rate-seg button').forEach((b) =>
+      b.classList.toggle('active', b.dataset.val === this.state.descentRate));
     const speedSlider = document.getElementById('speed-slider');
     if (speedSlider) speedSlider.value = String(this.state.speed);
     const sfx = document.getElementById('sfx-toggle');
@@ -85,6 +90,7 @@ export class Settings {
     wireSeg('theme-seg', 'theme');
     wireSeg('end-mode-seg', 'endMode');
     wireSeg('fx-seg', 'fxLevel');
+    wireSeg('descent-rate-seg', 'descentRate');
 
     const slider = document.getElementById('speed-slider');
     if (slider) {

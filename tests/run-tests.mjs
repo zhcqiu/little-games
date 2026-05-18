@@ -542,6 +542,30 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   truthy('slow descent: ~3500 left after 5s', Math.abs(g2.brickDescentTimer - 3500) < 50);
 }
 
+// descentRateMul：settings 可手调的"下移速度"独立倍率
+{
+  const g = new BreakoutGame();
+  g.ballRespawnTimer = 0;
+  g.setDescentRateMul(0.5);
+  g.brickDescentTimer = 10000;
+  g.step(4000);
+  // 4000 × 0.5 = 2000 扣除 → timer = 8000
+  truthy('descentRateMul 0.5: timer ~= 8000 after 4s',
+    Math.abs(g.brickDescentTimer - 8000) < 50);
+  // 同时叠加慢球：mul 实际 = 0.5 × 0.7 = 0.35
+  g._applyPowerup('slow');
+  const before = g.brickDescentTimer;
+  g.step(2000);
+  // 2000 × 0.35 = 700 扣除
+  truthy('descentRateMul 0.5 + slow: timer drop ~700',
+    Math.abs(before - g.brickDescentTimer - 700) < 50);
+  // setDescentRateMul 拒绝非法值
+  g.setDescentRateMul(-1);
+  truthy('setDescentRateMul rejects negative', g.descentRateMul === 0.5);
+  g.setDescentRateMul('abc');
+  truthy('setDescentRateMul rejects NaN', g.descentRateMul === 0.5);
+}
+
 // 道具效果（coverage gap）：multi / wider 应用后状态正确
 {
   const g = new BreakoutGame();

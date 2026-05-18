@@ -47,6 +47,7 @@ export class GameLogic {
     this.balls = [this._spawnBall()];
     this.ballRespawnTimer = 1500;   // ms 倒计时，到 0 后随机角度发射
     this.brickDescentTimer = DESCENT_TABLE[this.speedLevel - 1];
+    this.descentRateMul = 1.0;   // settings 可调（默认 1.0；UI 默认设 0.6 让初次体验更友好）
     this.slowRemainMs = 0;
     this.fallingItem = null;
 
@@ -122,9 +123,12 @@ export class GameLogic {
       }
     }
 
-    // 砖块下移定时器 —— 跟球速一致地节流：慢球生效时计时器走 0.7×，
-    // 保证"球速降 → 击砖效率降 → 砖块下移也降"的玩家直觉，不让减速包反成负反馈。
-    const descentMul = this.slowRemainMs > 0 ? 0.7 : 1;
+    // 砖块下移定时器 —— 三因素叠加节流：
+    //   1) 慢球生效 × 0.7（跟球速一致，避免减速包反成负反馈）
+    //   2) descentRateMul：玩家在设置里手调的"下移速度"独立倍率
+    //   3) （DESCENT_TABLE 自身的档位差异是 reset 时设的，不影响计时器扣减节奏）
+    const slowMul = this.slowRemainMs > 0 ? 0.7 : 1;
+    const descentMul = slowMul * this.descentRateMul;
     this.brickDescentTimer -= dt * descentMul;
     if (this.brickDescentTimer <= 0) {
       this.brickDescentTimer += DESCENT_TABLE[this.speedLevel - 1];
@@ -426,6 +430,13 @@ export class GameLogic {
 
   setEndMode(mode) {
     if (mode === 'standard' || mode === 'endless') this.endMode = mode;
+  }
+
+  /** 设置砖块下移速度倍率。<1 = 慢，1 = 基线，>1 = 快。settings 推过来。 */
+  setDescentRateMul(mul) {
+    const v = Number(mul);
+    if (!Number.isFinite(v) || v <= 0) return;
+    this.descentRateMul = Math.max(0.1, Math.min(3, v));
   }
 
   // 事件钩子
