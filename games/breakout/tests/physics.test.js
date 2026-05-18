@@ -54,11 +54,22 @@ import {
 
 // sweepAgainstBrick：球从位置 A 到位置 B，AABB 命中
 {
-  const ball = { x: 4.5, y: 6 };
-  const next = { x: 4.5, y: 5 };
+  // 球从砖下方（y=6.5，外于扩展 AABB 上界 6.3）干净接近砖底沿
+  const ball = { x: 4.5, y: 6.5 };
+  const next = { x: 4.5, y: 5.5 };
   const hit = sweepAgainstBrick(ball, next, 4, 5, 0.3);  // brickCol=4, brickRow=5, radius=0.3
   assertTrue('sweep top hit detected', hit !== null);
   assertEq('sweep top side',           hit.side, 'bottom');  // 球从下进，命中砖下沿
+}
+
+// 幽灵命中守卫（regression: Codex review C-1）：
+// 球刚反射离开邻砖（如 col=3 右面），现球心位于 x=4.3、扩展 AABB 重叠区域
+// 中。即使速度朝邻砖方向，也应被识别为"已在内部"，不算命中。
+{
+  const ball = { x: 4.3, y: 5.5 };   // 已在 col=4 砖扩展 AABB [3.7, 5.3] 内
+  const next = { x: 4.6, y: 5.5 };
+  const hit = sweepAgainstBrick(ball, next, 4, 5, 0.3);
+  assertEq('phantom adjacent-brick rejected', hit, null);
 }
 {
   const ball = { x: 3.5, y: 5.5 };

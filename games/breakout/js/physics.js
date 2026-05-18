@@ -67,6 +67,10 @@ export function sweepAgainstBrick(ball, next, brickCol, brickRow, radius) {
   const tExit  = Math.min(tExitX, tExitY);
 
   if (tEnter > tExit || tEnter > 1 || tExit < 0) return null;
+  // 拒绝"已经在 AABB 内"的幽灵命中：ball 刚反射离开邻砖后，下一子步起点在
+  // 当前砖的扩展 AABB 内（因 radius 让相邻 AABB 必然重叠 2×radius）。
+  // 这种情况下 tEnter 显著为负，应判定为非命中。
+  if (tEnter < -1e-3) return null;
   const t = Math.max(0, tEnter);
 
   let side;

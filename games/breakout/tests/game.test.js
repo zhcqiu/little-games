@@ -124,7 +124,7 @@ import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
   g.board[5][6] = 2;
   // 球从 (6.5, 6) 向上撞砖底（即 row=5+1=6 处）
-  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.balls[0] = { x: 6.5, y: 6.4, vx: 0, vy: -5 };
   let brickHits = 0;
   g.onBrick(() => brickHits++);
   g.step(50);
@@ -141,7 +141,7 @@ import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
   g.board[5][6] = 1;
   g.ballRespawnTimer = 0;
-  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.balls[0] = { x: 6.5, y: 6.4, vx: 0, vy: -5 };
   g.step(50);
   assertEq('combo capped at 10', g.combo, 10);
 }
@@ -225,7 +225,7 @@ import { SPEED_TABLE, PADDLE_Y, COLS } from '../js/game.js';
 
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
   g.board[5][6] = 1;
-  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.balls[0] = { x: 6.5, y: 6.4, vx: 0, vy: -5 };
   g.step(50);
   assertTrue('powerup item spawned', g.fallingItem !== null);
   assertEq('powerup type wider', g.fallingItem.type, 'wider');

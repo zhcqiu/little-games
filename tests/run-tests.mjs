@@ -402,14 +402,34 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   truthy('breakout paddle right vx>0', right.vx > 0);
 }
 {
-  const ball = { x: 4.5, y: 6 };
-  const next = { x: 4.5, y: 5 };
+  // 球从砖下方（y=6.5，外于扩展 AABB 6.3）干净接近砖底沿
+  const ball = { x: 4.5, y: 6.5 };
+  const next = { x: 4.5, y: 5.5 };
   const hit = sweepAgainstBrick(ball, next, 4, 5, 0.3);
   truthy('breakout sweep top hit', hit !== null && hit.side === 'bottom');
 }
 {
   const noHit = sweepAgainstBrick({ x: 1, y: 1 }, { x: 1.2, y: 1.2 }, 4, 5, 0.3);
   eq('breakout sweep no hit', noHit, null);
+}
+// 幽灵命中守卫（regression: Codex C-1）：球已在扩展 AABB 内不算新命中
+{
+  const ball = { x: 4.3, y: 5.5 };
+  const next = { x: 4.6, y: 5.5 };
+  const hit = sweepAgainstBrick(ball, next, 4, 5, 0.3);
+  eq('breakout phantom adjacent rejected', hit, null);
+}
+// reflectFromBrick 四方向（之前只测了 top；补 left/right/bottom）
+{
+  eq('reflectFromBrick bottom flips vy', reflectFromBrick({vx:1,vy:2},'bottom').vy, -2);
+  eq('reflectFromBrick left flips vx',   reflectFromBrick({vx:3,vy:1},'left').vx,  -3);
+  eq('reflectFromBrick right flips vx',  reflectFromBrick({vx:-3,vy:1},'right').vx, 3);
+}
+// paddleReflectionAngle 最左端（之前只测了 0 和 +1）
+{
+  const left = paddleReflectionAngle({vx:0,vy:5}, -1);
+  truthy('paddle left end vx<0', left.vx < 0);
+  truthy('paddle left end vy<0', left.vy < 0);
 }
 
 // bricks
@@ -444,7 +464,7 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   g.combo = 3;
   for (let r = 0; r < g.rows; r++) for (let c = 0; c < g.cols; c++) g.board[r][c] = 0;
   g.board[5][6] = 2;
-  g.balls[0] = { x: 6.5, y: 6.2, vx: 0, vy: -5 };
+  g.balls[0] = { x: 6.5, y: 6.4, vx: 0, vy: -5 };
   g.step(50);
   eq('breakout brick cleared', g.board[5][6], 0);
   eq('breakout score = value × combo', g.score, 6);
