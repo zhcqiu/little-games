@@ -34,6 +34,10 @@ function updateScoreUi() {
   highEl.textContent = String(settings.get('highScore'));
   comboEl.textContent = String(game.combo);
   comboBlock.classList.toggle('hidden', game.combo <= 1);
+  // 视觉升级：×5 起脉动 (combo-mid)；×8 起加彩虹 (combo-high)；满 ×10 max
+  comboBlock.classList.toggle('combo-mid', game.combo >= 5 && game.combo < 8);
+  comboBlock.classList.toggle('combo-high', game.combo >= 8 && game.combo < 10);
+  comboBlock.classList.toggle('combo-max', game.combo >= 10);
 }
 
 // 事件接线
@@ -294,6 +298,27 @@ if (snap && snap.score > 0) {
     if (!manualPaused) game.setPaused(false);
   });
 }
+
+// 新手引导（一次性）— 没有续玩存档时才显示，避免和续玩弹窗叠加
+const TUTORIAL_KEY = 'breakout.tutorialSeen';
+function maybeShowTutorial() {
+  try {
+    if (localStorage.getItem(TUTORIAL_KEY) === '1') return;
+  } catch (e) { return; }
+  const p = document.getElementById('tutorial-popup');
+  if (!p) return;
+  p.classList.remove('hidden');
+  game.setPaused(true);
+  document.getElementById('tutorial-ok').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch (err) {}
+    p.classList.add('hidden');
+    audio.unlock();
+    if (settings.get('bgmOn')) audio.startBgm();
+    if (!manualPaused) game.setPaused(false);
+  }, { once: true });
+}
+if (!snap || snap.score <= 0) maybeShowTutorial();
 
 // 浮字 toast（无尽压顶）
 const encourageToast = document.getElementById('encourage-toast');

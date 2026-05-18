@@ -109,9 +109,43 @@ export class Renderer {
       ctx.globalAlpha = 1;
     }
 
-    // 球贴板倒计时数字
+    // 球贴板倒计时数字 + 瞄准指示箭头
     if (game.ballRespawnTimer > 0) {
       const sec = Math.ceil(game.ballRespawnTimer / 1000);
+      // 瞄准箭头：根据 paddle 偏离 _aimRefCol 算角度，与 _launchAllBalls 公式一致
+      if (game._aimRefCol !== null && game._aimRefCol !== undefined) {
+        const aimDelta = game.paddle.col - game._aimRefCol;
+        const aimAngleDeg = Math.max(-60, Math.min(60, aimDelta * 40));
+        const aimRad = aimAngleDeg * Math.PI / 180;
+        const ball = game.balls[0];
+        if (ball) {
+          const cx = ball.x * this.cellSize;
+          const cy = ball.y * this.cellSize;
+          const arrowLen = this.cellSize * 2.5;
+          const dx = Math.sin(aimRad) * arrowLen;
+          const dy = -Math.cos(aimRad) * arrowLen;
+          ctx.strokeStyle = this._theme.paddle;
+          ctx.lineWidth = Math.max(2, this.cellSize * 0.12);
+          ctx.lineCap = 'round';
+          ctx.setLineDash([6, 5]);
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + dx, cy + dy);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // 箭头小三角
+          const tipX = cx + dx, tipY = cy + dy;
+          const ang = Math.atan2(dy, dx);
+          ctx.fillStyle = this._theme.paddle;
+          ctx.beginPath();
+          ctx.moveTo(tipX, tipY);
+          ctx.lineTo(tipX - Math.cos(ang - Math.PI / 6) * 8, tipY - Math.sin(ang - Math.PI / 6) * 8);
+          ctx.lineTo(tipX - Math.cos(ang + Math.PI / 6) * 8, tipY - Math.sin(ang + Math.PI / 6) * 8);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      // 倒计时数字
       ctx.fillStyle = this._theme.paddle;
       ctx.font = `bold ${this.cellSize * 1.2}px sans-serif`;
       ctx.textAlign = 'center';

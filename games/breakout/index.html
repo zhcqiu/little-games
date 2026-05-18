@@ -49,6 +49,7 @@
       <h3>📱 手机和平板</h3>
       <ul>
         <li><b>左右拖动</b> — 移动板拍（按住也不暂停，球继续飞）</li>
+        <li><b>倒计时时拖板拍</b> — 偏离起点的方向 = 球发射方向（虚线箭头预览）</li>
         <li><b>顶栏 ⏸</b> — 暂停 / 继续</li>
         <li><b>右上 ⚙</b> — 打开设置</li>
       </ul>
@@ -139,6 +140,18 @@
       </div>
     </div>
     <button id="restart-btn" class="primary">🔄 重新开始</button>
+  </div>
+
+  <!-- 新手引导气泡（一次性） -->
+  <div id="tutorial-popup" class="popup hidden">
+    <p style="font-size: 20px; margin: 0 0 12px;">👋 欢迎玩打砖块！</p>
+    <p style="margin: 0 0 6px;">👆 <b>左右拖动</b> 移动板拍接球</p>
+    <p style="margin: 0 0 6px;">🔥 <b>不掉球</b> 连击加倍（最多 ×10）</p>
+    <p style="margin: 0 0 6px;">🎁 接 <b>🟪/🌟/🐌</b> 道具有惊喜</p>
+    <p style="margin: 0 0 16px;">🏓 倒计时时 <b>拖板拍方向</b> = 瞄准！</p>
+    <div class="popup-buttons">
+      <button id="tutorial-ok" class="primary">✅ 开始玩</button>
+    </div>
   </div>
 
   <!-- 续玩询问气泡 -->

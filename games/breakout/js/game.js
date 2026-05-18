@@ -55,6 +55,7 @@ export class GameLogic {
     this.sessionSpeedBonus = 1.0;   // 本局得分驱动的球速倍率（1.0 → 1.4 渐增）
     this.comboDecayTimer = 0;        // > 0 时倒计时；归零自动 combo→1（防"闲"）
     this.bricksSinceLastPowerup = 0; // 自适应道具触发器（无道具时累计；满 22 强制掉）
+    this._aimRefCol = null;          // 倒计时开始时板拍位置；离基准越远，发射角越偏
 
     this._onBrick = null;
     this._onDrop = null;
@@ -169,6 +170,8 @@ export class GameLogic {
 
     if (this.ballRespawnTimer > 0) {
       this.ballRespawnTimer = Math.max(0, this.ballRespawnTimer - dt);
+      // 倒计时第一帧锚定瞄准基准列；之后玩家拖动板拍偏离基准 = 发射角偏向
+      if (this._aimRefCol === null) this._aimRefCol = this.paddle.col;
       for (const b of this.balls) {
         b.x = this.paddle.col;
         b.y = PADDLE_Y - PADDLE_HALF_HEIGHT - BALL_RADIUS - 0.05;
@@ -414,9 +417,15 @@ export class GameLogic {
   _launchAllBalls() {
     const baseSpeed = SPEED_TABLE[this.speedLevel - 1];
     const mul = this.slowRemainMs > 0 ? 0.7 : 1;
+    // 玩家瞄准：倒计时期间板拍偏离基准位置 → 偏向。max ±1.5 cell 偏移 → ±60°
+    const aimDelta = this._aimRefCol === null ? 0 : (this.paddle.col - this._aimRefCol);
+    const aimAngleDeg = Math.max(-60, Math.min(60, aimDelta * 40));   // 1 cell 偏移 ≈ 40°
+    const aimRad = aimAngleDeg * Math.PI / 180;
+    this._aimRefCol = null;   // 用完清零，下次倒计时重新锚定
     for (const b of this.balls) {
-      // 向上 ±45° 随机
-      const angle = (this._rng() * 90 - 45) * Math.PI / 180;
+      // 基础角度 = 玩家瞄准；多球之间加 ±15° 微随机散开
+      const jitter = (this._rng() * 30 - 15) * Math.PI / 180;
+      const angle = aimRad + jitter;
       const sp = baseSpeed * mul * this.sessionSpeedBonus;
       b.vx = sp * Math.sin(angle);
       b.vy = -sp * Math.cos(angle);
@@ -495,6 +504,7 @@ export class GameLogic {
     this.sessionSpeedBonus = 1.0;
     this.comboDecayTimer = 0;
     this.bricksSinceLastPowerup = 0;
+    this._aimRefCol = null;
   }
 
   setSpeedLevel(level) {
