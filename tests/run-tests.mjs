@@ -5,6 +5,8 @@ import { Game, createBag } from '../games/tetris/js/game.js';
 import { GameLogic as BreakoutGame, COLS as BR_COLS, ROWS as BR_ROWS } from '../games/breakout/js/game.js';
 import { reflectFromBrick, paddleReflectionAngle, sweepAgainstBrick } from '../games/breakout/js/physics.js';
 import { randomBrickValue } from '../games/breakout/js/bricks.js';
+import { Board, DIFFICULTIES, EMOJI_POOL } from '../games/lianliankan/js/board.js';
+import { Game as LianGame } from '../games/lianliankan/js/game.js';
 
 let passed = 0;
 let failed = 0;
@@ -769,6 +771,84 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   while (g.slowRemainMs > 0) g.step(500);
   const sp3 = Math.hypot(g.balls[0].vx, g.balls[0].vy);
   truthy('slow expire: ball back to 1×', Math.abs(sp3 / sp0 - 1.0) < 0.01);
+}
+
+// ───── lianliankan ─────
+eq('lian DIFFICULTIES 4 档', Object.keys(DIFFICULTIES).sort(), ['advanced','beginner','master','novice']);
+truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
+
+// Board 生成
+{
+  const b = new Board('novice');
+  eq('lian novice cells', b.countRemaining(), 36);
+  // 直方图全偶数
+  const hist = {};
+  for (let r = 1; r <= b.rows; r++) for (let c = 1; c <= b.cols; c++) {
+    const v = b.get(r, c); if (v) hist[v] = (hist[v] || 0) + 1;
+  }
+  let allEven = true;
+  for (const k of Object.keys(hist)) if (hist[k] % 2 !== 0) { allEven = false; break; }
+  truthy('lian novice 直方图全偶', allEven);
+  truthy('lian novice 初始有解', b.hasAnySolvable() !== null);
+}
+
+// findPath 同行
+{
+  const b = Object.create(Board.prototype);
+  b.rows = 2; b.cols = 4;
+  b.data = new Int8Array(4 * 6);
+  b.memory = false; b.flipped = null;
+  b.set(1, 1, 5); b.set(1, 4, 5);
+  const p = b.findPath({r:1,c:1}, {r:1,c:4});
+  truthy('lian findPath 同行', p !== null);
+}
+
+// Game 状态机
+{
+  const g = new LianGame('novice', () => 0.5);
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7); g.board.set(1, 3, 7);
+  // 加一对干扰牌避免消除后立即触发 win
+  g.board.set(2, 1, 9); g.board.set(2, 3, 9);
+  g.tap(1, 1);
+  const r = g.tap(1, 3);
+  eq('lian match', r.kind, 'match');
+  eq('lian score 10', g.score, 10);
+  eq('lian combo 1', g.combo, 1);
+}
+
+// combo 时间窗口
+{
+  const g = new LianGame('novice', () => 0.5);
+  g.board.data.fill(0);
+  g.board.set(1, 1, 7); g.board.set(1, 3, 7);
+  g.board.set(2, 1, 9); g.board.set(2, 3, 9);
+  g.elapsedMs = 1000;
+  g.tap(1, 1); g.tap(1, 3);
+  g.elapsedMs = 2500;
+  g.tap(2, 1); g.tap(2, 3);
+  eq('lian combo 2', g.combo, 2);
+  eq('lian score 25', g.score, 25);
+}
+
+// serialize / restore
+{
+  const g = new LianGame('novice', () => 0.5);
+  g.score = 50;
+  const snap = g.serialize();
+  eq('lian snap version', snap.version, 1);
+  const g2 = new LianGame('novice', () => 0.5);
+  eq('lian restore ok', g2.restore(snap), true);
+  eq('lian restore score', g2.score, 50);
+  eq('lian restore reject null', g2.restore(null), false);
+  eq('lian restore reject wrong version', g2.restore({version:99}), false);
+}
+
+// Memory 模式
+{
+  const g = new LianGame('beginner', () => 0.5);
+  truthy('lian beginner memory', g.memory === true);
+  truthy('lian beginner has flipped', g.board.flipped !== null);
 }
 
 // ───── result ─────

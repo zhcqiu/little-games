@@ -75,6 +75,14 @@ export class Settings {
     }
     this.highScore[difficulty] = cur;
     if (changed) this.save();
+    // 给首页卡片用：所有档的 bestScore 之最大值（标量）
+    try {
+      let max = 0;
+      for (const d of Object.keys(this.highScore)) {
+        if (this.highScore[d].bestScore > max) max = this.highScore[d].bestScore;
+      }
+      localStorage.setItem('lianliankan.highScore.scalar', String(max));
+    } catch (e) {}
     return changed;
   }
 
