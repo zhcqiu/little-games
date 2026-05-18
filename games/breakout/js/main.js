@@ -238,7 +238,10 @@ function persistSave() {
 }
 window.addEventListener('beforeunload', persistSave);
 window.addEventListener('pagehide', persistSave);
-document.addEventListener('visibilitychange', () => { if (document.hidden) persistSave(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) persistSave();
+  else audio.resume();   // iOS Safari 切后台后 AudioContext suspended，前台时显式恢复
+});
 
 const snap = loadSave();
 if (snap && snap.score > 0) {

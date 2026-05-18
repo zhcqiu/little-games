@@ -11,7 +11,11 @@ export class AudioEngine {
 
   /** 由首次用户手势调用，iOS Safari 要求 */
   unlock() {
-    if (this.ctx) return;
+    if (this.ctx) {
+      // 已存在 ctx 但被 iOS 切后台挂起 → 顺手恢复
+      this.resume();
+      return;
+    }
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
@@ -21,6 +25,13 @@ export class AudioEngine {
       this.master.connect(this.ctx.destination);
     } catch (e) {
       console.warn('AudioContext 创建失败：', e);
+    }
+  }
+
+  /** iOS Safari 切后台 → 前台后 ctx.state 变 'suspended'，需要显式 resume。 */
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      try { this.ctx.resume(); } catch (e) {}
     }
   }
 
