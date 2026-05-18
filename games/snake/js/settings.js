@@ -10,6 +10,7 @@ const DEFAULTS = {
   theme: 'cheery',
   fxLevel: 'strong',
   totalFood: 0,    // 累计吃食物数（解锁额外蛇头用）
+  foodEdgeMargin: 1,
 };
 
 const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
@@ -63,6 +64,7 @@ export class Settings {
     this.game.setTheme(this.state.theme);
     this.audio.setBgmTheme(this.state.theme);
     this.game.setTotalFood(this.state.totalFood);
+    this.game.setFoodEdgeMargin(this.state.foodEdgeMargin);
     document.body.dataset.theme = this.state.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',
@@ -85,6 +87,7 @@ export class Settings {
     setSeg('theme-seg',    this.state.theme);
     setSeg('end-mode-seg', this.state.endMode);
     setSeg('fx-seg',       this.state.fxLevel);
+    setSeg('food-edge-seg', this.state.foodEdgeMargin);
 
     const sfxBtn = document.getElementById('sfx-toggle');
     if (sfxBtn) {
@@ -115,6 +118,12 @@ export class Settings {
     document.getElementById('end-mode-seg')?.addEventListener('click', (e) => {
       const btn = e.target.closest('button');
       if (btn?.dataset.val) this.set('endMode', btn.dataset.val);
+    });
+
+    // 食物范围
+    document.getElementById('food-edge-seg')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn?.dataset.val !== undefined) this.set('foodEdgeMargin', parseInt(btn.dataset.val, 10) || 0);
     });
 
     // 音效 / BGM

@@ -363,3 +363,59 @@ for (let i = 0; i < 30; i++) {
   if (!cheeryT3.includes(g39.headEmoji)) { allFromT3Pool = false; break; }
 }
 assertTrue('600 食物时 head 来自 base+tier2+tier3 池', allFromT3Pool);
+
+// 食物边缘限制
+const g40 = new Game();
+g40.setFoodEdgeMargin(3);
+g40.snake = [{ row: 8, col: 7 }];   // 蛇只占一格，内部区域几乎全空
+// 抽 100 次食物，全部应在 row[3..12]、col[3..8] 范围内
+let allInner = true;
+for (let i = 0; i < 100; i++) {
+  const f = g40._spawnFood();
+  if (!f || f.row < 3 || f.row >= 13 || f.col < 3 || f.col >= 9) { allInner = false; break; }
+}
+assertEq('margin=3 食物全在内部', allInner, true);
+
+// margin=0 时食物可以出现在边缘
+const g41 = new Game();
+g41.setFoodEdgeMargin(0);
+g41.snake = [{ row: 8, col: 7 }];
+// 抽 200 次，应至少有一次在边缘
+let anyEdge = false;
+for (let i = 0; i < 200; i++) {
+  const f = g41._spawnFood();
+  if (f && (f.row === 0 || f.row === 15 || f.col === 0 || f.col === 11)) { anyEdge = true; break; }
+}
+assertEq('margin=0 食物可以在边缘', anyEdge, true);
+
+// fallback：margin 太大但内部都被占 → 用全板（蛇 192 节是极端，用一个较小但中心被占的场景）
+const g42 = new Game();
+g42.setFoodEdgeMargin(3);
+// 把内部 6×10 区域全填满（row 3-12, col 3-8）
+const occ = [];
+for (let r = 3; r < 13; r++) {
+  for (let c = 3; c < 9; c++) {
+    occ.push({ row: r, col: c });
+  }
+}
+g42.snake = occ;
+const fallback = g42._spawnFood();
+// 因为没有有效内部空格 → 应当回退到全板，落在边缘区
+assertTrue('fallback 抽到食物', fallback !== null);
+const isEdge = fallback.row < 3 || fallback.row >= 13 || fallback.col < 3 || fallback.col >= 9;
+assertEq('fallback 食物在边缘区', isEdge, true);
+
+// setFoodEdgeMargin 边界 clamp
+const g43 = new Game();
+g43.setFoodEdgeMargin(-1);
+assertEq('clamp -1 → 0', g43.foodEdgeMargin, 0);
+g43.setFoodEdgeMargin(99);
+assertEq('clamp 99 → 3', g43.foodEdgeMargin, 3);
+
+// 序列化保留
+const g44 = new Game();
+g44.foodEdgeMargin = 2;
+const fmSnap = g44.serialize();
+const g45 = new Game();
+g45.restore(fmSnap);
+assertEq('restore foodEdgeMargin', g45.foodEdgeMargin, 2);

@@ -52,6 +52,7 @@ export class Game {
     this.endMode = 'standard';     // standard | wrap | revive
     this.theme = 'cheery';
     this.totalFoodEver = 0;
+    this.foodEdgeMargin = 1;
     this.tickInterval = TICK_INTERVALS[0];
     this.accumulator = 0;
     this.reviveInvincibleMs = 0;   // > 0 表示无敌期内
@@ -72,6 +73,27 @@ export class Game {
 
   _spawnFood() {
     const occupied = new Set(this.snake.map((s) => `${s.row},${s.col}`));
+    const margin = this.foodEdgeMargin || 0;
+
+    // 先在"内部区域"找空格（离边 margin 格内不刷）
+    const inner = [];
+    if (margin > 0
+        && BOARD_HEIGHT - margin * 2 > 0
+        && BOARD_WIDTH - margin * 2 > 0) {
+      for (let r = margin; r < BOARD_HEIGHT - margin; r++) {
+        for (let c = margin; c < BOARD_WIDTH - margin; c++) {
+          if (!occupied.has(`${r},${c}`)) inner.push({ row: r, col: c });
+        }
+      }
+    }
+
+    if (inner.length > 0) {
+      this.foodEmoji = FOOD_EMOJI_POOL[Math.floor(Math.random() * FOOD_EMOJI_POOL.length)];
+      this.foodSpawnAt = performance.now();
+      return inner[Math.floor(Math.random() * inner.length)];
+    }
+
+    // fallback：内部区域全占 / margin=0 → 用全板
     const empty = [];
     for (let r = 0; r < BOARD_HEIGHT; r++) {
       for (let c = 0; c < BOARD_WIDTH; c++) {
@@ -103,6 +125,11 @@ export class Game {
 
   setTotalFood(n) {
     this.totalFoodEver = Math.max(0, n | 0);
+  }
+
+  setFoodEdgeMargin(n) {
+    const v = Math.max(0, Math.min(3, n | 0));
+    this.foodEdgeMargin = v;
   }
 
   setTheme(theme) {
@@ -291,6 +318,7 @@ export class Game {
       headEmoji: this.headEmoji,
       comboCount: this.comboCount,
       comboLastEatMs: this.comboLastEatMs,
+      foodEdgeMargin: this.foodEdgeMargin,
     };
   }
 
@@ -310,6 +338,9 @@ export class Game {
       this.headEmoji = snap.headEmoji || this._pickHead();
       this.comboCount = Number.isFinite(snap.comboCount) ? (snap.comboCount | 0) : 0;
       this.comboLastEatMs = Number.isFinite(snap.comboLastEatMs) ? snap.comboLastEatMs : -10000;
+      if (typeof snap.foodEdgeMargin === 'number') {
+        this.foodEdgeMargin = Math.max(0, Math.min(3, snap.foodEdgeMargin | 0));
+      }
       return true;
     } catch (e) {
       console.warn('restore failed:', e);

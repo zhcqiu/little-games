@@ -264,6 +264,30 @@ for (let i = 0; i < 30; i++) {
 }
 truthy('snake t2 unlock', allInT2);
 
+// snake food edge margin
+const sg16 = new SnakeGame();
+sg16.setFoodEdgeMargin(3);
+sg16.snake = [{ row: 8, col: 7 }];
+let allInner = true;
+for (let i = 0; i < 50; i++) {
+  const f = sg16._spawnFood();
+  if (!f || f.row < 3 || f.row >= 13 || f.col < 3 || f.col >= 9) { allInner = false; break; }
+}
+truthy('snake margin=3 inner only', allInner);
+
+const sg17 = new SnakeGame();
+sg17.setFoodEdgeMargin(-1);
+eq('snake clamp neg', sg17.foodEdgeMargin, 0);
+sg17.setFoodEdgeMargin(99);
+eq('snake clamp huge', sg17.foodEdgeMargin, 3);
+
+const sg18 = new SnakeGame();
+sg18.foodEdgeMargin = 2;
+const fmSnapNode = sg18.serialize();
+const sg19 = new SnakeGame();
+sg19.restore(fmSnapNode);
+eq('snake restore foodEdgeMargin', sg19.foodEdgeMargin, 2);
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
