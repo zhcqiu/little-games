@@ -138,7 +138,7 @@ input.onTap((r, c) => {
 function handleTapResult(result) {
   switch (result.kind) {
     case 'select':
-      renderer.setSelection(result.cell?.r ?? game.selection.r, result.cell?.c ?? game.selection.c);
+      renderer.setSelection(game.selection.r, game.selection.c);
       audio.playSelect();
       vibrate([5]);
       break;
@@ -317,6 +317,7 @@ function askDifficultyChange(newDiff) {
 function restartGame(difficulty) {
   game = new Game(difficulty);
   game.timed = settings.state.timed || DIFFICULTIES[difficulty].timed;
+  game.onLose(showLosePanel);  // 新 Game 实例需要重新挂回调
   renderer.mount(game);
   syncBottomBar();
   syncComboUi();

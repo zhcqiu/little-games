@@ -102,7 +102,6 @@ export class Settings {
       const prev = this.state.difficulty;
       if (prev === btn.dataset.val) return;
       // 切难度 → 弹确认
-      const confirmEl = document.getElementById('restart-confirm');
       this._cb.onDifficultyChange?.(btn.dataset.val);
     });
     document.getElementById('timed-toggle')?.addEventListener('click', () => {
