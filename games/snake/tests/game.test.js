@@ -288,3 +288,47 @@ const g31 = new Game();
 assertEq('restore ok', g31.restore(snapHead), true);
 assertEq('restore 恢复 head', g31.headEmoji, oldHead);
 assertEq('restore 恢复 theme', g31.theme, 'space');
+
+// 连吃 combo
+const g32 = new Game();
+g32.food = { row: 8, col: 8 };  // 第 1 食
+let comboHits = [];
+g32.onCombo((n) => comboHits.push(n));
+g32._advance();  // eat 1
+assertEq('combo 1', g32.comboCount, 1);
+g32.food = { row: 8, col: 9 };
+g32._advance();  // eat 2
+assertEq('combo 2', g32.comboCount, 2);
+g32.food = { row: 8, col: 10 };
+g32._advance();  // eat 3 — combo fires
+assertEq('combo 3', g32.comboCount, 3);
+assertEq('combo bonus +1', g32.score, 3 + 1);  // 3 eats × 1 + 1 bonus
+assertEq('combo cb fired with 3', comboHits, [3]);
+
+// 5s 后 combo 重置
+const g33 = new Game();
+g33.food = { row: 8, col: 8 };
+g33._advance();
+assertEq('combo 1', g33.comboCount, 1);
+g33.comboLastEatMs = performance.now() - 6000;   // 模拟 6 秒前
+g33.food = { row: 9, col: 8 };
+g33.currentDirection = 'down';
+g33._advance();
+assertEq('combo 重置为 1', g33.comboCount, 1);
+
+// reset 清 combo
+const g34 = new Game();
+g34.comboCount = 5;
+g34.comboLastEatMs = performance.now();
+g34.reset();
+assertEq('reset combo=0', g34.comboCount, 0);
+
+// 序列化保留 combo
+const g35 = new Game();
+g35.comboCount = 4;
+g35.comboLastEatMs = 12345;
+const comboSnap = g35.serialize();
+const g36 = new Game();
+g36.restore(comboSnap);
+assertEq('restore combo', g36.comboCount, 4);
+assertEq('restore comboLastEatMs', g36.comboLastEatMs, 12345);

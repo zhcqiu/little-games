@@ -50,11 +50,14 @@ export class Game {
     this.headEmoji = this._pickHead();
     this.foodSpawnAt = performance.now();   // 食物刚生成的时间戳，给 render 做弹出动画
     this.lastEatAt = -10000;                // 上次吃食物时间，给 render 做波纹
+    this.comboCount = 0;                    // 连吃 combo 计数
+    this.comboLastEatMs = -10000;           // 上次吃食物时间戳，combo 窗口判断用
 
     this._onEat = null;
     this._onDie = null;
     this._onRevive = null;
     this._onWrap = null;
+    this._onCombo = null;
   }
 
   _spawnFood() {
@@ -105,6 +108,7 @@ export class Game {
   onDie(cb)    { this._onDie = cb; }
   onRevive(cb) { this._onRevive = cb; }
   onWrap(cb)   { this._onWrap = cb; }
+  onCombo(cb)  { this._onCombo = cb; }
 
   queueDirection(dir) {
     if (!DIR_VECTORS[dir]) return;
@@ -181,9 +185,19 @@ export class Game {
     this.snake.unshift(nextHead);
     if (ate) {
       this.score += 1;
-      this.lastEatAt = performance.now();
+      const now = performance.now();
+      this.lastEatAt = now;
+      // combo: 5 秒内续吃累加，超过则重置为 1
+      if (now - this.comboLastEatMs < 5000) this.comboCount++;
+      else this.comboCount = 1;
+      this.comboLastEatMs = now;
       this.food = this._spawnFood();   // 可能 null（棋盘填满）
       if (this._onEat) this._onEat();
+      // 每 3 连吃奖励 +1 并触发 combo 回调
+      if (this.comboCount >= 3 && this.comboCount % 3 === 0) {
+        this.score += 1;
+        if (this._onCombo) this._onCombo(this.comboCount);
+      }
     } else {
       this.snake.pop();
     }
@@ -235,6 +249,8 @@ export class Game {
     this.dead = false;
     this.accumulator = 0;
     this.reviveInvincibleMs = 0;
+    this.comboCount = 0;
+    this.comboLastEatMs = -10000;
     this.food = this._spawnFood();
     this.headEmoji = this._pickHead();
   }
@@ -251,6 +267,8 @@ export class Game {
       reviveInvincibleMs: this.reviveInvincibleMs,
       theme: this.theme,
       headEmoji: this.headEmoji,
+      comboCount: this.comboCount,
+      comboLastEatMs: this.comboLastEatMs,
     };
   }
 
@@ -268,6 +286,8 @@ export class Game {
       this.reviveInvincibleMs = Math.max(0, snap.reviveInvincibleMs | 0);
       this.theme = HEAD_POOLS[snap.theme] ? snap.theme : this.theme;
       this.headEmoji = snap.headEmoji || this._pickHead();
+      this.comboCount = Number.isFinite(snap.comboCount) ? (snap.comboCount | 0) : 0;
+      this.comboLastEatMs = Number.isFinite(snap.comboLastEatMs) ? snap.comboLastEatMs : -10000;
       return true;
     } catch (e) {
       console.warn('restore failed:', e);

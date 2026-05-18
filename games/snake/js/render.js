@@ -91,6 +91,44 @@ export class Renderer {
     }
 
     ctx.restore();
+
+    // 危险预警：蛇头下一格是墙或自身（非穿墙、非无敌、非死亡、非暂停）
+    if (this._isHeadInDanger(game)) {
+      const pulse = (Math.sin(performance.now() / 100) + 1) / 2;
+      ctx.save();
+      ctx.strokeStyle = '#ff9800';
+      ctx.lineWidth = 6;
+      ctx.globalAlpha = 0.35 + pulse * 0.45;
+      ctx.strokeRect(0, 0, w, h);
+      ctx.restore();
+    }
+  }
+
+  _isHeadInDanger(game) {
+    if (game.dead || game.paused) return false;
+    if (game.reviveInvincibleMs > 0) return false;
+    if (!game.snake || game.snake.length === 0) return false;
+    const head = game.snake[0];
+    const dirs = {
+      up:    { dr: -1, dc:  0 },
+      down:  { dr: +1, dc:  0 },
+      left:  { dr:  0, dc: -1 },
+      right: { dr:  0, dc: +1 },
+    };
+    const d = dirs[game.currentDirection];
+    if (!d) return false;
+    const r = head.row + d.dr;
+    const c = head.col + d.dc;
+    // 墙：穿墙模式不算危险
+    if (r < 0 || r >= BOARD_HEIGHT || c < 0 || c >= BOARD_WIDTH) {
+      return game.endMode !== 'wrap';
+    }
+    // 自身：排除尾巴（下 tick 会让位）
+    for (let i = 0; i < game.snake.length - 1; i++) {
+      const s = game.snake[i];
+      if (s.row === r && s.col === c) return true;
+    }
+    return false;
   }
 
   _drawSnake(game, theme) {

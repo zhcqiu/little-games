@@ -93,6 +93,26 @@ export class Audio extends AudioEngine {
     this.playNoiseSweep({ fromFreq: 2000, toFreq: 200, duration: 120, gain: 0.25, q: 2 });
   }
 
+  /** 里程碑：上行三音 arpeggio，比 eat 更高更亮 */
+  playMilestone() {
+    if (!this.sfxOn || !this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    // C6 - E6 - G6，三音 60ms 间隔，triangle，比 eat 高一个八度
+    this.scheduleNote(1046.50, t0,         140, 0.32, 'triangle');
+    this.scheduleNote(1318.51, t0 + 0.06,  140, 0.32, 'triangle');
+    this.scheduleNote(1567.98, t0 + 0.12,  180, 0.32, 'triangle');
+  }
+
+  /** 连击：快速上行三音 chime，区别于 eat */
+  playCombo() {
+    if (!this.sfxOn || !this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    // G5 - B5 - D6
+    this.scheduleNote(783.99,  t0,         100, 0.3, 'triangle');
+    this.scheduleNote(987.77,  t0 + 0.05,  100, 0.3, 'triangle');
+    this.scheduleNote(1174.66, t0 + 0.10,  140, 0.3, 'triangle');
+  }
+
   /** 破纪录：上行 4 音 */
   playHighScore() {
     if (!this.sfxOn || !this.ctx) return;

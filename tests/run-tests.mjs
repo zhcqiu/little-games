@@ -227,6 +227,32 @@ sg10.restore(headSnap);
 eq('snake restore preserves head', sg10.headEmoji, oldH);
 eq('snake restore preserves theme', sg10.theme, 'forest');
 
+// snake combo
+const sg11 = new SnakeGame();
+sg11.food = { row: 8, col: 8 };
+sg11._advance();
+eq('snake combo 1', sg11.comboCount, 1);
+sg11.food = { row: 8, col: 9 };
+sg11._advance();
+sg11.food = { row: 8, col: 10 };
+sg11._advance();
+eq('snake combo 3', sg11.comboCount, 3);
+eq('snake combo +1 bonus', sg11.score, 4);
+
+const sg12 = new SnakeGame();
+sg12.comboCount = 7;
+sg12.reset();
+eq('snake reset combo', sg12.comboCount, 0);
+
+const sg13 = new SnakeGame();
+sg13.comboCount = 4;
+sg13.comboLastEatMs = 999;
+const snap2 = sg13.serialize();
+const sg14 = new SnakeGame();
+sg14.restore(snap2);
+eq('snake restore combo', sg14.comboCount, 4);
+eq('snake restore comboLastEatMs', sg14.comboLastEatMs, 999);
+
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

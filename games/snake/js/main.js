@@ -120,6 +120,9 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
+const MILESTONES = [10, 15, 20, 30, 50, 75, 100, 150, 200];
+let lastMilestone = 0;
+
 game.onEat(() => {
   audio.playEat();
   const head = game.snake[0];
@@ -128,6 +131,26 @@ game.onEat(() => {
   effects.triggerShake(3, 80);
   showClearToast('✨');
   vibrate([15]);
+
+  // 里程碑检测
+  const len = game.snake.length;
+  for (const m of MILESTONES) {
+    if (len >= m && lastMilestone < m) {
+      lastMilestone = m;
+      // 延迟一帧再弹 milestone toast 避免和 ✨ 重叠
+      setTimeout(() => {
+        showClearToast('🎖️' + m);
+        audio.playMilestone();
+        vibrate([30, 40, 50]);
+      }, 400);
+      break;
+    }
+  }
+});
+game.onCombo((n) => {
+  audio.playCombo();
+  showClearToast('🔥' + n + '连');
+  vibrate([20, 20, 60]);
 });
 game.onDie(() => {
   audio.playDie();
@@ -185,6 +208,20 @@ function setManualPause(p) {
   manualPause = p;
   game.setPaused(p);
   pauseOverlay.classList.toggle('hidden', !p);
+  const extra = document.getElementById('pause-extra');
+  if (p && extra) {
+    const score = game.score;
+    const high = settings.get('highScore');
+    if (score === 0) {
+      extra.textContent = '';
+    } else if (score < high) {
+      extra.textContent = '还差 ' + (high - score + 1) + ' 步破纪录！';
+    } else {
+      extra.textContent = '已破纪录！继续冲 🔥';
+    }
+  } else if (extra) {
+    extra.textContent = '';
+  }
   if (p) audio.stopBgm(100);
   else if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
 }
@@ -310,6 +347,7 @@ let highScoreCelebrated = false;
 function resetHighScoreTracker() {
   highScoreBaseline = settings.get('highScore');
   highScoreCelebrated = false;
+  lastMilestone = 0;
 }
 function celebrateHighScore() {
   audio.playHighScore();
