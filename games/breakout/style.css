@@ -1,41 +1,16 @@
+@import url('../../shared/themes.css');
+
+/* 打砖块专属：砖块 4 色 + 板拍 + 球。每主题各自定。 */
 :root {
-  /* 默认 = 童趣 */
-  --bg: #fff8e1;
-  --bg-2: #ff8a65;
-  --primary: #ff7043;
-  --primary-dark: #e64a19;
-  --text: #ffffff;
-  --text-dim: #ffe0b2;
-  --panel-bg: #ffecb3;
-  --panel-text: #4e342e;
-  --button-bg: #ffffff;
-  --button-bg-text: #5d4037;
-  --button-active: #ff7043;
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  --canvas-bg: #ffffff;
-  --canvas-grid: rgba(255, 112, 67, 0.16);
-  --canvas-border: #ff7043;
-  --brick-1: #4fc3f7;  /* 蓝 */
-  --brick-2: #81c784;  /* 绿 */
-  --brick-3: #fff176;  /* 黄 */
-  --brick-5: #e57373;  /* 红 */
+  --brick-1: #4fc3f7;
+  --brick-2: #81c784;
+  --brick-3: #fff176;
+  --brick-5: #e57373;
   --paddle: #ff7043;
   --ball: #ffffff;
 }
 
 body[data-theme="candy"] {
-  --bg: #fce4ec;
-  --bg-2: #f06292;
-  --primary: #ec407a;
-  --primary-dark: #ad1457;
-  --text-dim: #f8bbd0;
-  --panel-bg: #fce4ec;
-  --panel-text: #880e4f;
-  --button-bg-text: #ad1457;
-  --button-active: #ec407a;
-  --canvas-bg: #fff0f5;
-  --canvas-grid: rgba(236, 64, 122, 0.18);
-  --canvas-border: #ec407a;
   --brick-1: #f8bbd0;
   --brick-2: #f48fb1;
   --brick-3: #f06292;
@@ -45,18 +20,6 @@ body[data-theme="candy"] {
 }
 
 body[data-theme="forest"] {
-  --bg: #e8f5e9;
-  --bg-2: #66bb6a;
-  --primary: #43a047;
-  --primary-dark: #1b5e20;
-  --text-dim: #c8e6c9;
-  --panel-bg: #e8f5e9;
-  --panel-text: #1b5e20;
-  --button-bg-text: #2e7d32;
-  --button-active: #43a047;
-  --canvas-bg: #f1f8e9;
-  --canvas-grid: rgba(67, 160, 71, 0.18);
-  --canvas-border: #43a047;
   --brick-1: #aed581;
   --brick-2: #81c784;
   --brick-3: #66bb6a;
@@ -66,18 +29,6 @@ body[data-theme="forest"] {
 }
 
 body[data-theme="ocean"] {
-  --bg: #e0f7fa;
-  --bg-2: #26c6da;
-  --primary: #00acc1;
-  --primary-dark: #006064;
-  --text-dim: #b2ebf2;
-  --panel-bg: #e0f7fa;
-  --panel-text: #006064;
-  --button-bg-text: #00838f;
-  --button-active: #00acc1;
-  --canvas-bg: #f0fbfd;
-  --canvas-grid: rgba(0, 172, 193, 0.18);
-  --canvas-border: #00acc1;
   --brick-1: #80deea;
   --brick-2: #4dd0e1;
   --brick-3: #26c6da;
@@ -87,19 +38,6 @@ body[data-theme="ocean"] {
 }
 
 body[data-theme="space"] {
-  --bg: #311b92;
-  --bg-2: #512da8;
-  --primary: #7c4dff;
-  --primary-dark: #4527a0;
-  --text-dim: #d1c4e9;
-  --panel-bg: #4527a0;
-  --panel-text: #ffffff;
-  --button-bg: #7e57c2;
-  --button-bg-text: #ffffff;
-  --button-active: #b388ff;
-  --canvas-bg: #1a0a4a;
-  --canvas-grid: rgba(179, 136, 255, 0.18);
-  --canvas-border: #b388ff;
   --brick-1: #9575cd;
   --brick-2: #7e57c2;
   --brick-3: #b388ff;
@@ -109,19 +47,6 @@ body[data-theme="space"] {
 }
 
 body[data-theme="night"] {
-  --bg: #1a1a2e;
-  --bg-2: #16213e;
-  --primary: #42a5f5;
-  --primary-dark: #1976d2;
-  --text-dim: #b0bec5;
-  --panel-bg: #263858;
-  --panel-text: #ffffff;
-  --button-bg: #37475e;
-  --button-bg-text: #ffffff;
-  --button-active: #42a5f5;
-  --canvas-bg: #0d1b2a;
-  --canvas-grid: rgba(66, 165, 245, 0.12);
-  --canvas-border: #42a5f5;
   --brick-1: #64b5f6;
   --brick-2: #4fc3f7;
   --brick-3: #ffd54f;
