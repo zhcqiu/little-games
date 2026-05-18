@@ -19,7 +19,7 @@ export const PADDLE_Y = 16;                // 板拍中心行（距底 2 格）
 export const PADDLE_HALF_HEIGHT = 0.25;   // cell
 export const INITIAL_BRICK_ROWS = 4;
 export const SPEED_TABLE   = [6, 8, 10, 12, 14];   // 球速 cell/s（档位 1-5）
-export const DESCENT_TABLE = [8000, 7000, 5000, 4000, 3000];  // 砖块下移间隔 ms
+export const DESCENT_TABLE = [11000, 9000, 6500, 5000, 4000];  // 砖块下移间隔 ms（V1.0 太紧，整体放宽 ~30%，低速档放宽更多）
 
 export class GameLogic {
   constructor() {
@@ -119,8 +119,10 @@ export class GameLogic {
       }
     }
 
-    // 砖块下移定时器
-    this.brickDescentTimer -= dt;
+    // 砖块下移定时器 —— 跟球速一致地节流：慢球生效时计时器走 0.7×，
+    // 保证"球速降 → 击砖效率降 → 砖块下移也降"的玩家直觉，不让减速包反成负反馈。
+    const descentMul = this.slowRemainMs > 0 ? 0.7 : 1;
+    this.brickDescentTimer -= dt * descentMul;
     if (this.brickDescentTimer <= 0) {
       this.brickDescentTimer += DESCENT_TABLE[this.speedLevel - 1];
       this._descendBricks();

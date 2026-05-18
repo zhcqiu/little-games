@@ -525,6 +525,23 @@ eq('snake old-snap gameTimeMs zero', sg27.gameTimeMs, 0);
   eq('breakout restore combo', g2.combo, 4);
 }
 
+// 慢球应同时减缓砖块下移（regression: 用户反馈低球速被压顶）
+{
+  // 不接慢球：5000ms 内扣 5000ms
+  const g1 = new BreakoutGame();
+  g1.ballRespawnTimer = 0;
+  g1.brickDescentTimer = 7000;
+  g1.step(5000);
+  truthy('normal descent: ~2000 left after 5s', Math.abs(g1.brickDescentTimer - 2000) < 50);
+  // 接慢球：5000ms 内只扣 3500ms（× 0.7）
+  const g2 = new BreakoutGame();
+  g2.ballRespawnTimer = 0;
+  g2.brickDescentTimer = 7000;
+  g2._applyPowerup('slow');
+  g2.step(5000);
+  truthy('slow descent: ~3500 left after 5s', Math.abs(g2.brickDescentTimer - 3500) < 50);
+}
+
 // 道具效果（coverage gap）：multi / wider 应用后状态正确
 {
   const g = new BreakoutGame();
