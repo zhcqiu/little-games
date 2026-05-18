@@ -312,6 +312,7 @@ function askDifficultyChange(newDiff) {
     document.getElementById('restart-confirm').classList.add('hidden');
     settings.state.difficulty = newDiff;
     settings.save();
+    settings._syncUi();
     restartGame(newDiff);
   };
 }
