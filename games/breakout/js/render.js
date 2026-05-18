@@ -41,7 +41,8 @@ export class Renderer {
       brick3:  read('--brick-3',    '#fff176'),
       brick5:  read('--brick-5',    '#e57373'),
       paddle:  read('--paddle',     '#ff7043'),
-      ball:    read('--ball',       '#ffffff'),
+      ball:    read('--ball',       '#3e2723'),
+      ballStroke: read('--ball-stroke', '#ffffff'),
     };
   }
 
@@ -145,13 +146,23 @@ export class Renderer {
 
   _drawBall(ball) {
     const ctx = this.ctx;
-    ctx.fillStyle = this._theme.ball;
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    const r = BALL_RADIUS * this.cellSize;
+    const cx = ball.x * this.cellSize;
+    const cy = ball.y * this.cellSize;
+    // 投影增加立体感
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 1;
+    ctx.fillStyle = this._theme.ball;
     ctx.beginPath();
-    ctx.arc(ball.x * this.cellSize, ball.y * this.cellSize, BALL_RADIUS * this.cellSize, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    // 高对比描边：保证球在任何主题/砖块色背景下都不被吞
+    ctx.lineWidth = Math.max(1.5, r * 0.18);
+    ctx.strokeStyle = this._theme.ballStroke;
+    ctx.stroke();
   }
 
   _drawFallingItem(item) {

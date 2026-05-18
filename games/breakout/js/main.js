@@ -109,7 +109,10 @@ const input = new Input(
   () => ({ row: 0, col: game.paddle.col })   // gesture-input 用 piece state，对打砖块只关心 col
 );
 input.on('moveTo', (_row, col) => game.setPaddleCol(col));
-input.on('pauseChange', (paused) => game.setPaused(paused));
+// 注意：故意不订阅 input.on('pauseChange', ...)。
+// gesture-input 把"任何手指按下"翻译成 pauseChange(true)，那是俄罗斯方块的语义
+// （按住挂方块看局面）。打砖块的板拍跟随手指本身就要球持续运动，按住反而把
+// 球冻在半空，破坏反应性玩法。手动暂停走顶栏 ⏸ 按钮 / P 键。
 input.onFirstTouch(() => {
   audio.unlock();
   if (settings.get('bgmOn')) audio.startBgm();

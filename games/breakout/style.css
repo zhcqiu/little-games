@@ -1,13 +1,15 @@
 @import url('../../shared/themes.css');
 
-/* 打砖块专属：砖块 4 色 + 板拍 + 球。每主题各自定。 */
+/* 打砖块专属：砖块 4 色 + 板拍 + 球。每主题各自定。
+ * 球色策略：浅色背景主题用深的对比色，深色背景主题用亮白；render 端再加描边兜底。 */
 :root {
   --brick-1: #4fc3f7;
   --brick-2: #81c784;
   --brick-3: #fff176;
   --brick-5: #e57373;
   --paddle: #ff7043;
-  --ball: #ffffff;
+  --ball: #3e2723;          /* 童趣浅黄背景：深棕球 */
+  --ball-stroke: #ffffff;
 }
 
 body[data-theme="candy"] {
@@ -16,7 +18,8 @@ body[data-theme="candy"] {
   --brick-3: #f06292;
   --brick-5: #c2185b;
   --paddle: #ec407a;
-  --ball: #fff0f5;
+  --ball: #4a148c;          /* 粉背景：深紫球 */
+  --ball-stroke: #ffffff;
 }
 
 body[data-theme="forest"] {
@@ -25,7 +28,8 @@ body[data-theme="forest"] {
   --brick-3: #66bb6a;
   --brick-5: #2e7d32;
   --paddle: #43a047;
-  --ball: #f1f8e9;
+  --ball: #1b5e20;          /* 浅绿背景：深绿球 */
+  --ball-stroke: #ffffff;
 }
 
 body[data-theme="ocean"] {
@@ -34,7 +38,8 @@ body[data-theme="ocean"] {
   --brick-3: #26c6da;
   --brick-5: #00838f;
   --paddle: #00acc1;
-  --ball: #f0fbfd;
+  --ball: #01579b;          /* 浅青背景：深蓝球 */
+  --ball-stroke: #ffffff;
 }
 
 body[data-theme="space"] {
@@ -43,7 +48,8 @@ body[data-theme="space"] {
   --brick-3: #b388ff;
   --brick-5: #ff80ab;
   --paddle: #b388ff;
-  --ball: #ffffff;
+  --ball: #ffeb3b;          /* 深紫背景：亮黄球 */
+  --ball-stroke: #311b92;
 }
 
 body[data-theme="night"] {
@@ -52,7 +58,8 @@ body[data-theme="night"] {
   --brick-3: #ffd54f;
   --brick-5: #ef5350;
   --paddle: #42a5f5;
-  --ball: #ffffff;
+  --ball: #ffeb3b;          /* 深蓝背景：亮黄球 */
+  --ball-stroke: #16213e;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
