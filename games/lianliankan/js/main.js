@@ -303,18 +303,11 @@ function askRestart() {
   };
 }
 function askDifficultyChange(newDiff) {
-  document.getElementById('restart-confirm').classList.remove('hidden');
-  document.getElementById('restart-cancel').onclick = () => {
-    document.getElementById('restart-confirm').classList.add('hidden');
-    settings._syncUi();
-  };
-  document.getElementById('restart-ok').onclick = () => {
-    document.getElementById('restart-confirm').classList.add('hidden');
-    settings.state.difficulty = newDiff;
-    settings.save();
-    settings._syncUi();
-    restartGame(newDiff);
-  };
+  // 切难度直接生效——已经在设置面板里二次点击了，再加确认是冗余
+  settings.state.difficulty = newDiff;
+  settings.save();
+  settings._syncUi();
+  restartGame(newDiff);
 }
 
 function restartGame(difficulty) {
