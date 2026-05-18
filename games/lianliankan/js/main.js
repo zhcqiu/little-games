@@ -137,6 +137,8 @@ input.onTap((r, c) => {
 
 function handleTapResult(result) {
   switch (result.kind) {
+    case 'ignore':
+      return;
     case 'select':
       renderer.setSelection(game.selection.r, game.selection.c);
       audio.playSelect();
