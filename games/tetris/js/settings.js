@@ -1,15 +1,14 @@
 // settings.js — 设置面板 + localStorage 持久化
+import { GlobalSettings, GLOBAL_FIELDS } from '../../../shared/global-settings.js';
+
 const KEY = 'tetris.settings';
 const KEY_HIGH = 'tetris.highScore';
 
+// 仅游戏特有字段；theme/sfxOn/bgmOn/fxLevel 由 GlobalSettings 管。
 const DEFAULTS = {
   speed: 1,
   upwardTolerance: 1,
   endMode: 'standard',
-  sfxOn: true,
-  bgmOn: true,
-  theme: 'cheery',
-  fxLevel: 'strong',  // strong | mild | off
 };
 
 const FX_INTENSITY = { strong: 1.0, mild: 0.4, off: 0 };
@@ -19,7 +18,7 @@ export class Settings {
     this.game = game;
     this.audio = audio;
     this.effects = effects;
-    this.state = { ...DEFAULTS };
+    this.state = { ...DEFAULTS, ...GlobalSettings.snapshot() };
     this.highScore = 0;
   }
 
@@ -32,11 +31,16 @@ export class Settings {
     } catch (e) {
       // localStorage 不可用，用默认值
     }
+    for (const f of GLOBAL_FIELDS) this.state[f] = GlobalSettings.get(f);
   }
 
   save() {
+    const local = {};
+    for (const k of Object.keys(this.state)) {
+      if (!GLOBAL_FIELDS.includes(k)) local[k] = this.state[k];
+    }
     try {
-      localStorage.setItem(KEY, JSON.stringify(this.state));
+      localStorage.setItem(KEY, JSON.stringify(local));
       localStorage.setItem(KEY_HIGH, String(this.highScore));
     } catch (e) { /* ignore */ }
   }
@@ -51,6 +55,7 @@ export class Settings {
       this.highScore = value;
     } else {
       this.state[key] = value;
+      if (GLOBAL_FIELDS.includes(key)) GlobalSettings.set(key, value);
       this.apply();
     }
     this.save();

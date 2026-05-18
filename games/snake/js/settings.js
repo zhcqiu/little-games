@@ -1,14 +1,13 @@
 // settings.js — 设置面板 + localStorage
+import { GlobalSettings, GLOBAL_FIELDS } from '../../../shared/global-settings.js';
+
 const KEY = 'snake.settings';
 const KEY_HIGH = 'snake.highScore';
 
+// 仅游戏特有字段；theme/sfxOn/bgmOn/fxLevel 由 GlobalSettings 管。
 const DEFAULTS = {
   speed: 1,
   endMode: 'standard',
-  sfxOn: true,
-  bgmOn: true,
-  theme: 'cheery',
-  fxLevel: 'strong',
   totalFood: 0,    // 累计吃食物数（解锁额外蛇头用）
   foodEdgeMargin: 1,
 };
@@ -20,7 +19,7 @@ export class Settings {
     this.game = game;
     this.audio = audio;
     this.effects = effects;
-    this.state = { ...DEFAULTS };
+    this.state = { ...DEFAULTS, ...GlobalSettings.snapshot() };
     this.highScore = 0;
     this._onOpen = null;
     this._onClose = null;
@@ -36,11 +35,16 @@ export class Settings {
       const h = localStorage.getItem(KEY_HIGH);
       if (h) this.highScore = parseInt(h, 10) || 0;
     } catch (e) { /* 默认值兜底 */ }
+    for (const f of GLOBAL_FIELDS) this.state[f] = GlobalSettings.get(f);
   }
 
   save() {
+    const local = {};
+    for (const k of Object.keys(this.state)) {
+      if (!GLOBAL_FIELDS.includes(k)) local[k] = this.state[k];
+    }
     try {
-      localStorage.setItem(KEY, JSON.stringify(this.state));
+      localStorage.setItem(KEY, JSON.stringify(local));
       localStorage.setItem(KEY_HIGH, String(this.highScore));
     } catch (e) {}
   }
@@ -55,6 +59,7 @@ export class Settings {
       this.highScore = value;
     } else {
       this.state[key] = value;
+      if (GLOBAL_FIELDS.includes(key)) GlobalSettings.set(key, value);
       this.apply();
     }
     this.save();

@@ -1,14 +1,13 @@
 // settings.js — 设置面板 + localStorage
+import { GlobalSettings, GLOBAL_FIELDS } from '../../../shared/global-settings.js';
+
 const KEY = 'breakout.settings';
 const KEY_HIGH = 'breakout.highScore';
 
+// 仅游戏特有字段；theme/sfxOn/bgmOn/fxLevel 由 GlobalSettings 管。
 const DEFAULTS = {
-  theme: 'cheery',
   speed: 2,
   endMode: 'endless',
-  sfxOn: true,
-  bgmOn: true,
-  fxLevel: 'strong',
   descentRate: 'slow',   // 砖块下移速度：'slow' / 'normal' / 'fast'（默认慢，照顾低龄玩家）
 };
 
@@ -20,7 +19,7 @@ export class Settings {
     this.game = game;
     this.audio = audio;
     this.effects = effects;
-    this.state = { ...DEFAULTS };
+    this.state = { ...DEFAULTS, ...GlobalSettings.snapshot() };
     this.highScore = 0;
   }
 
@@ -30,11 +29,18 @@ export class Settings {
       if (raw) this.state = { ...DEFAULTS, ...JSON.parse(raw) };
       this.highScore = parseInt(localStorage.getItem(KEY_HIGH) || '0', 10) || 0;
     } catch (e) {}
+    // 全局字段总是从 GlobalSettings 取（覆盖掉旧 KEY 里的残留值）
+    for (const f of GLOBAL_FIELDS) this.state[f] = GlobalSettings.get(f);
   }
 
   save() {
+    // 只把游戏特有字段写进本地 KEY，全局字段交给 GlobalSettings
+    const local = {};
+    for (const k of Object.keys(this.state)) {
+      if (!GLOBAL_FIELDS.includes(k)) local[k] = this.state[k];
+    }
     // 拆两个 try：settings 写失败（配额满）时高分仍能存
-    try { localStorage.setItem(KEY, JSON.stringify(this.state)); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify(local)); } catch (e) {}
     try { localStorage.setItem(KEY_HIGH, String(this.highScore)); } catch (e) {}
   }
 
@@ -43,8 +49,13 @@ export class Settings {
   }
 
   set(key, value) {
-    if (key === 'highScore') this.highScore = value;
-    else { this.state[key] = value; this.apply(); }
+    if (key === 'highScore') {
+      this.highScore = value;
+    } else {
+      this.state[key] = value;
+      if (GLOBAL_FIELDS.includes(key)) GlobalSettings.set(key, value);
+      this.apply();
+    }
     this.save();
   }
 
