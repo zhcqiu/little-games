@@ -1,0 +1,186 @@
+// audio.js — 打砖块音效
+import { AudioEngine } from '../../../shared/audio-engine.js';
+import { BGM_THEMES } from '../../../shared/bgm-themes.js';
+
+const BRICK_FREQ = { 1: 440, 2: 554, 3: 659, 5: 880 };
+
+export class Audio extends AudioEngine {
+  constructor() {
+    super();
+    this.bgmOn = true;
+    this.bgmController = null;
+    this.speedLevel = 2;
+    this.bgmTheme = 'cheery';
+  }
+
+  setBgmTheme(themeName) {
+    if (!BGM_THEMES[themeName]) return;
+    if (this.bgmTheme === themeName) return;
+    this.bgmTheme = themeName;
+    // 若正在放，重启以使用新主题
+    if (this.bgmController) {
+      this.stopBgm(200);
+      if (this.bgmOn && this.ctx) {
+        setTimeout(() => {
+          if (this.bgmOn && this.ctx && !this.bgmController) this._startBgm();
+        }, 250);
+      }
+    }
+  }
+
+  setBgmOn(on) {
+    this.bgmOn = on;
+    if (!on) {
+      this.stopBgm(200);
+    } else if (on && !this.bgmController && this.ctx) {
+      this._startBgm();
+    }
+  }
+
+  setSpeedLevel(level) {
+    if (this.speedLevel === level) return;
+    this.speedLevel = level;
+    if (this.bgmController) {
+      this.stopBgm(150);
+      if (this.bgmOn && this.ctx) {
+        setTimeout(() => {
+          if (this.bgmOn && this.ctx && !this.bgmController) this._startBgm();
+        }, 200);
+      }
+    }
+  }
+
+  stopBgm(fadeMs = 200) {
+    if (this.bgmController) {
+      this.bgmController.stop(fadeMs);
+      this.bgmController = null;
+    }
+  }
+
+  // ── 游戏音效 ──
+
+  /** 弹板拍：方波短促一下 */
+  playPaddle() {
+    this.playTone({ freq: 600, type: 'square', duration: 60, gain: 0.3 });
+  }
+
+  /** 弹砖：按分值变调（1→440 / 2→554 / 3→659 / 5→880） */
+  playBrick(value) {
+    const freq = BRICK_FREQ[value] || 440;
+    this.playTone({ freq, type: 'square', duration: 70, gain: 0.35 });
+  }
+
+  /** 弹墙：低音短促 */
+  playWall() {
+    this.playTone({ freq: 380, type: 'square', duration: 40, gain: 0.2 });
+  }
+
+  /** 接道具：噪声扫频 + 三音琶音 C5/E5/G5 */
+  playPowerup() {
+    this.playNoiseSweep({ fromFreq: 800, toFreq: 2400, duration: 220, gain: 0.25 });
+    if (!this.sfxOn || !this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    this.scheduleNote(523.25, t0,         100, 0.3, 'triangle');
+    this.scheduleNote(659.25, t0 + 0.06,  100, 0.3, 'triangle');
+    this.scheduleNote(783.99, t0 + 0.12,  120, 0.3, 'triangle');
+  }
+
+  /** 掉球：低沉下扫 */
+  playDrop() {
+    this.playThump({ fromFreq: 220, toFreq: 80, duration: 220, gain: 0.5 });
+  }
+
+  /** 压顶：噪声扫频 + 低音 sawtooth */
+  playTopOut() {
+    this.playNoiseSweep({ fromFreq: 2000, toFreq: 200, duration: 400, gain: 0.4 });
+    this.playTone({ freq: 110, type: 'sawtooth', duration: 400, gain: 0.3 });
+  }
+
+  /** 破纪录：上行 4 音 C5/E5/G5/C6 */
+  playHighScore() {
+    if (!this.sfxOn || !this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    for (let i = 0; i < notes.length; i++) {
+      this.scheduleNote(notes[i], t0 + i * 0.08, 180, 0.32, 'triangle');
+    }
+  }
+
+  startBgm() {
+    if (this.bgmOn && !this.bgmController) this._startBgm();
+  }
+
+  _startBgm() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const theme = BGM_THEMES[this.bgmTheme] || BGM_THEMES.cheery;
+    const melody = theme.melody;
+    const bass = theme.bass;
+    // 速度越快节拍越快：speedLevel 1 用原速，每升一级缩短 10%
+    const speedScale = 1 + (this.speedLevel - 1) * 0.1;
+    const beatMs = theme.beatMs / speedScale;
+    const melodyType = theme.melodyType;
+    const bassType = theme.bassType;
+
+    const totalDuration = (melody.length * beatMs) / 1000;
+
+    const bgmGain = ctx.createGain();
+    bgmGain.gain.value = 0;
+    bgmGain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.5);
+    bgmGain.connect(this.master);
+
+    let stopFlag = false;
+
+    const schedule = (loopStart) => {
+      for (let i = 0; i < melody.length; i++) {
+        const t = loopStart + (i * beatMs) / 1000;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = melodyType;
+        osc.frequency.value = melody[i];
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.45, t + 0.02);
+        g.gain.linearRampToValueAtTime(0.3, t + 0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(0.4, beatMs / 1000 * 0.9));
+        osc.connect(g);
+        g.connect(bgmGain);
+        osc.start(t);
+        osc.stop(t + Math.max(0.5, beatMs / 1000));
+      }
+      for (let i = 0; i < bass.length; i++) {
+        const t = loopStart + (i * 2 * beatMs) / 1000;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = bassType;
+        osc.frequency.value = bass[i];
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.35, t + 0.05);
+        g.gain.linearRampToValueAtTime(0.18, t + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(1.0, beatMs / 1000 * 1.6));
+        osc.connect(g);
+        g.connect(bgmGain);
+        osc.start(t);
+        osc.stop(t + Math.max(1.1, beatMs / 1000 * 1.7));
+      }
+    };
+
+    let loopStart = ctx.currentTime + 0.1;
+    schedule(loopStart);
+    const interval = setInterval(() => {
+      if (stopFlag) return;
+      loopStart += totalDuration;
+      schedule(loopStart);
+    }, totalDuration * 1000 - 200);
+
+    this.bgmController = {
+      stop: (fadeMs = 200) => {
+        stopFlag = true;
+        clearInterval(interval);
+        const tNow = ctx.currentTime;
+        bgmGain.gain.cancelScheduledValues(tNow);
+        bgmGain.gain.setValueAtTime(bgmGain.gain.value, tNow);
+        bgmGain.gain.linearRampToValueAtTime(0, tNow + fadeMs / 1000);
+      },
+    };
+  }
+}
