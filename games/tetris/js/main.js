@@ -153,7 +153,7 @@ document.addEventListener('visibilitychange', () => {
 // 主循环
 let lastTime = performance.now();
 function loop(now) {
-  const dt = now - lastTime;
+  const dt = Math.min(now - lastTime, 200); // 封顶防极端大帧
   lastTime = now;
   game.step(dt);
   effects.step(dt);
@@ -190,7 +190,10 @@ document.addEventListener('visibilitychange', () => {
     game.setPaused(true);
     audio.stopBgm(100);
   } else {
-    if (input.fingers && input.fingers.size === 0) game.setPaused(false);
+    // 重置时间戳：切后台期间积累的大 dt 会导致方块瞬间堆积
+    lastTime = performance.now();
+    // 只有用户没有手动暂停时才自动恢复
+    if (!manualPause && input.fingers && input.fingers.size === 0) game.setPaused(false);
     if (settings.get('bgmOn') && audio.ctx) audio.startBgm();
   }
 });
