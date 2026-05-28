@@ -402,7 +402,7 @@ function formatTime(ms) {
 // 主循环
 let last = performance.now();
 function loop(now) {
-  const dt = now - last;
+  const dt = Math.min(now - last, 200);
   last = now;
   game.step(dt);
   effects.step(dt);

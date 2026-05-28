@@ -167,7 +167,7 @@ document.getElementById('pad-right').addEventListener('click', () => padDir('rig
 // 主循环
 let lastTime = performance.now();
 function loop(now) {
-  const dt = now - lastTime;
+  const dt = Math.min(now - lastTime, 200);
   lastTime = now;
   game.step(dt);
   effects.step(dt);
