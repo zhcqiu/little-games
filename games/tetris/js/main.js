@@ -33,7 +33,7 @@ input.on('rotate', (dir) => {
 });
 input.on('hardDrop', () => game.hardDrop());
 input.on('pauseChange', (paused) => {
-  game.setPaused(paused);
+  if (!manualPause) game.setPaused(paused);
 });
 input.onFirstTouch(() => {
   audio.unlock();
