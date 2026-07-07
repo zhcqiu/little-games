@@ -168,10 +168,13 @@ export class Renderer {
     for (const s of game.scenery.slice().sort((a, b) => b.z - a.z)) {
       const road = this._roadAt(s.z);
       const scale = this._scale(s.z);
-      const x = s.side === 'left' ? road.left - this.w * 0.08 * scale : road.right + this.w * 0.08 * scale;
       const y = road.y;
-      if (s.kind === 'tree') this._drawTree(ctx, x, y, scale);
-      else this._drawHouse(ctx, x, y, scale, t);
+      if (s.kind === 'tree') {
+        const x = s.side === 'left' ? road.left - this.w * 0.05 * scale : road.right + this.w * 0.05 * scale;
+        this._drawTree(ctx, x, y, scale);
+      } else {
+        this._drawBuilding(ctx, road, y, scale, s, t);
+      }
     }
   }
 
@@ -184,16 +187,56 @@ export class Renderer {
     ctx.fill();
   }
 
-  _drawHouse(ctx, x, y, scale, t) {
-    ctx.fillStyle = '#fff3e0';
-    ctx.fillRect(x - 22 * scale, y - 36 * scale, 44 * scale, 36 * scale);
-    ctx.fillStyle = t.primary;
+  _drawBuilding(ctx, road, y, scale, item, t) {
+    const sideSign = item.side === 'left' ? -1 : 1;
+    const baseW = 58 * scale * (item.widthMul || 1);
+    const baseH = 92 * scale * (item.heightMul || 1);
+    const gap = 5 * scale;
+    const edge = item.side === 'left' ? road.left : road.right;
+    const xNear = edge + sideSign * gap;
+    const xFar = edge + sideSign * (gap + baseW * 0.84);
+    const left = item.side === 'left' ? xFar : xNear;
+    const right = item.side === 'left' ? xNear : xFar;
+    const topNear = y - baseH;
+    const topFar = y - baseH * 0.88;
+
+    ctx.fillStyle = item.wall || '#ffe0b2';
     ctx.beginPath();
-    ctx.moveTo(x - 26 * scale, y - 36 * scale);
-    ctx.lineTo(x, y - 60 * scale);
-    ctx.lineTo(x + 26 * scale, y - 36 * scale);
+    ctx.moveTo(left, topFar);
+    ctx.lineTo(right, topNear);
+    ctx.lineTo(right, y);
+    ctx.lineTo(left, y - baseH * 0.08);
     ctx.closePath();
     ctx.fill();
+
+    ctx.fillStyle = item.roof || t.primary;
+    ctx.beginPath();
+    ctx.moveTo(left - sideSign * 2 * scale, topFar);
+    ctx.lineTo(right + sideSign * 2 * scale, topNear);
+    ctx.lineTo(right, topNear - 10 * scale);
+    ctx.lineTo(left, topFar - 8 * scale);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = item.window || '#42a5f5';
+    const floors = item.floors || 3;
+    const cols = Math.max(1, Math.floor(baseW / (20 * scale)));
+    for (let r = 0; r < floors; r++) {
+      const wy = topNear + baseH * 0.18 + r * (baseH * 0.62 / floors);
+      for (let c = 0; c < cols; c++) {
+        const wx = (item.side === 'left' ? right - baseW * 0.22 - c * 18 * scale : right - baseW * 0.72 + c * 18 * scale);
+        ctx.globalAlpha = 0.72;
+        ctx.fillRect(wx, wy, 8 * scale, 10 * scale);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = Math.max(1, 1.5 * scale);
+    ctx.beginPath();
+    ctx.moveTo(right, topNear);
+    ctx.lineTo(right, y);
+    ctx.stroke();
   }
 
   _drawFruits(ctx, game) {
@@ -210,36 +253,84 @@ export class Renderer {
   _drawVehicles(ctx, game) {
     for (const v of game.vehicles.slice().sort((a, b) => b.z - a.z)) {
       const p = this.objectPoint(v.lane, game.laneCount, v.z);
-      this._drawCar(ctx, p.x, p.y, this._scale(v.z), v.model, v.direction === 'toward');
+      this._drawCar(ctx, p.x, p.y, this._scale(v.z), v.model, v.direction === 'toward', 0, v.z);
     }
   }
 
   _drawPlayer(ctx, game, t) {
     const p = this.playerPoint(game);
     const model = { color: t.primary, roof: '#ffe0b2' };
-    this._drawCar(ctx, p.x, p.y, 1.35 * this.dpr, model, false, game.damage);
+    this._drawCar(ctx, p.x, p.y, 1.35 * this.dpr, model, false, game.damage, 0.08);
   }
 
-  _drawCar(ctx, x, y, scale, model, toward, damage = 0) {
+  _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2) {
     const w = 44 * scale;
     const h = 68 * scale;
+    const perspective = 1 - Math.max(0, Math.min(1, z));
+    const topW = w * (0.52 + perspective * 0.1);
+    const midW = w * (0.72 + perspective * 0.08);
+    const bottomW = w * (1.02 + perspective * 0.1);
+    const topY = -h * 0.52;
+    const hoodY = toward ? -h * 0.08 : -h * 0.2;
+    const bottomY = h * 0.48;
     ctx.save();
     ctx.translate(x, y - h * 0.35);
+
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.beginPath();
     ctx.ellipse(0, h * 0.42, w * 0.58, h * 0.16, 0, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.fillStyle = model.color;
-    this._roundRect(ctx, -w / 2, -h / 2, w, h, 10 * scale);
+    ctx.beginPath();
+    ctx.moveTo(-topW / 2, topY);
+    ctx.lineTo(topW / 2, topY);
+    ctx.lineTo(bottomW / 2, bottomY);
+    ctx.quadraticCurveTo(0, bottomY + h * 0.08, -bottomW / 2, bottomY);
+    ctx.closePath();
     ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.beginPath();
+    ctx.moveTo(-topW * 0.38, topY + h * 0.12);
+    ctx.lineTo(topW * 0.38, topY + h * 0.12);
+    ctx.lineTo(midW * 0.32, hoodY);
+    ctx.lineTo(-midW * 0.32, hoodY);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.fillStyle = model.roof;
-    this._roundRect(ctx, -w * 0.32, -h * 0.28, w * 0.64, h * 0.28, 7 * scale);
+    ctx.beginPath();
+    ctx.moveTo(-topW * 0.34, topY + h * 0.1);
+    ctx.lineTo(topW * 0.34, topY + h * 0.1);
+    ctx.lineTo(midW * 0.28, topY + h * 0.34);
+    ctx.lineTo(-midW * 0.28, topY + h * 0.34);
+    ctx.closePath();
     ctx.fill();
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = Math.max(1, 2 * scale);
+    ctx.beginPath();
+    ctx.moveTo(-topW / 2, topY);
+    ctx.lineTo(-bottomW / 2, bottomY);
+    ctx.moveTo(topW / 2, topY);
+    ctx.lineTo(bottomW / 2, bottomY);
+    ctx.stroke();
+
     ctx.fillStyle = toward ? '#fff59d' : '#263238';
-    ctx.fillRect(-w * 0.38, h * 0.24, w * 0.18, h * 0.08);
-    ctx.fillRect(w * 0.2, h * 0.24, w * 0.18, h * 0.08);
+    ctx.beginPath();
+    ctx.ellipse(-bottomW * 0.27, h * 0.27, w * 0.09, h * 0.04, 0, 0, Math.PI * 2);
+    ctx.ellipse(bottomW * 0.27, h * 0.27, w * 0.09, h * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#263238';
+    ctx.fillRect(-bottomW * 0.48, h * 0.02, w * 0.09, h * 0.28);
+    ctx.fillRect(bottomW * 0.39, h * 0.02, w * 0.09, h * 0.28);
+
     if (damage > 0) {
-      ctx.font = `${18 * scale}px sans-serif`;
+      ctx.font = (18 * scale) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText(damage >= 2 ? '💨' : '🩹', w * 0.06, -h * 0.02);
     }
     ctx.restore();
@@ -273,7 +364,8 @@ export class Renderer {
     const zz = Math.max(0, Math.min(1, z));
     const horizonY = this.h * 0.26;
     const nearY = this.h * 0.96;
-    const k = 1 - zz;
+    const depth = 1 - zz;
+    const k = Math.pow(depth, 1.8);
     const y = horizonY + k * (nearY - horizonY);
     const farWidth = this.w * 0.18;
     const nearWidth = this.w * 1.22;
@@ -282,7 +374,8 @@ export class Renderer {
   }
 
   _scale(z) {
-    const k = 1 - Math.max(0, Math.min(1, z));
-    return (0.18 + k * 1.08) * this.dpr;
+    const depth = 1 - Math.max(0, Math.min(1, z));
+    const k = Math.pow(depth, 1.55);
+    return (0.16 + k * 1.18) * this.dpr;
   }
 }

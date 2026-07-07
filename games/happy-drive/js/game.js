@@ -10,9 +10,9 @@ const VEHICLES = [
 ];
 
 const CHALLENGES = {
-  gentle: { spawnMul: 0.72, speedMul: 0.78, fruitMul: 1.22 },
-  normal: { spawnMul: 1.0, speedMul: 1.0, fruitMul: 1.0 },
-  lively: { spawnMul: 1.24, speedMul: 1.14, fruitMul: 0.92 },
+  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 0.55 },
+  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 0.48 },
+  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 0.42 },
 };
 
 function clamp(n, min, max) {
@@ -52,8 +52,8 @@ export class Game {
     this.vehicles = [];
     this.fruits = [];
     this.scenery = [];
-    this.vehicleSpawnMs = 900;
-    this.fruitSpawnMs = 1300;
+    this.vehicleSpawnMs = 450;
+    this.fruitSpawnMs = 2600;
     this.scenerySpawnMs = 0;
     this.combo = 0;
     this.comboMs = 0;
@@ -231,16 +231,44 @@ export class Game {
 
     if (this.vehicleSpawnMs <= 0) {
       this._spawnVehicle();
-      this.vehicleSpawnMs = clamp(1650 - this.gameTimeMs / 140, 620, 1650) + Math.random() * 520;
+      this.vehicleSpawnMs = clamp(980 - this.gameTimeMs / 220, 420, 980) + Math.random() * 260;
     }
     if (this.fruitSpawnMs <= 0) {
       this._spawnFruit();
-      this.fruitSpawnMs = 1000 + Math.random() * 900;
+      this.fruitSpawnMs = 2600 + Math.random() * 1800;
     }
     if (this.scenerySpawnMs <= 0) {
-      this.scenery.push({ side: 'left', z: 1.05, kind: Math.random() < 0.55 ? 'tree' : 'house' });
-      this.scenery.push({ side: 'right', z: 1.05, kind: Math.random() < 0.55 ? 'tree' : 'house' });
-      this.scenerySpawnMs = 360;
+      this._spawnSceneryPair();
+      this.scenerySpawnMs = 170;
+    }
+  }
+
+  _spawnSceneryPair() {
+    const palettes = [
+      { wall: '#ffe0b2', roof: '#ff7043', window: '#42a5f5' },
+      { wall: '#c8e6c9', roof: '#43a047', window: '#80deea' },
+      { wall: '#bbdefb', roof: '#5c6bc0', window: '#fff59d' },
+      { wall: '#f8bbd0', roof: '#ec407a', window: '#b3e5fc' },
+      { wall: '#d7ccc8', roof: '#8d6e63', window: '#ffecb3' },
+    ];
+    for (const side of ['left', 'right']) {
+      const isTree = Math.random() < 0.14;
+      if (isTree) {
+        this.scenery.push({ side, z: 1.05, kind: 'tree' });
+      } else {
+        const palette = pick(palettes);
+        this.scenery.push({
+          side,
+          z: 1.05,
+          kind: 'building',
+          wall: palette.wall,
+          roof: palette.roof,
+          window: palette.window,
+          floors: 2 + randInt(4),
+          widthMul: 0.85 + Math.random() * 0.45,
+          heightMul: 0.85 + Math.random() * 0.55,
+        });
+      }
     }
   }
 
@@ -256,7 +284,7 @@ export class Game {
       id: Math.random().toString(36).slice(2),
       lane: pick(candidates),
       z: 1.04,
-      speed: towardPlayer ? 0.34 + Math.random() * 0.16 : 0.18 + Math.random() * 0.12,
+      speed: towardPlayer ? 0.16 + Math.random() * 0.08 : 0.08 + Math.random() * 0.06,
       direction: towardPlayer ? 'toward' : 'same',
       model: pick(VEHICLES),
       hit: false,
@@ -264,7 +292,8 @@ export class Game {
   }
 
   _spawnFruit() {
-    const blocked = new Set(this.vehicles.filter((v) => v.z > 0.65).map((v) => v.lane));
+    if (this.vehicles.some((v) => v.direction === 'toward' && v.z > 0.18)) return;
+    const blocked = new Set(this.vehicles.filter((v) => v.z > 0.15).map((v) => v.lane));
     const candidates = [];
     for (let lane = 0; lane < this.laneCount; lane++) {
       if (!blocked.has(lane)) candidates.push(lane);
@@ -280,13 +309,13 @@ export class Game {
 
   _moveObjects(seconds) {
     const d = this._difficulty();
-    const base = 0.13 + this.playerSpeed * 0.12;
+    const base = 0.08 + this.playerSpeed * 0.075;
     for (const v of this.vehicles) v.z -= seconds * (base + v.speed * d.speed);
     for (const f of this.fruits) {
-      f.z -= seconds * (base + 0.12);
+      f.z -= seconds * (base + 0.07);
       f.bob += seconds * 5;
     }
-    for (const s of this.scenery) s.z -= seconds * (base + 0.18);
+    for (const s of this.scenery) s.z -= seconds * (base + 0.1);
     this.vehicles = this.vehicles.filter((v) => v.z > -0.14);
     this.fruits = this.fruits.filter((f) => f.z > -0.12);
     this.scenery = this.scenery.filter((s) => s.z > -0.1);

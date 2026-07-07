@@ -913,6 +913,12 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive restore guides', g2.guidesOn, false);
   eq('drive restore invalid', g2.restore({}), false);
 }
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: 0, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g._spawnFruit();
+  eq('drive fruit waits for oncoming traffic', g.fruits.length, 0);
+}
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
