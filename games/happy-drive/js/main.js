@@ -119,12 +119,15 @@ function closeTopPanel() {
   document.getElementById('restart-confirm').classList.add('hidden');
 }
 
-game.on('fruit', ({ fruit, combo }) => {
+game.on('fruit', ({ fruit, combo, extraLife }) => {
   audio.playFruit();
   const p = renderer.objectPoint(fruit.lane, game.laneCount, fruit.z);
-  effects.burst(p.x, p.y, ['#ffeb3b', '#ff7043', '#66bb6a', '#42a5f5'], 16);
-  showClearToast(combo >= 3 ? '🌈' + combo : fruit.emoji);
-  vibrate([15]);
+  effects.burst(p.x, p.y, ['#ffeb3b', '#ff7043', '#66bb6a', '#42a5f5'], extraLife ? 24 : 16);
+  showClearToast(extraLife ? '❤️+1' : (combo >= 3 ? '🌈' + combo : fruit.emoji));
+  vibrate(extraLife ? [20, 20, 35] : [15]);
+});
+game.on('extraLife', () => {
+  showToast('❤️');
 });
 game.on('crash', ({ damage }) => {
   audio.playCrash();

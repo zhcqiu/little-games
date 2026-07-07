@@ -24,6 +24,8 @@ const TRAFFIC_SPAWN_Z_MAX = 1.08;
 const TRAFFIC_PRESSURE_Z_MIN = 0.18;
 const TRAFFIC_PRESSURE_Z_MAX = 0.9;
 const MAX_ACTIVE_FRUITS = 2;
+const FRUITS_PER_EXTRA_HIT = 8;
+const MAX_FRUIT_BONUS_HITS = 4;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -41,6 +43,7 @@ export class Game {
   constructor() {
     this.challenge = 'gentle';
     this.guidesOn = true;
+    this.baseMaxHits = 3;
     this.maxHits = 3;
     this.speedSetting = 2;
     this._listeners = {};
@@ -52,6 +55,8 @@ export class Game {
     this.fruitCount = 0;
     this.distance = 0;
     this.damage = 0;
+    this.fruitBonusHits = 0;
+    this.maxHits = this.baseMaxHits;
     this.gameTimeMs = 0;
     this.paused = false;
     this.gameOver = false;
@@ -88,7 +93,10 @@ export class Game {
 
   setMaxHits(value) {
     const n = parseInt(value, 10);
-    if (Number.isFinite(n)) this.maxHits = clamp(n, 2, 5);
+    if (Number.isFinite(n)) {
+      this.baseMaxHits = clamp(n, 2, 5);
+      this.maxHits = this.baseMaxHits + this.fruitBonusHits;
+    }
   }
 
   setSpeed(value) {
@@ -192,6 +200,8 @@ export class Game {
       challenge: this.challenge,
       guidesOn: this.guidesOn,
       maxHits: this.maxHits,
+      baseMaxHits: this.baseMaxHits,
+      fruitBonusHits: this.fruitBonusHits,
       vehicles: this.vehicles,
       fruits: this.fruits,
       scenery: this.scenery,
@@ -204,6 +214,9 @@ export class Game {
     this.score = Math.max(0, snap.score | 0);
     this.fruitCount = Math.max(0, snap.fruitCount | 0);
     this.distance = Math.max(0, Number(snap.distance) || 0);
+    this.fruitBonusHits = clamp(snap.fruitBonusHits | 0, 0, MAX_FRUIT_BONUS_HITS);
+    this.baseMaxHits = clamp(snap.baseMaxHits || snap.maxHits || this.baseMaxHits, 2, 5);
+    this.maxHits = this.baseMaxHits + this.fruitBonusHits;
     this.damage = clamp(snap.damage | 0, 0, this.maxHits);
     this.gameTimeMs = Math.max(0, Number(snap.gameTimeMs) || 0);
     this.laneCount = clamp(snap.laneCount | 0, MIN_LANES, MAX_LANES);
@@ -213,7 +226,7 @@ export class Game {
     this.setSpeed(snap.speedSetting || this.speedSetting);
     this.setChallenge(snap.challenge || this.challenge);
     this.setGuidesOn(snap.guidesOn !== false);
-    this.setMaxHits(snap.maxHits || this.maxHits);
+    if (snap.baseMaxHits) this.setMaxHits(snap.baseMaxHits);
     this.vehicles = snap.vehicles.filter((o) => Number.isFinite(o.z));
     this.fruits = snap.fruits.filter((o) => Number.isFinite(o.z));
     this.scenery = Array.isArray(snap.scenery) ? snap.scenery.filter((o) => Number.isFinite(o.z)) : [];
@@ -392,8 +405,7 @@ export class Game {
     const base = 0.08 + this.playerSpeed * 0.075;
     for (const v of this.vehicles) {
       this._updateVehicleLane(v, seconds);
-      const nearExit = v.z < 0.16 ? (0.16 - v.z) * 2.4 : 0;
-      v.z -= seconds * (base + v.speed * d.speed + nearExit);
+      v.z -= seconds * (base + v.speed * d.speed);
     }
     for (const f of this.fruits) {
       const nearExit = f.z < 0.16 ? (0.16 - f.z) * 2.4 : 0;
@@ -437,17 +449,27 @@ export class Game {
     for (const f of this.fruits) {
       if (this._overlapsPlayer(f)) {
         this.fruitCount += 1;
+        const extraLife = this._maybeAwardFruitLife(f);
         this.combo = this.comboMs > 0 ? this.combo + 1 : 1;
         this.comboMs = 3000;
         const bonus = this.combo >= 3 ? 2 : 1;
         this.score += 5 * bonus;
         this.sunSmileMs = 1800;
-        this._emit('fruit', { fruit: f, combo: this.combo, bonus });
+        this._emit('fruit', { fruit: f, combo: this.combo, bonus, extraLife });
       } else {
         kept.push(f);
       }
     }
     this.fruits = kept;
+  }
+
+  _maybeAwardFruitLife(fruit) {
+    if (this.fruitCount % FRUITS_PER_EXTRA_HIT !== 0) return false;
+    if (this.fruitBonusHits >= MAX_FRUIT_BONUS_HITS) return false;
+    this.fruitBonusHits += 1;
+    this.maxHits = this.baseMaxHits + this.fruitBonusHits;
+    this._emit('extraLife', { fruit, maxHits: this.maxHits, fruitCount: this.fruitCount });
+    return true;
   }
 
   _overlapsPlayer(o) {

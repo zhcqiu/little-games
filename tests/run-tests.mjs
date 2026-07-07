@@ -910,6 +910,17 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 }
 {
   const g = new DriveGame();
+  let extraLifeEvents = 0;
+  g.on('extraLife', () => extraLifeEvents++);
+  for (let i = 0; i < 8; i++) {
+    g.fruits = [{ lane: g.playerLane, z: 0.04, emoji: '🍓', bob: 0 }];
+    g.step(16);
+  }
+  eq('drive fruit grants extra hit at 8', g.maxHits, 4);
+  eq('drive fruit extra life event once', extraLifeEvents, 1);
+}
+{
+  const g = new DriveGame();
   g.vehicles = [{ lane: g.playerLane, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);
   eq('drive crash damage +1', g.damage, 1);
@@ -1060,6 +1071,14 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   g.vehicles = [{ lane: g.playerLane, z: -0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);
   eq('drive passed vehicle clears bottom', g.vehicles.length, 0);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: g.playerLane, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  const before = g.vehicles[0].z;
+  g._moveObjects(0.1);
+  const delta = before - g.vehicles[0].z;
+  truthy('drive rear vehicle does not accelerate away', delta < 0.04);
 }
 {
   const g = new DriveGame();
