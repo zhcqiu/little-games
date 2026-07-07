@@ -282,27 +282,38 @@ export class Renderer {
   }
 
   _drawSpeedLines(ctx, game, t) {
-    const p = this.playerPoint(game);
-    const scale = this._scale(PLAYER_Z);
     const speed = Math.max(0.35, game.playerSpeed || 0.5);
-    const phase = (this.time * (0.18 + speed * 0.24)) % 90;
+    const phase = (this.time * (0.0028 + speed * 0.0035)) % 1;
     const count = Math.min(6, Math.max(3, Math.round(2 + game.speedSetting)));
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.62)';
-    ctx.lineWidth = Math.max(2, 2.4 * scale);
+    ctx.strokeStyle = 'rgba(231,248,255,0.66)';
     ctx.lineCap = 'round';
     for (let i = 0; i < count; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = (18 + i * 5) * scale;
-      const y = p.y + (34 + ((phase + i * 17) % 90)) * scale;
-      const len = (18 + speed * 26 + i * 2) * scale;
-      ctx.globalAlpha = Math.max(0, 0.58 - ((y - p.y) / (130 * scale)));
+      const pairIndex = Math.floor(i / 2);
+      const drift = (phase + pairIndex * 0.34) % 1;
+      const seg = this._speedLineSegment(game, side, pairIndex, drift, speed);
+      ctx.globalAlpha = Math.max(0, 0.62 - drift * 0.42);
+      ctx.lineWidth = Math.max(1.5, (2.0 + speed * 1.1 - pairIndex * 0.18) * this.dpr);
       ctx.beginPath();
-      ctx.moveTo(p.x + side * spread, y);
-      ctx.lineTo(p.x + side * (spread + 5 * scale), y + len);
+      ctx.moveTo(seg.start.x, seg.start.y);
+      ctx.lineTo(seg.end.x, seg.end.y);
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  _speedLineSegment(game, side, pairIndex, drift, speed) {
+    const laneCount = game.laneCount || 3;
+    const lane = Number.isFinite(game.playerOffset) ? game.playerOffset : Math.floor(laneCount / 2);
+    const zStart = Math.max(0.004, PLAYER_Z + 0.012 - drift * 0.014);
+    const zEnd = Math.max(0, zStart - (0.022 + speed * 0.018 + drift * 0.012));
+    const laneStart = Math.max(0, Math.min(laneCount - 1, lane + side * (0.22 + pairIndex * 0.1)));
+    const laneEnd = Math.max(0, Math.min(laneCount - 1, laneStart + side * (0.18 + speed * 0.12 + drift * 0.08)));
+    return {
+      start: this.objectPoint(laneStart, laneCount, zStart),
+      end: this.objectPoint(laneEnd, laneCount, zEnd),
+    };
   }
 
   _drawPlayer(ctx, game, t) {
