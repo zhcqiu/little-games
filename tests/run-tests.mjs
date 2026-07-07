@@ -969,6 +969,19 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   }
 }
 {
+  const oldRandom = Math.random;
+  const seq = [0, 0, 0, 0, 0, 0];
+  Math.random = () => seq.shift() ?? 0;
+  try {
+    const g = new DriveGame();
+    g._spawnVehicle();
+    eq('drive oncoming traffic can spawn in half lane', g.vehicles[0].lane, 0.5);
+    eq('drive half-lane spawn target matches lane', g.vehicles[0].targetLane, 0.5);
+  } finally {
+    Math.random = oldRandom;
+  }
+}
+{
   const g = new DriveGame();
   g.vehicles = [{ lane: g.playerLane, z: -0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);

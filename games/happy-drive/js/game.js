@@ -285,28 +285,44 @@ export class Game {
   _spawnVehicle() {
     const occupied = this.vehicles.filter((v) => v.z > 0.72).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
     const pressure = this.vehicles.filter((v) => v.z > 0.22 && v.z < 0.82).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
-    const pressureLanes = new Set(pressure.map((lane) => Math.round(lane)));
-    if (pressureLanes.size >= this.laneCount - 1) return;
+    if (pressure.length >= this.laneCount - 1) return;
+
+    const towardPlayer = Math.random() < 0.36 + Math.min(0.18, this.gameTimeMs / 240000);
+    const slots = this._trafficSlots(towardPlayer || Math.random() < 0.3);
     const candidates = [];
-    for (let lane = 0; lane < this.laneCount; lane++) {
+    for (const lane of slots) {
       const occupiedNear = occupied.some((pos) => Math.abs(pos - lane) < 0.38);
-      const pressureNear = pressure.some((pos) => Math.abs(pos - lane) < 0.55);
+      const pressureNear = pressure.some((pos) => Math.abs(pos - lane) < 0.5);
       if (!occupiedNear && !pressureNear) candidates.push(lane);
     }
     if (!candidates.length) return;
-    const lane = pick(candidates);
-    const towardPlayer = Math.random() < 0.36 + Math.min(0.18, this.gameTimeMs / 240000);
+
+    const halfLaneCandidates = candidates.filter((lane) => Math.abs(lane - Math.round(lane)) > 0.01);
+    const lane = towardPlayer && halfLaneCandidates.length && Math.random() < 0.68
+      ? pick(halfLaneCandidates)
+      : pick(candidates);
+
     this.vehicles.push({
       id: Math.random().toString(36).slice(2),
       lane,
       targetLane: lane,
-      laneChangeMs: 700 + Math.random() * 1400,
+      laneChangeMs: 650 + Math.random() * 1300,
       z: 1.04,
       speed: towardPlayer ? 0.16 + Math.random() * 0.08 : 0.08 + Math.random() * 0.06,
       direction: towardPlayer ? 'toward' : 'same',
       model: pick(VEHICLES),
       hit: false,
     });
+  }
+
+  _trafficSlots(includeHalfLanes) {
+    const slots = [];
+    const steps = (this.laneCount - 1) * 2;
+    for (let i = 0; i <= steps; i++) {
+      if (!includeHalfLanes && i % 2 !== 0) continue;
+      slots.push(i / 2);
+    }
+    return slots;
   }
 
   _spawnFruit() {
