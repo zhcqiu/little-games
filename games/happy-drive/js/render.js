@@ -189,54 +189,54 @@ export class Renderer {
 
   _drawBuilding(ctx, road, y, scale, item, t) {
     const sideSign = item.side === 'left' ? -1 : 1;
-    const baseW = 58 * scale * (item.widthMul || 1);
-    const baseH = 92 * scale * (item.heightMul || 1);
-    const gap = 5 * scale;
+    const baseW = 52 * scale * (item.widthMul || 1);
+    const baseH = 82 * scale * (item.heightMul || 1);
+    const gap = 10 * scale;
     const edge = item.side === 'left' ? road.left : road.right;
-    const xNear = edge + sideSign * gap;
-    const xFar = edge + sideSign * (gap + baseW * 0.84);
-    const left = item.side === 'left' ? xFar : xNear;
-    const right = item.side === 'left' ? xNear : xFar;
-    const topNear = y - baseH;
-    const topFar = y - baseH * 0.88;
+    const nearEdge = edge + sideSign * gap;
+    const farEdge = nearEdge + sideSign * baseW;
+    const left = Math.min(nearEdge, farEdge);
+    const right = Math.max(nearEdge, farEdge);
+    const bottom = y + 2 * scale;
+    const top = bottom - baseH;
+    const roofSlant = sideSign * 5 * scale;
 
     ctx.fillStyle = item.wall || '#ffe0b2';
     ctx.beginPath();
-    ctx.moveTo(left, topFar);
-    ctx.lineTo(right, topNear);
-    ctx.lineTo(right, y);
-    ctx.lineTo(left, y - baseH * 0.08);
+    ctx.moveTo(left + roofSlant * 0.25, top);
+    ctx.lineTo(right + roofSlant * 0.25, top + 4 * scale);
+    ctx.lineTo(right, bottom);
+    ctx.lineTo(left, bottom);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = item.roof || t.primary;
     ctx.beginPath();
-    ctx.moveTo(left - sideSign * 2 * scale, topFar);
-    ctx.lineTo(right + sideSign * 2 * scale, topNear);
-    ctx.lineTo(right, topNear - 10 * scale);
-    ctx.lineTo(left, topFar - 8 * scale);
+    ctx.moveTo(left - 2 * scale, top);
+    ctx.lineTo(right + 2 * scale, top + 4 * scale);
+    ctx.lineTo(right + roofSlant, top - 8 * scale);
+    ctx.lineTo(left + roofSlant, top - 10 * scale);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = item.window || '#42a5f5';
     const floors = item.floors || 3;
-    const cols = Math.max(1, Math.floor(baseW / (20 * scale)));
+    const cols = Math.max(1, Math.min(3, Math.floor(baseW / (16 * scale))));
+    const marginX = baseW * 0.18;
+    const usableW = Math.max(10 * scale, baseW - marginX * 2);
     for (let r = 0; r < floors; r++) {
-      const wy = topNear + baseH * 0.18 + r * (baseH * 0.62 / floors);
+      const wy = top + baseH * 0.18 + r * (baseH * 0.62 / floors);
       for (let c = 0; c < cols; c++) {
-        const wx = (item.side === 'left' ? right - baseW * 0.22 - c * 18 * scale : right - baseW * 0.72 + c * 18 * scale);
+        const wx = left + marginX + c * (usableW / cols) + sideSign * 2 * scale;
         ctx.globalAlpha = 0.72;
-        ctx.fillRect(wx, wy, 8 * scale, 10 * scale);
+        ctx.fillRect(wx, wy, 7 * scale, 9 * scale);
       }
     }
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-    ctx.lineWidth = Math.max(1, 1.5 * scale);
-    ctx.beginPath();
-    ctx.moveTo(right, topNear);
-    ctx.lineTo(right, y);
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = Math.max(1, 1.2 * scale);
+    ctx.strokeRect(left, top + 4 * scale, right - left, bottom - top - 4 * scale);
   }
 
   _drawFruits(ctx, game) {
@@ -253,26 +253,33 @@ export class Renderer {
   _drawVehicles(ctx, game) {
     for (const v of game.vehicles.slice().sort((a, b) => b.z - a.z)) {
       const p = this.objectPoint(v.lane, game.laneCount, v.z);
-      this._drawCar(ctx, p.x, p.y, this._scale(v.z), v.model, v.direction === 'toward', 0, v.z);
+      const road = this._roadAt(v.z);
+      const sideLean = this._sideLean(p.x, road);
+      this._drawCar(ctx, p.x, p.y, this._scale(v.z), v.model, v.direction === 'toward', 0, v.z, sideLean);
     }
   }
 
   _drawPlayer(ctx, game, t) {
     const p = this.playerPoint(game);
     const model = { color: t.primary, roof: '#ffe0b2' };
-    this._drawCar(ctx, p.x, p.y, 1.35 * this.dpr, model, false, game.damage, 0.08);
+    const road = this._roadAt(0.08);
+    this._drawCar(ctx, p.x, p.y, 1.28 * this.dpr, model, false, game.damage, 0.08, this._sideLean(p.x, road));
   }
 
-  _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2) {
+  _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2, sideLean = 0) {
     const w = 34 * scale;
     const h = 56 * scale;
     const perspective = 1 - Math.max(0, Math.min(1, z));
+    const lean = Math.max(-0.24, Math.min(0.24, sideLean || 0));
     const topW = w * (0.54 + perspective * 0.08);
     const midW = w * (0.76 + perspective * 0.08);
     const bottomW = w * (1.0 + perspective * 0.08);
     const topY = -h * 0.52;
     const hoodY = toward ? -h * 0.08 : -h * 0.2;
     const bottomY = h * 0.48;
+    const topShift = lean * w * 0.7;
+    const midShift = lean * w * 0.35;
+    const bottomShift = -lean * w * 0.12;
     ctx.save();
     ctx.translate(x, y - h * 0.35);
 
@@ -281,70 +288,95 @@ export class Renderer {
     ctx.ellipse(0, h * 0.42, w * 0.52, h * 0.14, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    const body = {
+      tl: { x: -topW / 2 + topShift, y: topY },
+      tr: { x: topW / 2 + topShift, y: topY },
+      br: { x: bottomW / 2 + bottomShift, y: bottomY },
+      bl: { x: -bottomW / 2 + bottomShift, y: bottomY },
+    };
+
     ctx.fillStyle = model.color;
     ctx.beginPath();
-    ctx.moveTo(-topW / 2, topY);
-    ctx.lineTo(topW / 2, topY);
-    ctx.lineTo(bottomW / 2, bottomY);
-    ctx.quadraticCurveTo(0, bottomY + h * 0.06, -bottomW / 2, bottomY);
+    ctx.moveTo(body.tl.x, body.tl.y);
+    ctx.lineTo(body.tr.x, body.tr.y);
+    ctx.lineTo(body.br.x, body.br.y);
+    ctx.quadraticCurveTo(bottomShift, bottomY + h * 0.06, body.bl.x, body.bl.y);
     ctx.closePath();
     ctx.fill();
+
+    if (Math.abs(lean) > 0.04) {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.beginPath();
+      if (lean > 0) {
+        ctx.moveTo(body.tl.x, body.tl.y);
+        ctx.lineTo(body.bl.x, body.bl.y);
+        ctx.lineTo(body.bl.x + w * 0.18, body.bl.y - h * 0.08);
+        ctx.lineTo(body.tl.x + w * 0.1, body.tl.y + h * 0.08);
+      } else {
+        ctx.moveTo(body.tr.x, body.tr.y);
+        ctx.lineTo(body.br.x, body.br.y);
+        ctx.lineTo(body.br.x - w * 0.18, body.br.y - h * 0.08);
+        ctx.lineTo(body.tr.x - w * 0.1, body.tr.y + h * 0.08);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
 
     ctx.strokeStyle = 'rgba(0,0,0,0.18)';
     ctx.lineWidth = Math.max(1, 1.6 * scale);
     ctx.beginPath();
-    ctx.moveTo(-topW / 2, topY);
-    ctx.lineTo(-bottomW / 2, bottomY);
-    ctx.moveTo(topW / 2, topY);
-    ctx.lineTo(bottomW / 2, bottomY);
+    ctx.moveTo(body.tl.x, body.tl.y);
+    ctx.lineTo(body.bl.x, body.bl.y);
+    ctx.moveTo(body.tr.x, body.tr.y);
+    ctx.lineTo(body.br.x, body.br.y);
     ctx.stroke();
 
     ctx.fillStyle = model.roof;
     ctx.beginPath();
-    ctx.moveTo(-topW * 0.34, topY + h * 0.1);
-    ctx.lineTo(topW * 0.34, topY + h * 0.1);
-    ctx.lineTo(midW * 0.28, topY + h * 0.34);
-    ctx.lineTo(-midW * 0.28, topY + h * 0.34);
+    ctx.moveTo(-topW * 0.34 + topShift, topY + h * 0.1);
+    ctx.lineTo(topW * 0.34 + topShift, topY + h * 0.1);
+    ctx.lineTo(midW * 0.28 + midShift, topY + h * 0.34);
+    ctx.lineTo(-midW * 0.28 + midShift, topY + h * 0.34);
     ctx.closePath();
     ctx.fill();
 
     if (toward) {
       ctx.fillStyle = 'rgba(187, 222, 251, 0.9)';
       ctx.beginPath();
-      ctx.moveTo(-midW * 0.34, topY + h * 0.38);
-      ctx.lineTo(midW * 0.34, topY + h * 0.38);
-      ctx.lineTo(midW * 0.24, hoodY + h * 0.2);
-      ctx.lineTo(-midW * 0.24, hoodY + h * 0.2);
+      ctx.moveTo(-midW * 0.34 + midShift, topY + h * 0.38);
+      ctx.lineTo(midW * 0.34 + midShift, topY + h * 0.38);
+      ctx.lineTo(midW * 0.24 + bottomShift, hoodY + h * 0.2);
+      ctx.lineTo(-midW * 0.24 + bottomShift, hoodY + h * 0.2);
       ctx.closePath();
       ctx.fill();
 
       ctx.fillStyle = '#263238';
-      ctx.fillRect(-bottomW * 0.22, h * 0.22, bottomW * 0.44, h * 0.06);
+      ctx.fillRect(-bottomW * 0.22 + bottomShift, h * 0.22, bottomW * 0.44, h * 0.06);
       ctx.fillStyle = '#fff59d';
       ctx.beginPath();
-      ctx.ellipse(-bottomW * 0.32, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
-      ctx.ellipse(bottomW * 0.32, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
+      ctx.ellipse(-bottomW * 0.32 + bottomShift, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
+      ctx.ellipse(bottomW * 0.32 + bottomShift, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.fillStyle = 'rgba(38, 50, 56, 0.85)';
       ctx.beginPath();
-      ctx.moveTo(-midW * 0.3, topY + h * 0.36);
-      ctx.lineTo(midW * 0.3, topY + h * 0.36);
-      ctx.lineTo(midW * 0.24, topY + h * 0.58);
-      ctx.lineTo(-midW * 0.24, topY + h * 0.58);
+      ctx.moveTo(-midW * 0.3 + midShift, topY + h * 0.36);
+      ctx.lineTo(midW * 0.3 + midShift, topY + h * 0.36);
+      ctx.lineTo(midW * 0.24 + bottomShift, topY + h * 0.58);
+      ctx.lineTo(-midW * 0.24 + bottomShift, topY + h * 0.58);
       ctx.closePath();
       ctx.fill();
 
       ctx.fillStyle = '#d32f2f';
-      ctx.fillRect(-bottomW * 0.38, h * 0.28, w * 0.14, h * 0.06);
-      ctx.fillRect(bottomW * 0.24, h * 0.28, w * 0.14, h * 0.06);
+      ctx.fillRect(-bottomW * 0.38 + bottomShift, h * 0.28, w * 0.14, h * 0.06);
+      ctx.fillRect(bottomW * 0.24 + bottomShift, h * 0.28, w * 0.14, h * 0.06);
       ctx.fillStyle = 'rgba(38,50,56,0.5)';
-      ctx.fillRect(-bottomW * 0.24, h * 0.21, bottomW * 0.48, h * 0.035);
+      ctx.fillRect(-bottomW * 0.24 + bottomShift, h * 0.21, bottomW * 0.48, h * 0.035);
     }
 
     ctx.fillStyle = '#263238';
-    ctx.fillRect(-bottomW * 0.48, h * 0.02, w * 0.08, h * 0.25);
-    ctx.fillRect(bottomW * 0.4, h * 0.02, w * 0.08, h * 0.25);
+    ctx.fillRect(-bottomW * 0.48 + bottomShift, h * 0.02, w * 0.08, h * 0.25);
+    ctx.fillRect(bottomW * 0.4 + bottomShift, h * 0.02, w * 0.08, h * 0.25);
 
     if (damage > 0) {
       ctx.font = (18 * scale) + 'px sans-serif';
@@ -353,6 +385,11 @@ export class Renderer {
       ctx.fillText(damage >= 2 ? '💨' : '🩹', w * 0.06, -h * 0.02);
     }
     ctx.restore();
+  }
+
+  _sideLean(x, road) {
+    const half = Math.max(1, road.width / 2);
+    return Math.max(-0.24, Math.min(0.24, ((x - this.w / 2) / half) * 0.2));
   }
 
   _drawRepairOverlay(ctx) {
@@ -381,20 +418,22 @@ export class Renderer {
 
   _roadAt(z) {
     const zz = Math.max(0, Math.min(1, z));
-    const horizonY = this.h * 0.26;
-    const nearY = this.h * 0.96;
-    const depth = 1 - zz;
-    const k = Math.pow(depth, 1.8);
+    const horizonY = this.h * 0.27;
+    const nearY = this.h * 0.97;
+    const nearD = 0.32;
+    const farD = 5.6;
+    const d = nearD + zz * (farD - nearD);
+    const inv = 1 / d;
+    const k = (inv - 1 / farD) / (1 / nearD - 1 / farD);
     const y = horizonY + k * (nearY - horizonY);
-    const farWidth = this.w * 0.18;
-    const nearWidth = this.w * 1.22;
+    const farWidth = this.w * 0.16;
+    const nearWidth = this.w * 1.18;
     const width = farWidth + k * (nearWidth - farWidth);
-    return { y, width, left: this.w / 2 - width / 2, right: this.w / 2 + width / 2 };
+    return { y, width, left: this.w / 2 - width / 2, right: this.w / 2 + width / 2, k };
   }
 
   _scale(z) {
-    const depth = 1 - Math.max(0, Math.min(1, z));
-    const k = Math.pow(depth, 1.55);
-    return (0.16 + k * 1.18) * this.dpr;
+    const road = this._roadAt(z);
+    return (0.13 + road.k * 1.24) * this.dpr;
   }
 }

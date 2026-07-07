@@ -8,6 +8,7 @@ import { randomBrickValue } from '../games/breakout/js/bricks.js';
 import { Board, DIFFICULTIES, EMOJI_POOL } from '../games/lianliankan/js/board.js';
 import { Game as LianGame } from '../games/lianliankan/js/game.js';
 import { Game as DriveGame, MIN_LANES, MAX_LANES } from '../games/happy-drive/js/game.js';
+import { Renderer as DriveRenderer } from '../games/happy-drive/js/render.js';
 
 let passed = 0;
 let failed = 0;
@@ -945,6 +946,13 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   ];
   g._spawnVehicle();
   eq('drive pressure zone leaves one lane open', g.vehicles.length, 2);
+}
+{
+  const r = Object.create(DriveRenderer.prototype);
+  r.w = 600; r.h = 800; r.dpr = 1;
+  const farDelta = r._roadAt(0.8).y - r._roadAt(0.9).y;
+  const nearDelta = r._roadAt(0.1).y - r._roadAt(0.2).y;
+  truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
