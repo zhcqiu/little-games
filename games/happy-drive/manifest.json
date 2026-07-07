@@ -1,0 +1,11 @@
+{
+  "name": "快乐开车",
+  "short_name": "开车",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fff8e1",
+  "theme_color": "#ff7043",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

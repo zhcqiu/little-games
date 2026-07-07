@@ -1,0 +1,65 @@
+@import url('../../shared/themes.css');
+@import url('../../shared/ui.css');
+
+.score-block {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 10px;
+  align-items: center;
+}
+
+#game-canvas {
+  width: min(100vw, 720px);
+  height: min(calc(100vh - 132px), 960px);
+  max-height: 960px;
+  aspect-ratio: 3 / 4;
+}
+
+#control-pad {
+  display: none;
+  grid-template-columns: 60px 60px 60px;
+  grid-template-rows: 60px 60px;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+#pad-accelerate { grid-column: 2; grid-row: 1; }
+#pad-left       { grid-column: 1; grid-row: 2; }
+#pad-slow       { grid-column: 2; grid-row: 2; }
+#pad-right      { grid-column: 3; grid-row: 2; }
+
+#guide-toggle {
+  min-width: 72px;
+}
+
+body[data-theme="space"] {
+  --road-sky: #1d1453;
+}
+
+body[data-theme="night"] {
+  --road-sky: #17223d;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #control-pad { display: grid; }
+}
+
+@media (max-width: 520px) {
+  .score-block {
+    grid-template-columns: repeat(3, auto);
+    gap: 6px;
+    font-size: 15px;
+  }
+
+  .score-block .emoji { font-size: 17px; }
+
+  #game-canvas {
+    width: 100vw;
+    height: calc(100vh - 58px - env(safe-area-inset-top, 0px));
+    border-radius: 0;
+    outline: none;
+  }
+}

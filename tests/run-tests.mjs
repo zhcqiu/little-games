@@ -7,6 +7,7 @@ import { reflectFromBrick, paddleReflectionAngle, sweepAgainstBrick } from '../g
 import { randomBrickValue } from '../games/breakout/js/bricks.js';
 import { Board, DIFFICULTIES, EMOJI_POOL } from '../games/lianliankan/js/board.js';
 import { Game as LianGame } from '../games/lianliankan/js/game.js';
+import { Game as DriveGame, MIN_LANES, MAX_LANES } from '../games/happy-drive/js/game.js';
 
 let passed = 0;
 let failed = 0;
@@ -851,6 +852,67 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('lian beginner has flipped', g.board.flipped !== null);
 }
 
+// ───── happy drive ─────
+{
+  const g = new DriveGame();
+  eq('drive min lanes', MIN_LANES, 3);
+  eq('drive max lanes', MAX_LANES, 5);
+  eq('drive initial lanes', g.laneCount, 3);
+  eq('drive initial score', g.score, 0);
+  eq('drive initial damage', g.damage, 0);
+  eq('drive initial lane', g.playerLane, 1);
+}
+{
+  const g = new DriveGame();
+  g.moveLeft();
+  eq('drive left lane', g.playerLane, 0);
+  eq('drive left edge clamp', g.moveLeft(), false);
+  g.moveRight();
+  g.moveRight();
+  eq('drive right lane', g.playerLane, 2);
+  eq('drive right edge clamp', g.moveRight(), false);
+}
+{
+  const g = new DriveGame();
+  g.fruits = [{ lane: g.playerLane, z: 0.12, emoji: '🍓', bob: 0 }];
+  g.step(16);
+  eq('drive fruit collected', g.fruitCount, 1);
+  eq('drive fruit score +5', g.score, 5);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: g.playerLane, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.step(16);
+  eq('drive crash damage +1', g.damage, 1);
+  eq('drive crash not over yet', g.gameOver, false);
+}
+{
+  const g = new DriveGame();
+  g.setMaxHits(2);
+  g.vehicles = [
+    { lane: g.playerLane, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: g.playerLane, z: 0.09, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+  ];
+  g.step(16);
+  g.vehicles[1].hit = false;
+  g.step(16);
+  eq('drive max hits game over', g.gameOver, true);
+}
+{
+  const g = new DriveGame();
+  g.setChallenge('lively');
+  g.setGuidesOn(false);
+  g.setSpeed(5);
+  g.score = 12;
+  g.fruits = [{ lane: 0, z: 0.5, emoji: '🍌', bob: 1 }];
+  const snap = g.serialize();
+  const g2 = new DriveGame();
+  eq('drive restore ok', g2.restore(snap), true);
+  eq('drive restore score', g2.score, 12);
+  eq('drive restore challenge', g2.challenge, 'lively');
+  eq('drive restore guides', g2.guidesOn, false);
+  eq('drive restore invalid', g2.restore({}), false);
+}
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>快乐开车 · 小游戏乐园</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <meta name="theme-color" content="#ff7043">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header id="top-bar">
+    <div class="score-block">
+      <div title="水果"><span class="emoji">🍓</span> <span id="score">0</span></div>
+      <div title="最高"><span class="emoji">🏆</span> <span id="high-score">0</span></div>
+      <div title="小车状态"><span class="emoji">🩹</span> <span id="damage">0/3</span></div>
+    </div>
+    <button id="pause-btn" aria-label="暂停">⏸</button>
+    <button id="help-btn" aria-label="帮助">？</button>
+    <button id="settings-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <main>
+    <canvas id="game-canvas"></canvas>
+  </main>
+
+  <div id="control-pad" aria-label="方向按键">
+    <button id="pad-accelerate" aria-label="加速">↑</button>
+    <button id="pad-left" aria-label="左移">←</button>
+    <button id="pad-slow" aria-label="减速">↓</button>
+    <button id="pad-right" aria-label="右移">→</button>
+  </div>
+
+  <div id="help-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>怎么玩</h2>
+      <button id="help-close" aria-label="关闭帮助">✕</button>
+    </div>
+    <div class="help-section">
+      <h3>🎮 目标</h3>
+      <p>开着小车去公园野餐，收集水果，避开路上的车。</p>
+    </div>
+    <div class="help-section">
+      <h3>📱 手机和平板</h3>
+      <ul>
+        <li><b>点左半边</b> — 往左换一条车道</li>
+        <li><b>点右半边</b> — 往右换一条车道</li>
+        <li><b>向上滑</b> — 稍微加速</li>
+        <li><b>向下滑</b> — 稍微减速</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>🚗 小车状态</h3>
+      <p>碰到车会慢下来。碰几次后，小车会停在路边修一修，然后重新开始。</p>
+    </div>
+    <div class="help-section">
+      <h3>🌈 温和提示</h3>
+      <p>同一车道有车靠近时，道路会轻轻发亮，提醒小朋友换道。</p>
+    </div>
+  </div>
+
+  <div id="settings-panel" class="panel hidden" aria-hidden="true">
+    <div class="panel-header">
+      <h2>设置</h2>
+      <button id="settings-close" aria-label="关闭设置">✕</button>
+    </div>
+    <div class="setting-row">
+      <label>🚗 小车速度</label>
+      <div class="slider-row">
+        <span>🐢</span>
+        <input type="range" id="speed-slider" min="1" max="5" step="1" value="2">
+        <span>🚀</span>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>🌱 难度</label>
+      <div class="seg" id="challenge-seg">
+        <button data-val="gentle" class="active">🌱 轻松</button>
+        <button data-val="normal">🌈 普通</button>
+        <button data-val="lively">⭐ 活泼</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label>🩹 修车次数</label>
+      <div class="seg seg-narrow" id="hits-seg">
+        <button data-val="2">2</button>
+        <button data-val="3" class="active">3</button>
+        <button data-val="4">4</button>
+        <button data-val="5">5</button>
+      </div>
+      <p class="hint">达到次数后，小车会停下修理并重新开始。</p>
+    </div>
+    <div class="setting-row toggle-row">
+      <label>💡 温和提示</label>
+      <button class="toggle active" id="guide-toggle">开</button>
+    </div>
+    <p class="hint">🎨 主题 / 🔊 音效 / 🎵 音乐 / 🎬 动效请在主菜单 ⚙️ 里设置</p>
+    <button id="restart-btn" class="primary">🔄 重新开始</button>
+  </div>
+
+  <div id="restart-confirm" class="popup hidden">
+    <p>重新开始这次兜风吗？</p>
+    <div class="popup-buttons">
+      <button id="restart-cancel">取消</button>
+      <button id="restart-ok" class="primary">开始</button>
+    </div>
+  </div>
+
+  <div id="tutorial-popup" class="popup hidden">
+    <p style="font-size: 20px; margin: 0 0 12px;">🚗 快乐开车</p>
+    <p style="margin: 0 0 8px;">点左边或右边换车道。</p>
+    <p style="margin: 0 0 16px;">收集水果，慢慢避开车。</p>
+    <div class="popup-buttons">
+      <button id="tutorial-ok" class="primary">开始玩</button>
+    </div>
+  </div>
+
+  <div id="gameover-panel" class="panel hidden">
+    <div class="gameover-emoji">🛠️</div>
+    <p class="gameover-stat">小车修好了</p>
+    <p class="gameover-stat">🍓 <span id="final-score">0</span></p>
+    <p class="gameover-stat">🏆 <span id="final-high">0</span></p>
+    <button id="replay-btn" class="primary">▶️ 再开一次</button>
+    <button id="share-btn" class="secondary hidden">📤 分享成绩</button>
+  </div>
+
+  <div id="event-toast" class="toast hidden">🍓</div>
+  <div id="clear-toast" class="clear-toast hidden">✨</div>
+
+  <div id="pause-overlay" class="pause-overlay hidden">
+    <div class="pause-icon">⏸</div>
+    <div class="pause-hint">点屏幕 / 按 P 继续</div>
+    <div id="pause-extra" class="pause-extra"></div>
+  </div>
+
+  <div id="version-tag" class="version-tag">v1.0</div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
