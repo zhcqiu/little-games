@@ -887,7 +887,13 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   const g = new DriveGame();
   g.fruits = [{ lane: g.playerLane, z: 0.12, emoji: '🍓', bob: 0 }];
   g.step(16);
-  eq('drive fruit collected', g.fruitCount, 1);
+  eq('drive fruit outside shared hit depth not collected', g.fruitCount, 0);
+}
+{
+  const g = new DriveGame();
+  g.fruits = [{ lane: g.playerLane, z: 0.04, emoji: '🍓', bob: 0 }];
+  g.step(16);
+  eq('drive fruit collected with shared hitbox', g.fruitCount, 1);
   eq('drive fruit score +5', g.score, 5);
 }
 {
@@ -946,6 +952,16 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   g.vehicles = [{ lane: g.playerLane, z: 0.12, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);
   eq('drive near visual gap avoids collision', g.damage, 0);
+}
+{
+  const g = new DriveGame();
+  g.playerOffset = 0.31;
+  g.targetOffset = 0.31;
+  g.fruits = [{ lane: 0, z: 0.04, emoji: '🍌', bob: 0 }];
+  g.vehicles = [{ lane: 0, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.step(16);
+  eq('drive fruit uses same lateral hitbox as car', g.fruitCount, 0);
+  eq('drive car uses same lateral hitbox as fruit', g.damage, 0);
 }
 {
   const g = new DriveGame();

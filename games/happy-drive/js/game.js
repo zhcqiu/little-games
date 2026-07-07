@@ -15,6 +15,10 @@ const CHALLENGES = {
   lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 1.48 },
 };
 
+const PLAYER_HIT_LANE = 0.3;
+const PLAYER_HIT_Z_MIN = -0.02;
+const PLAYER_HIT_Z_MAX = 0.085;
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -381,7 +385,7 @@ export class Game {
   _checkCollections() {
     const kept = [];
     for (const f of this.fruits) {
-      if (Math.abs(f.lane - this.playerOffset) < 0.34 && f.z < 0.18) {
+      if (this._overlapsPlayer(f)) {
         this.fruitCount += 1;
         this.combo = this.comboMs > 0 ? this.combo + 1 : 1;
         this.comboMs = 3000;
@@ -396,12 +400,16 @@ export class Game {
     this.fruits = kept;
   }
 
+  _overlapsPlayer(o) {
+    return Math.abs(o.lane - this.playerOffset) < PLAYER_HIT_LANE &&
+      o.z < PLAYER_HIT_Z_MAX &&
+      o.z > PLAYER_HIT_Z_MIN;
+  }
+
   _checkCollisions() {
     for (const v of this.vehicles) {
       if (v.hit) continue;
-      const lateralOverlap = Math.abs(v.lane - this.playerOffset) < 0.3;
-      const depthOverlap = v.z < 0.085 && v.z > -0.02;
-      if (lateralOverlap && depthOverlap) {
+      if (this._overlapsPlayer(v)) {
         v.hit = true;
         this.damage += 1;
         this.combo = 0;
