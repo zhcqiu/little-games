@@ -130,7 +130,7 @@ game.on('crash', ({ damage }) => {
   audio.playCrash();
   const p = renderer.playerPoint(game);
   effects.crash(p.x, p.y, damage);
-  showToast(damage >= 2 ? '小心！' : '碰到了！');
+  showToast(damage >= 2 ? '⚠️💥' : '💥');
   vibrate(damage >= 2 ? [70, 25, 70, 25, 45] : [55, 25, 45]);
 });
 game.on('gameOver', () => {
