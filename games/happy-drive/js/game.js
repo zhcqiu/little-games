@@ -48,6 +48,7 @@ export class Game {
     this.laneCount = MIN_LANES;
     this.playerLane = 1;
     this.playerOffset = 1;
+    this.targetOffset = 1;
     this.playerSpeed = this._targetSpeed();
     this.vehicles = [];
     this.fruits = [];
@@ -87,18 +88,20 @@ export class Game {
 
   moveLeft() {
     if (this.gameOver) return false;
-    const next = clamp(this.playerLane - 1, 0, this.laneCount - 1);
-    if (next === this.playerLane) return false;
-    this.playerLane = next;
+    const next = clamp(this.targetOffset - 0.5, 0, this.laneCount - 1);
+    if (Math.abs(next - this.targetOffset) < 0.001) return false;
+    this.targetOffset = next;
+    this.playerLane = Math.round(next);
     this._emit('move', next);
     return true;
   }
 
   moveRight() {
     if (this.gameOver) return false;
-    const next = clamp(this.playerLane + 1, 0, this.laneCount - 1);
-    if (next === this.playerLane) return false;
-    this.playerLane = next;
+    const next = clamp(this.targetOffset + 0.5, 0, this.laneCount - 1);
+    if (Math.abs(next - this.targetOffset) < 0.001) return false;
+    this.targetOffset = next;
+    this.playerLane = Math.round(next);
     this._emit('move', next);
     return true;
   }
@@ -132,9 +135,13 @@ export class Game {
 
     const oldLaneCount = this.laneCount;
     this.laneCount = clamp(MIN_LANES + Math.floor(this.gameTimeMs / 45000), MIN_LANES, MAX_LANES);
-    if (this.laneCount !== oldLaneCount) this.playerLane = clamp(this.playerLane, 0, this.laneCount - 1);
+    if (this.laneCount !== oldLaneCount) {
+      this.playerLane = clamp(this.playerLane, 0, this.laneCount - 1);
+      this.targetOffset = clamp(this.targetOffset, 0, this.laneCount - 1);
+      this.playerOffset = clamp(this.playerOffset, 0, this.laneCount - 1);
+    }
 
-    this.playerOffset += (this.playerLane - this.playerOffset) * Math.min(1, seconds * 10);
+    this.playerOffset += (this.targetOffset - this.playerOffset) * Math.min(1, seconds * 7.5);
     this.playerSpeed += (this._targetSpeed() - this.playerSpeed) * Math.min(1, seconds * 3);
     if (this.comboMs > 0) {
       this.comboMs -= dt;
@@ -151,7 +158,7 @@ export class Game {
     if (!this.guidesOn) return null;
     let nearest = null;
     for (const v of this.vehicles) {
-      if (v.hit || v.lane !== this.playerLane) continue;
+      if (v.hit || Math.abs(v.lane - this.playerOffset) > 0.62) continue;
       if (v.z > 0.16 && v.z < 0.44) {
         if (!nearest || v.z < nearest.z) nearest = v;
       }
@@ -169,6 +176,8 @@ export class Game {
       gameTimeMs: this.gameTimeMs,
       laneCount: this.laneCount,
       playerLane: this.playerLane,
+      playerOffset: this.playerOffset,
+      targetOffset: this.targetOffset,
       speedSetting: this.speedSetting,
       challenge: this.challenge,
       guidesOn: this.guidesOn,
@@ -189,7 +198,8 @@ export class Game {
     this.gameTimeMs = Math.max(0, Number(snap.gameTimeMs) || 0);
     this.laneCount = clamp(snap.laneCount | 0, MIN_LANES, MAX_LANES);
     this.playerLane = clamp(snap.playerLane | 0, 0, this.laneCount - 1);
-    this.playerOffset = this.playerLane;
+    this.playerOffset = clamp(Number.isFinite(snap.playerOffset) ? snap.playerOffset : this.playerLane, 0, this.laneCount - 1);
+    this.targetOffset = clamp(Number.isFinite(snap.targetOffset) ? snap.targetOffset : this.playerOffset, 0, this.laneCount - 1);
     this.setSpeed(snap.speedSetting || this.speedSetting);
     this.setChallenge(snap.challenge || this.challenge);
     this.setGuidesOn(snap.guidesOn !== false);
@@ -274,9 +284,11 @@ export class Game {
 
   _spawnVehicle() {
     const occupied = new Set(this.vehicles.filter((v) => v.z > 0.72).map((v) => v.lane));
+    const pressure = new Set(this.vehicles.filter((v) => v.z > 0.22 && v.z < 0.82).map((v) => v.lane));
+    if (pressure.size >= this.laneCount - 1) return;
     const candidates = [];
     for (let lane = 0; lane < this.laneCount; lane++) {
-      if (!occupied.has(lane)) candidates.push(lane);
+      if (!occupied.has(lane) && !pressure.has(lane)) candidates.push(lane);
     }
     if (!candidates.length) return;
     const towardPlayer = Math.random() < 0.36 + Math.min(0.18, this.gameTimeMs / 240000);
@@ -324,7 +336,7 @@ export class Game {
   _checkCollections() {
     const kept = [];
     for (const f of this.fruits) {
-      if (f.lane === this.playerLane && f.z < 0.18) {
+      if (Math.abs(f.lane - this.playerOffset) < 0.34 && f.z < 0.18) {
         this.fruitCount += 1;
         this.combo = this.comboMs > 0 ? this.combo + 1 : 1;
         this.comboMs = 3000;
@@ -341,8 +353,10 @@ export class Game {
 
   _checkCollisions() {
     for (const v of this.vehicles) {
-      if (v.hit || v.lane !== this.playerLane) continue;
-      if (v.z < 0.16 && v.z > -0.06) {
+      if (v.hit) continue;
+      const lateralOverlap = Math.abs(v.lane - this.playerOffset) < 0.38;
+      const depthOverlap = v.z < 0.15 && v.z > -0.045;
+      if (lateralOverlap && depthOverlap) {
         v.hit = true;
         this.damage += 1;
         this.combo = 0;

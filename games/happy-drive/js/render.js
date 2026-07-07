@@ -264,21 +264,21 @@ export class Renderer {
   }
 
   _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2) {
-    const w = 44 * scale;
-    const h = 68 * scale;
+    const w = 34 * scale;
+    const h = 56 * scale;
     const perspective = 1 - Math.max(0, Math.min(1, z));
-    const topW = w * (0.52 + perspective * 0.1);
-    const midW = w * (0.72 + perspective * 0.08);
-    const bottomW = w * (1.02 + perspective * 0.1);
+    const topW = w * (0.54 + perspective * 0.08);
+    const midW = w * (0.76 + perspective * 0.08);
+    const bottomW = w * (1.0 + perspective * 0.08);
     const topY = -h * 0.52;
     const hoodY = toward ? -h * 0.08 : -h * 0.2;
     const bottomY = h * 0.48;
     ctx.save();
     ctx.translate(x, y - h * 0.35);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
     ctx.beginPath();
-    ctx.ellipse(0, h * 0.42, w * 0.58, h * 0.16, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, h * 0.42, w * 0.52, h * 0.14, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = model.color;
@@ -286,18 +286,18 @@ export class Renderer {
     ctx.moveTo(-topW / 2, topY);
     ctx.lineTo(topW / 2, topY);
     ctx.lineTo(bottomW / 2, bottomY);
-    ctx.quadraticCurveTo(0, bottomY + h * 0.08, -bottomW / 2, bottomY);
+    ctx.quadraticCurveTo(0, bottomY + h * 0.06, -bottomW / 2, bottomY);
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = Math.max(1, 1.6 * scale);
     ctx.beginPath();
-    ctx.moveTo(-topW * 0.38, topY + h * 0.12);
-    ctx.lineTo(topW * 0.38, topY + h * 0.12);
-    ctx.lineTo(midW * 0.32, hoodY);
-    ctx.lineTo(-midW * 0.32, hoodY);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(-topW / 2, topY);
+    ctx.lineTo(-bottomW / 2, bottomY);
+    ctx.moveTo(topW / 2, topY);
+    ctx.lineTo(bottomW / 2, bottomY);
+    ctx.stroke();
 
     ctx.fillStyle = model.roof;
     ctx.beginPath();
@@ -308,24 +308,43 @@ export class Renderer {
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-    ctx.lineWidth = Math.max(1, 2 * scale);
-    ctx.beginPath();
-    ctx.moveTo(-topW / 2, topY);
-    ctx.lineTo(-bottomW / 2, bottomY);
-    ctx.moveTo(topW / 2, topY);
-    ctx.lineTo(bottomW / 2, bottomY);
-    ctx.stroke();
+    if (toward) {
+      ctx.fillStyle = 'rgba(187, 222, 251, 0.9)';
+      ctx.beginPath();
+      ctx.moveTo(-midW * 0.34, topY + h * 0.38);
+      ctx.lineTo(midW * 0.34, topY + h * 0.38);
+      ctx.lineTo(midW * 0.24, hoodY + h * 0.2);
+      ctx.lineTo(-midW * 0.24, hoodY + h * 0.2);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.fillStyle = toward ? '#fff59d' : '#263238';
-    ctx.beginPath();
-    ctx.ellipse(-bottomW * 0.27, h * 0.27, w * 0.09, h * 0.04, 0, 0, Math.PI * 2);
-    ctx.ellipse(bottomW * 0.27, h * 0.27, w * 0.09, h * 0.04, 0, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = '#263238';
+      ctx.fillRect(-bottomW * 0.22, h * 0.22, bottomW * 0.44, h * 0.06);
+      ctx.fillStyle = '#fff59d';
+      ctx.beginPath();
+      ctx.ellipse(-bottomW * 0.32, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
+      ctx.ellipse(bottomW * 0.32, h * 0.27, w * 0.09, h * 0.045, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(38, 50, 56, 0.85)';
+      ctx.beginPath();
+      ctx.moveTo(-midW * 0.3, topY + h * 0.36);
+      ctx.lineTo(midW * 0.3, topY + h * 0.36);
+      ctx.lineTo(midW * 0.24, topY + h * 0.58);
+      ctx.lineTo(-midW * 0.24, topY + h * 0.58);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#d32f2f';
+      ctx.fillRect(-bottomW * 0.38, h * 0.28, w * 0.14, h * 0.06);
+      ctx.fillRect(bottomW * 0.24, h * 0.28, w * 0.14, h * 0.06);
+      ctx.fillStyle = 'rgba(38,50,56,0.5)';
+      ctx.fillRect(-bottomW * 0.24, h * 0.21, bottomW * 0.48, h * 0.035);
+    }
 
     ctx.fillStyle = '#263238';
-    ctx.fillRect(-bottomW * 0.48, h * 0.02, w * 0.09, h * 0.28);
-    ctx.fillRect(bottomW * 0.39, h * 0.02, w * 0.09, h * 0.28);
+    ctx.fillRect(-bottomW * 0.48, h * 0.02, w * 0.08, h * 0.25);
+    ctx.fillRect(bottomW * 0.4, h * 0.02, w * 0.08, h * 0.25);
 
     if (damage > 0) {
       ctx.font = (18 * scale) + 'px sans-serif';

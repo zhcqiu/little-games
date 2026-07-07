@@ -865,11 +865,18 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 {
   const g = new DriveGame();
   g.moveLeft();
-  eq('drive left lane', g.playerLane, 0);
+  eq('drive half-left target', g.targetOffset, 0.5);
+  g.step(200);
+  truthy('drive half-left offset between lanes', g.playerOffset > 0 && g.playerOffset < 1);
+  g.moveLeft();
+  eq('drive full-left target', g.targetOffset, 0);
   eq('drive left edge clamp', g.moveLeft(), false);
   g.moveRight();
+  eq('drive half-right target', g.targetOffset, 0.5);
   g.moveRight();
-  eq('drive right lane', g.playerLane, 2);
+  g.moveRight();
+  g.moveRight();
+  eq('drive full-right target', g.targetOffset, 2);
   eq('drive right edge clamp', g.moveRight(), false);
 }
 {
@@ -918,6 +925,26 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   g.vehicles = [{ lane: 0, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g._spawnFruit();
   eq('drive fruit waits for oncoming traffic', g.fruits.length, 0);
+}
+{
+  const g = new DriveGame();
+  g.playerOffset = 0.5;
+  g.targetOffset = 0.5;
+  g.vehicles = [
+    { lane: 0, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 1, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+  ];
+  g.step(16);
+  eq('drive gap between two cars avoids collision', g.damage, 0);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [
+    { lane: 0, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 1, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+  ];
+  g._spawnVehicle();
+  eq('drive pressure zone leaves one lane open', g.vehicles.length, 2);
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);
