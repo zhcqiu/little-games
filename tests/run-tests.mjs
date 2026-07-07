@@ -1095,6 +1095,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   const markerPhaseA = r._laneMarkerPhase({ distance: 10 }, 0.13);
   const markerPhaseB = r._laneMarkerPhase({ distance: 12 }, 0.13);
   truthy('drive lane markers sync to world distance', markerPhaseB < markerPhaseA);
+  truthy('drive lane markers include player rear', r._laneMarkerStartZ({ distance: 10 }, 0.13) <= 0.02);
   const leftSpeedLine = r._speedLineSegment({ playerOffset: 1, laneCount: 3 }, -1, 0, 0.4, 0.55);
   const rightSpeedLine = r._speedLineSegment({ playerOffset: 1, laneCount: 3 }, 1, 0, 0.4, 0.55);
   truthy('drive left speed line follows road perspective', leftSpeedLine.end.x < leftSpeedLine.start.x && leftSpeedLine.end.y > leftSpeedLine.start.y);
