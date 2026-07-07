@@ -9,6 +9,7 @@ import { Board, DIFFICULTIES, EMOJI_POOL } from '../games/lianliankan/js/board.j
 import { Game as LianGame } from '../games/lianliankan/js/game.js';
 import { Game as DriveGame, MIN_LANES, MAX_LANES } from '../games/happy-drive/js/game.js';
 import { Renderer as DriveRenderer } from '../games/happy-drive/js/render.js';
+import { Effects as DriveEffects } from '../games/happy-drive/js/effects.js';
 
 let passed = 0;
 let failed = 0;
@@ -981,6 +982,12 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   ];
   g._spawnVehicle();
   eq('drive pressure zone leaves one lane open', g.vehicles.length, 2);
+}
+{
+  const e = new DriveEffects();
+  e.crash(100, 120, 2);
+  truthy('drive crash flash is strong', e.flashMs >= 400 && e.impactMs >= 800);
+  truthy('drive crash shake is strong', e.shakeAmp >= 20 && e.shakeMs >= 500);
 }
 {
   const r = Object.create(DriveRenderer.prototype);

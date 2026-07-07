@@ -129,10 +129,9 @@ game.on('fruit', ({ fruit, combo }) => {
 game.on('crash', ({ damage }) => {
   audio.playCrash();
   const p = renderer.playerPoint(game);
-  effects.burst(p.x, p.y, ['#ffca28', '#ff7043', '#90a4ae'], 10);
-  effects.shake(8, 180);
-  showToast(damage >= 2 ? '💨' : '🩹');
-  vibrate([40, 20, 30]);
+  effects.crash(p.x, p.y, damage);
+  showToast(damage >= 2 ? '小心！' : '碰到了！');
+  vibrate(damage >= 2 ? [70, 25, 70, 25, 45] : [55, 25, 45]);
 });
 game.on('gameOver', () => {
   audio.playRepair();
