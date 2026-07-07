@@ -10,9 +10,9 @@ const VEHICLES = [
 ];
 
 const CHALLENGES = {
-  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 2.65 },
-  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 2.35 },
-  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 2.1 },
+  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 1.75 },
+  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 1.55 },
+  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 1.38 },
 };
 
 const PLAYER_HIT_LANE = 0.3;
@@ -23,6 +23,7 @@ const TRAFFIC_SPAWN_Z_MIN = 0.66;
 const TRAFFIC_SPAWN_Z_MAX = 1.08;
 const TRAFFIC_PRESSURE_Z_MIN = 0.18;
 const TRAFFIC_PRESSURE_Z_MAX = 0.9;
+const MAX_ACTIVE_FRUITS = 2;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -63,7 +64,7 @@ export class Game {
     this.fruits = [];
     this.scenery = [];
     this.vehicleSpawnMs = 700;
-    this.fruitSpawnMs = 850;
+    this.fruitSpawnMs = 1200;
     this.scenerySpawnMs = 0;
     this.combo = 0;
     this.comboMs = 0;
@@ -254,7 +255,7 @@ export class Game {
     }
     if (this.fruitSpawnMs <= 0) {
       const spawned = this._spawnFruit();
-      this.fruitSpawnMs = spawned ? this._nextFruitSpawnMs() : 320;
+      this.fruitSpawnMs = spawned ? this._nextFruitSpawnMs() : 520;
     }
     if (this.scenerySpawnMs <= 0) {
       this._spawnSceneryPair();
@@ -362,10 +363,13 @@ export class Game {
   }
 
   _nextFruitSpawnMs() {
-    return 850 + Math.random() * 650;
+    return 1350 + Math.random() * 900;
   }
 
   _spawnFruit() {
+    if (this.fruits.length >= MAX_ACTIVE_FRUITS) return false;
+    const fruitCrowded = this.fruits.some((f) => f.z > 0.42);
+    if (fruitCrowded) return false;
     const blocked = this.vehicles
       .filter((v) => v.z > 0.12 && v.z < 1.08)
       .map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);

@@ -864,7 +864,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive initial damage', g.damage, 0);
   eq('drive initial lane', g.playerLane, 1);
   truthy('drive default speed reduced 20%', Math.abs(g.playerSpeed - 0.552) < 0.001);
-  truthy('drive fruit spawn rate increased 150%', Math.abs(g._difficulty().fruit - 2.65) < 0.001);
+  truthy('drive fruit spawn rate reduced from pile-up tuning', Math.abs(g._difficulty().fruit - 1.75) < 0.001);
 }
 {
   const g = new DriveGame();
@@ -959,12 +959,20 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive fruit blocked returns false', g._spawnFruit(), false);
   g.fruitSpawnMs = 0;
   g._spawn(16);
-  truthy('drive fruit retries soon when blocked', g.fruitSpawnMs <= 320);
+  truthy('drive fruit retries soon when blocked', g.fruitSpawnMs <= 520);
 }
 {
   const g = new DriveGame();
   const next = g._nextFruitSpawnMs();
-  truthy('drive fruit cadence is more even', next >= 850 && next <= 1500);
+  truthy('drive fruit cadence is calmer', next >= 1350 && next <= 2250);
+}
+{
+  const g = new DriveGame();
+  g.fruits = [
+    { lane: 0, z: 0.6, emoji: '🍓', bob: 0 },
+    { lane: 2, z: 0.2, emoji: '🍌', bob: 0 },
+  ];
+  eq('drive fruit cap prevents piles', g._spawnFruit(), false);
 }
 {
   const g = new DriveGame();
@@ -1081,6 +1089,12 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);
   const eightLaneX = r.projectLane(7, 8, 0.02);
   truthy('drive renderer supports eight lanes', eightLaneX < r._roadAt(0.02).right);
+  const farMarker = r._roadAt(0.85);
+  const nearMarker = r._roadAt(0.12);
+  truthy('drive lane markers respect perspective', nearMarker.k > farMarker.k * 8);
+  const markerPhaseA = r._laneMarkerPhase({ distance: 10 }, 0.13);
+  const markerPhaseB = r._laneMarkerPhase({ distance: 12 }, 0.13);
+  truthy('drive lane markers sync to world distance', markerPhaseB < markerPhaseA);
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);

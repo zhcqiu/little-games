@@ -131,21 +131,7 @@ export class Renderer {
       ctx.restore();
     }
 
-    ctx.lineWidth = Math.max(2, this.w * 0.006);
-    ctx.strokeStyle = '#ffffff';
-    const dashSpan = 34 * this.dpr;
-    ctx.lineDashOffset = -((this.time * (0.035 + game.playerSpeed * 0.09)) % dashSpan);
-    for (let i = 1; i < game.laneCount; i++) {
-      ctx.setLineDash([18 * this.dpr, 16 * this.dpr]);
-      ctx.beginPath();
-      const a = this.projectLane(i - 0.5, game.laneCount, 1);
-      const b = this.projectLane(i - 0.5, game.laneCount, 0);
-      ctx.moveTo(a, horizon.y);
-      ctx.lineTo(b, near.y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    ctx.lineDashOffset = 0;
+    this._drawLaneMarkers(ctx, game);
     ctx.strokeStyle = t.primary;
     ctx.lineWidth = Math.max(4, this.w * 0.009);
     ctx.beginPath();
@@ -154,6 +140,36 @@ export class Renderer {
     ctx.moveTo(horizon.right, horizon.y);
     ctx.lineTo(near.right, near.y);
     ctx.stroke();
+  }
+
+  _drawLaneMarkers(ctx, game) {
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineCap = 'round';
+    const spacing = 0.13;
+    const phase = this._laneMarkerPhase(game, spacing);
+    for (let z = 0.06 + phase; z < 0.96; z += spacing) {
+      const z2 = Math.min(0.985, z + 0.045 + (1 - z) * 0.025);
+      const road = this._roadAt(z);
+      ctx.globalAlpha = 0.42 + road.k * 0.45;
+      ctx.lineWidth = Math.max(1.2, (1.2 + road.k * 3.4) * this.dpr);
+      for (let i = 1; i < game.laneCount; i++) {
+        const lane = i - 0.5;
+        const a = this.objectPoint(lane, game.laneCount, z2);
+        const b = this.objectPoint(lane, game.laneCount, z);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  _laneMarkerPhase(game, spacing = 0.13) {
+    const distance = Math.max(0, Number(game.distance) || 0);
+    const progress = (distance * 0.018) % spacing;
+    return (spacing - progress) % spacing;
   }
 
   _lanePath(ctx, lane, laneCount, zNear, zFar) {
