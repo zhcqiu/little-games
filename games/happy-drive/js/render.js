@@ -71,6 +71,7 @@ export class Renderer {
     this._drawRoad(ctx, game, t);
     this._drawFruits(ctx, game);
     this._drawVehicles(ctx, game);
+    this._drawSpeedLines(ctx, game, t);
     this._drawPlayer(ctx, game, t);
     if (game.gameOver) this._drawRepairOverlay(ctx);
   }
@@ -132,6 +133,8 @@ export class Renderer {
 
     ctx.lineWidth = Math.max(2, this.w * 0.006);
     ctx.strokeStyle = '#ffffff';
+    const dashSpan = 34 * this.dpr;
+    ctx.lineDashOffset = -((this.time * (0.035 + game.playerSpeed * 0.09)) % dashSpan);
     for (let i = 1; i < game.laneCount; i++) {
       ctx.setLineDash([18 * this.dpr, 16 * this.dpr]);
       ctx.beginPath();
@@ -142,6 +145,7 @@ export class Renderer {
       ctx.stroke();
     }
     ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
     ctx.strokeStyle = t.primary;
     ctx.lineWidth = Math.max(4, this.w * 0.009);
     ctx.beginPath();
@@ -261,14 +265,42 @@ export class Renderer {
     }
   }
 
+  _drawSpeedLines(ctx, game, t) {
+    const p = this.playerPoint(game);
+    const scale = this._scale(PLAYER_Z);
+    const speed = Math.max(0.35, game.playerSpeed || 0.5);
+    const phase = (this.time * (0.18 + speed * 0.24)) % 90;
+    const count = Math.min(6, Math.max(3, Math.round(2 + game.speedSetting)));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+    ctx.lineWidth = Math.max(2, 2.4 * scale);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < count; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const spread = (18 + i * 5) * scale;
+      const y = p.y + (34 + ((phase + i * 17) % 90)) * scale;
+      const len = (18 + speed * 26 + i * 2) * scale;
+      ctx.globalAlpha = Math.max(0, 0.58 - ((y - p.y) / (130 * scale)));
+      ctx.beginPath();
+      ctx.moveTo(p.x + side * spread, y);
+      ctx.lineTo(p.x + side * (spread + 5 * scale), y + len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   _drawPlayer(ctx, game, t) {
     const p = this.playerPoint(game);
     const model = { color: t.primary, roof: '#ffe0b2' };
     const road = this._roadAt(PLAYER_Z);
-    this._drawCar(ctx, p.x, p.y, this._scale(PLAYER_Z) * 1.02, model, false, game.damage, PLAYER_Z, this._sideLean(p.x, road));
+    const speed = Math.max(0.35, game.playerSpeed || 0.5);
+    const bob = Math.sin(this.time * (0.006 + speed * 0.006)) * (1.5 + speed * 3) * this.dpr;
+    const turnTilt = Math.max(-0.12, Math.min(0.12, (game.targetOffset - game.playerOffset) * 0.18));
+    const wheelPhase = this.time * (0.025 + speed * 0.045);
+    this._drawCar(ctx, p.x, p.y + bob, this._scale(PLAYER_Z) * 1.02, model, false, game.damage, PLAYER_Z, this._sideLean(p.x, road), wheelPhase, turnTilt);
   }
 
-  _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2, sideLean = 0) {
+  _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2, sideLean = 0, wheelPhase = 0, bodyTilt = 0) {
     const w = 34 * scale;
     const h = 56 * scale;
     const perspective = 1 - Math.max(0, Math.min(1, z));
@@ -284,6 +316,7 @@ export class Renderer {
     const bottomShift = -lean * w * 0.12;
     ctx.save();
     ctx.translate(x, y - h * 0.35);
+    ctx.rotate(bodyTilt);
 
     ctx.fillStyle = 'rgba(0,0,0,0.16)';
     ctx.beginPath();
@@ -377,8 +410,18 @@ export class Renderer {
     }
 
     ctx.fillStyle = '#263238';
-    ctx.fillRect(-bottomW * 0.48 + bottomShift, h * 0.02, w * 0.08, h * 0.25);
-    ctx.fillRect(bottomW * 0.4 + bottomShift, h * 0.02, w * 0.08, h * 0.25);
+    const leftWheel = { x: -bottomW * 0.48 + bottomShift, y: h * 0.02, w: w * 0.08, h: h * 0.25 };
+    const rightWheel = { x: bottomW * 0.4 + bottomShift, y: h * 0.02, w: w * 0.08, h: h * 0.25 };
+    ctx.fillRect(leftWheel.x, leftWheel.y, leftWheel.w, leftWheel.h);
+    ctx.fillRect(rightWheel.x, rightWheel.y, rightWheel.w, rightWheel.h);
+    if (wheelPhase) {
+      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      const spin = (Math.sin(wheelPhase) * 0.5 + 0.5) * leftWheel.h;
+      for (const wheel of [leftWheel, rightWheel]) {
+        ctx.fillRect(wheel.x + wheel.w * 0.18, wheel.y + spin, wheel.w * 0.64, Math.max(1, 1.4 * scale));
+        ctx.fillRect(wheel.x + wheel.w * 0.18, wheel.y + ((spin + wheel.h * 0.5) % wheel.h), wheel.w * 0.64, Math.max(1, 1.4 * scale));
+      }
+    }
 
     if (damage > 0) {
       ctx.font = (18 * scale) + 'px sans-serif';

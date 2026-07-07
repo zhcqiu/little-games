@@ -858,13 +858,23 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 {
   const g = new DriveGame();
   eq('drive min lanes', MIN_LANES, 3);
-  eq('drive max lanes', MAX_LANES, 5);
+  eq('drive max lanes', MAX_LANES, 8);
   eq('drive initial lanes', g.laneCount, 3);
   eq('drive initial score', g.score, 0);
   eq('drive initial damage', g.damage, 0);
   eq('drive initial lane', g.playerLane, 1);
   truthy('drive default speed reduced 20%', Math.abs(g.playerSpeed - 0.552) < 0.001);
   truthy('drive fruit spawn rate increased 150%', Math.abs(g._difficulty().fruit - 2.65) < 0.001);
+}
+{
+  const g = new DriveGame();
+  g.gameTimeMs = 120000;
+  truthy('drive speed difficulty rises more gently', g._difficulty().speed < 0.8);
+  g.step(16);
+  truthy('drive lane growth is gradual', g.laneCount <= 4);
+  g.gameTimeMs = 350000;
+  g.step(16);
+  eq('drive lane cap reaches eight', g.laneCount, 8);
 }
 {
   const g = new DriveGame();
@@ -1047,6 +1057,8 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   const farDelta = r._roadAt(0.8).y - r._roadAt(0.9).y;
   const nearDelta = r._roadAt(0.1).y - r._roadAt(0.2).y;
   truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);
+  const eightLaneX = r.projectLane(7, 8, 0.02);
+  truthy('drive renderer supports eight lanes', eightLaneX < r._roadAt(0.02).right);
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);

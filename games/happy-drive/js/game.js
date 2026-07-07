@@ -1,5 +1,5 @@
 export const MIN_LANES = 3;
-export const MAX_LANES = 5;
+export const MAX_LANES = 8;
 export const FRUITS = ['🍓', '🍌', '🍎', '🍊', '🍇', '🍉'];
 
 const VEHICLES = [
@@ -138,7 +138,7 @@ export class Game {
     if (this.planeMs <= -3800) this.planeMs = 9000 + Math.random() * 5000;
 
     const oldLaneCount = this.laneCount;
-    this.laneCount = clamp(MIN_LANES + Math.floor(this.gameTimeMs / 45000), MIN_LANES, MAX_LANES);
+    this.laneCount = clamp(MIN_LANES + Math.floor(this.gameTimeMs / 70000), MIN_LANES, MAX_LANES);
     if (this.laneCount !== oldLaneCount) {
       this.playerLane = clamp(this.playerLane, 0, this.laneCount - 1);
       this.targetOffset = clamp(this.targetOffset, 0, this.laneCount - 1);
@@ -231,8 +231,8 @@ export class Game {
   _difficulty() {
     const c = CHALLENGES[this.challenge] || CHALLENGES.gentle;
     return {
-      spawn: c.spawnMul * (1 + this.gameTimeMs / 95000),
-      speed: c.speedMul * (1 + this.gameTimeMs / 120000),
+      spawn: c.spawnMul * (1 + this.gameTimeMs / 170000),
+      speed: c.speedMul * (1 + this.gameTimeMs / 260000),
       fruit: c.fruitMul,
     };
   }
@@ -245,7 +245,7 @@ export class Game {
 
     if (this.vehicleSpawnMs <= 0) {
       this._spawnVehicle();
-      this.vehicleSpawnMs = clamp(980 - this.gameTimeMs / 220, 420, 980) + Math.random() * 260;
+      this.vehicleSpawnMs = clamp(1040 - this.gameTimeMs / 460, 560, 1040) + Math.random() * 300;
     }
     if (this.fruitSpawnMs <= 0) {
       const spawned = this._spawnFruit();
@@ -360,12 +360,13 @@ export class Game {
       v.z -= seconds * (base + v.speed * d.speed + nearExit);
     }
     for (const f of this.fruits) {
-      f.z -= seconds * (base + 0.07);
+      const nearExit = f.z < 0.16 ? (0.16 - f.z) * 2.4 : 0;
+      f.z -= seconds * (base + 0.07 + nearExit);
       f.bob += seconds * 5;
     }
     for (const s of this.scenery) s.z -= seconds * (base + 0.1);
     this.vehicles = this.vehicles.filter((v) => v.z > -0.025);
-    this.fruits = this.fruits.filter((f) => f.z > -0.12);
+    this.fruits = this.fruits.filter((f) => f.z > -0.025);
     this.scenery = this.scenery.filter((s) => s.z > -0.1);
   }
 
