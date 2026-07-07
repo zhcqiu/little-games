@@ -872,6 +872,8 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive speed difficulty rises more gently', g._difficulty().speed < 0.8);
   g.step(16);
   truthy('drive lane growth is gradual', g.laneCount <= 4);
+  const nextVehicleMs = g._nextVehicleSpawnMs();
+  truthy('drive vehicle cadence stays bounded late', nextVehicleMs >= 720 && nextVehicleMs <= 1560);
   g.gameTimeMs = 350000;
   g.step(16);
   eq('drive lane cap reaches eight', g.laneCount, 8);
@@ -1018,9 +1020,29 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   Math.random = () => seq.shift() ?? 0;
   try {
     const g = new DriveGame();
-    g._spawnVehicle();
+    eq('drive oncoming traffic spawn succeeds', g._spawnVehicle(), true);
     eq('drive oncoming traffic can spawn in half lane', g.vehicles[0].lane, 0.5);
     eq('drive half-lane spawn target matches lane', g.vehicles[0].targetLane, 0.5);
+  } finally {
+    Math.random = oldRandom;
+  }
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: 0, targetLane: 0, z: 0.92, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  eq('drive adjacent half lane blocked near spawn', g._trafficSlotOpen(0.5, 0.66, 1.08), false);
+}
+{
+  const oldRandom = Math.random;
+  Math.random = () => 0;
+  try {
+    const g = new DriveGame();
+    g.vehicles = [
+      { lane: 1, targetLane: 1, laneChangeMs: 0, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+      { lane: 0.5, targetLane: 0.5, laneChangeMs: 999, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#111', roof: '#fff' }, hit: false },
+    ];
+    g._moveObjects(0.2);
+    eq('drive lane change avoids occupied adjacent lane', g.vehicles[0].targetLane, 1.5);
   } finally {
     Math.random = oldRandom;
   }
@@ -1037,8 +1059,8 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
     { lane: 0, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
     { lane: 1, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
   ];
-  g._spawnVehicle();
-  eq('drive pressure zone leaves one lane open', g.vehicles.length, 2);
+  eq('drive pressure zone leaves one lane open', g._spawnVehicle(), false);
+  eq('drive pressure zone leaves one lane open count', g.vehicles.length, 2);
 }
 {
   const e = new DriveEffects();

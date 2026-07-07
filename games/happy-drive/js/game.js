@@ -18,6 +18,11 @@ const CHALLENGES = {
 const PLAYER_HIT_LANE = 0.3;
 const PLAYER_HIT_Z_MIN = -0.02;
 const PLAYER_HIT_Z_MAX = 0.085;
+const TRAFFIC_LANE_GAP = 0.62;
+const TRAFFIC_SPAWN_Z_MIN = 0.66;
+const TRAFFIC_SPAWN_Z_MAX = 1.08;
+const TRAFFIC_PRESSURE_Z_MIN = 0.18;
+const TRAFFIC_PRESSURE_Z_MAX = 0.9;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -57,7 +62,7 @@ export class Game {
     this.vehicles = [];
     this.fruits = [];
     this.scenery = [];
-    this.vehicleSpawnMs = 450;
+    this.vehicleSpawnMs = 700;
     this.fruitSpawnMs = 850;
     this.scenerySpawnMs = 0;
     this.combo = 0;
@@ -239,13 +244,13 @@ export class Game {
 
   _spawn(dt) {
     const d = this._difficulty();
-    this.vehicleSpawnMs -= dt * d.spawn;
+    this.vehicleSpawnMs -= dt;
     this.fruitSpawnMs -= dt * d.fruit;
     this.scenerySpawnMs -= dt;
 
     if (this.vehicleSpawnMs <= 0) {
-      this._spawnVehicle();
-      this.vehicleSpawnMs = clamp(1040 - this.gameTimeMs / 460, 560, 1040) + Math.random() * 300;
+      const spawned = this._spawnVehicle();
+      this.vehicleSpawnMs = spawned ? this._nextVehicleSpawnMs(d) : 260;
     }
     if (this.fruitSpawnMs <= 0) {
       const spawned = this._spawnFruit();
@@ -286,23 +291,49 @@ export class Game {
     }
   }
 
-  _spawnVehicle() {
-    const occupied = this.vehicles.filter((v) => v.z > 0.72).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
-    const pressure = this.vehicles.filter((v) => v.z > 0.22 && v.z < 0.82).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
-    if (pressure.length >= this.laneCount - 1) return;
+  _nextVehicleSpawnMs(d = this._difficulty()) {
+    const base = clamp(1280 - this.gameTimeMs / 950, 820, 1280);
+    const difficultyTrim = clamp((d.spawn - 1.2) * 70, 0, 220);
+    const pressure = this.vehicles.filter((v) => v.z > TRAFFIC_PRESSURE_Z_MIN && v.z < TRAFFIC_PRESSURE_Z_MAX).length;
+    const pressureEase = pressure > this.laneCount * 0.45 ? 180 : 0;
+    return clamp(base - difficultyTrim + pressureEase, 720, 1380) + Math.random() * 180;
+  }
 
-    const towardPlayer = Math.random() < 0.36 + Math.min(0.18, this.gameTimeMs / 240000);
-    const slots = this._trafficSlots(towardPlayer || Math.random() < 0.3);
+  _vehicleLane(v) {
+    return Number.isFinite(v.targetLane) ? v.targetLane : v.lane;
+  }
+
+  _trafficSlotOpen(lane, zMin = TRAFFIC_PRESSURE_Z_MIN, zMax = TRAFFIC_PRESSURE_Z_MAX, gap = TRAFFIC_LANE_GAP, ignore = null) {
+    return !this.vehicles.some((v) =>
+      v !== ignore &&
+      v.z > zMin &&
+      v.z < zMax &&
+      Math.abs(this._vehicleLane(v) - lane) <= gap
+    );
+  }
+
+  _spawnVehicle() {
+    const pressure = this.vehicles.filter((v) => v.z > TRAFFIC_PRESSURE_Z_MIN && v.z < TRAFFIC_PRESSURE_Z_MAX);
+    const pressureLimit = Math.max(2, Math.ceil(this.laneCount * 0.55));
+    if (pressure.length >= pressureLimit) return false;
+
+    const towardPressure = pressure.filter((v) => v.direction === 'toward');
+    const towardLimit = Math.max(1, Math.ceil(this.laneCount * 0.38));
+    const towardNearTop = this.vehicles.some((v) => v.direction === 'toward' && v.z > 0.72);
+    let towardPlayer = Math.random() < 0.34 + Math.min(0.12, this.gameTimeMs / 320000);
+    if (towardPlayer && (towardPressure.length >= towardLimit || towardNearTop)) towardPlayer = false;
+
+    const slots = this._trafficSlots(towardPlayer || Math.random() < 0.24);
     const candidates = [];
     for (const lane of slots) {
-      const occupiedNear = occupied.some((pos) => Math.abs(pos - lane) < 0.38);
-      const pressureNear = pressure.some((pos) => Math.abs(pos - lane) < 0.5);
-      if (!occupiedNear && !pressureNear) candidates.push(lane);
+      const spawnOpen = this._trafficSlotOpen(lane, TRAFFIC_SPAWN_Z_MIN, TRAFFIC_SPAWN_Z_MAX);
+      const pressureOpen = this._trafficSlotOpen(lane, TRAFFIC_PRESSURE_Z_MIN, TRAFFIC_PRESSURE_Z_MAX);
+      if (spawnOpen && pressureOpen) candidates.push(lane);
     }
-    if (!candidates.length) return;
+    if (!candidates.length) return false;
 
     const halfLaneCandidates = candidates.filter((lane) => Math.abs(lane - Math.round(lane)) > 0.01);
-    const lane = towardPlayer && halfLaneCandidates.length && Math.random() < 0.68
+    const lane = towardPlayer && halfLaneCandidates.length && Math.random() < 0.58
       ? pick(halfLaneCandidates)
       : pick(candidates);
 
@@ -310,13 +341,14 @@ export class Game {
       id: Math.random().toString(36).slice(2),
       lane,
       targetLane: lane,
-      laneChangeMs: 650 + Math.random() * 1300,
+      laneChangeMs: 900 + Math.random() * 1600,
       z: 1.04,
-      speed: towardPlayer ? 0.16 + Math.random() * 0.08 : 0.08 + Math.random() * 0.06,
+      speed: towardPlayer ? 0.15 + Math.random() * 0.05 : 0.08 + Math.random() * 0.04,
       direction: towardPlayer ? 'toward' : 'same',
       model: pick(VEHICLES),
       hit: false,
     });
+    return true;
   }
 
   _trafficSlots(includeHalfLanes) {
@@ -378,10 +410,17 @@ export class Game {
     const canChange = v.direction === 'toward' && v.z > 0.18 && v.z < 0.86;
     if (canChange && v.laneChangeMs <= 0) {
       const baseLane = Math.round(v.targetLane * 2) / 2;
+      const zMin = Math.max(TRAFFIC_PRESSURE_Z_MIN, v.z - 0.24);
+      const zMax = Math.min(TRAFFIC_PRESSURE_Z_MAX, v.z + 0.24);
       const options = [baseLane - 0.5, baseLane + 0.5]
-        .filter((lane) => lane >= 0 && lane <= this.laneCount - 1 && Math.abs(lane - v.targetLane) > 0.01);
-      if (options.length && Math.random() < 0.62) v.targetLane = pick(options);
-      v.laneChangeMs = 900 + Math.random() * 1700;
+        .filter((lane) =>
+          lane >= 0 &&
+          lane <= this.laneCount - 1 &&
+          Math.abs(lane - v.targetLane) > 0.01 &&
+          this._trafficSlotOpen(lane, zMin, zMax, TRAFFIC_LANE_GAP, v)
+        );
+      if (options.length && Math.random() < 0.48) v.targetLane = pick(options);
+      v.laneChangeMs = 1200 + Math.random() * 2000;
     }
 
     const rate = v.direction === 'toward' ? 1.45 : 0.8;
