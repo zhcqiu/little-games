@@ -863,7 +863,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive initial damage', g.damage, 0);
   eq('drive initial lane', g.playerLane, 1);
   truthy('drive default speed reduced 20%', Math.abs(g.playerSpeed - 0.552) < 0.001);
-  truthy('drive fruit spawn rate increased about 40%', Math.abs(g._difficulty().fruit - 0.77) < 0.001);
+  truthy('drive fruit spawn rate increased 150%', Math.abs(g._difficulty().fruit - 1.93) < 0.001);
 }
 {
   const g = new DriveGame();
@@ -948,6 +948,27 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 }
 {
   const g = new DriveGame();
+  g.playerOffset = 0.5;
+  g.targetOffset = 0.5;
+  g.vehicles = [{ lane: 0.5, targetLane: 0.5, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.step(16);
+  eq('drive half-lane vehicle can hit middle player', g.damage, 1);
+}
+{
+  const oldRandom = Math.random;
+  Math.random = () => 0;
+  try {
+    const g = new DriveGame();
+    g.vehicles = [{ lane: 1, targetLane: 1, laneChangeMs: 0, z: 0.5, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+    g._moveObjects(0.2);
+    eq('drive oncoming vehicle can target half lane', g.vehicles[0].targetLane, 0.5);
+    truthy('drive oncoming vehicle starts lane change', g.vehicles[0].lane < 1 && g.vehicles[0].lane > 0.5);
+  } finally {
+    Math.random = oldRandom;
+  }
+}
+{
+  const g = new DriveGame();
   g.vehicles = [{ lane: g.playerLane, z: -0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);
   eq('drive passed vehicle clears bottom', g.vehicles.length, 0);
@@ -968,7 +989,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive player stays in lower screen', player.y > r.h * 0.72);
   truthy('drive left lane shows left side', r._sideLean(r.w * 0.25, { width: r.w }) > 0);
   truthy('drive right lane shows right side', r._sideLean(r.w * 0.75, { width: r.w }) < 0);
-  truthy('drive side perspective is stronger', Math.abs(r._sideLean(r.w * 0.25, { width: r.w })) > 0.18);
+  truthy('drive side perspective is stronger', Math.abs(r._sideLean(r.w * 0.25, { width: r.w })) > 0.3);
   const farDelta = r._roadAt(0.8).y - r._roadAt(0.9).y;
   const nearDelta = r._roadAt(0.1).y - r._roadAt(0.2).y;
   truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);

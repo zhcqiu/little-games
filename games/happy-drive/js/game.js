@@ -10,9 +10,9 @@ const VEHICLES = [
 ];
 
 const CHALLENGES = {
-  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 0.77 },
-  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 0.67 },
-  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 0.59 },
+  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 1.93 },
+  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 1.68 },
+  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 1.48 },
 };
 
 function clamp(n, min, max) {
@@ -283,18 +283,24 @@ export class Game {
   }
 
   _spawnVehicle() {
-    const occupied = new Set(this.vehicles.filter((v) => v.z > 0.72).map((v) => v.lane));
-    const pressure = new Set(this.vehicles.filter((v) => v.z > 0.22 && v.z < 0.82).map((v) => v.lane));
-    if (pressure.size >= this.laneCount - 1) return;
+    const occupied = this.vehicles.filter((v) => v.z > 0.72).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
+    const pressure = this.vehicles.filter((v) => v.z > 0.22 && v.z < 0.82).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
+    const pressureLanes = new Set(pressure.map((lane) => Math.round(lane)));
+    if (pressureLanes.size >= this.laneCount - 1) return;
     const candidates = [];
     for (let lane = 0; lane < this.laneCount; lane++) {
-      if (!occupied.has(lane) && !pressure.has(lane)) candidates.push(lane);
+      const occupiedNear = occupied.some((pos) => Math.abs(pos - lane) < 0.38);
+      const pressureNear = pressure.some((pos) => Math.abs(pos - lane) < 0.55);
+      if (!occupiedNear && !pressureNear) candidates.push(lane);
     }
     if (!candidates.length) return;
+    const lane = pick(candidates);
     const towardPlayer = Math.random() < 0.36 + Math.min(0.18, this.gameTimeMs / 240000);
     this.vehicles.push({
       id: Math.random().toString(36).slice(2),
-      lane: pick(candidates),
+      lane,
+      targetLane: lane,
+      laneChangeMs: 700 + Math.random() * 1400,
       z: 1.04,
       speed: towardPlayer ? 0.16 + Math.random() * 0.08 : 0.08 + Math.random() * 0.06,
       direction: towardPlayer ? 'toward' : 'same',
@@ -305,10 +311,10 @@ export class Game {
 
   _spawnFruit() {
     if (this.vehicles.some((v) => v.direction === 'toward' && v.z > 0.18)) return;
-    const blocked = new Set(this.vehicles.filter((v) => v.z > 0.15).map((v) => v.lane));
+    const blocked = this.vehicles.filter((v) => v.z > 0.15).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
     const candidates = [];
     for (let lane = 0; lane < this.laneCount; lane++) {
-      if (!blocked.has(lane)) candidates.push(lane);
+      if (!blocked.some((pos) => Math.abs(pos - lane) < 0.55)) candidates.push(lane);
     }
     if (!candidates.length) return;
     this.fruits.push({
@@ -323,6 +329,7 @@ export class Game {
     const d = this._difficulty();
     const base = 0.08 + this.playerSpeed * 0.075;
     for (const v of this.vehicles) {
+      this._updateVehicleLane(v, seconds);
       const nearExit = v.z < 0.16 ? (0.16 - v.z) * 2.4 : 0;
       v.z -= seconds * (base + v.speed * d.speed + nearExit);
     }
@@ -334,6 +341,25 @@ export class Game {
     this.vehicles = this.vehicles.filter((v) => v.z > -0.025);
     this.fruits = this.fruits.filter((f) => f.z > -0.12);
     this.scenery = this.scenery.filter((s) => s.z > -0.1);
+  }
+
+  _updateVehicleLane(v, seconds) {
+    if (!Number.isFinite(v.targetLane)) v.targetLane = v.lane;
+    if (!Number.isFinite(v.laneChangeMs)) v.laneChangeMs = 700 + Math.random() * 1400;
+
+    v.laneChangeMs -= seconds * 1000;
+    const canChange = v.direction === 'toward' && v.z > 0.18 && v.z < 0.86;
+    if (canChange && v.laneChangeMs <= 0) {
+      const baseLane = Math.round(v.targetLane * 2) / 2;
+      const options = [baseLane - 0.5, baseLane + 0.5]
+        .filter((lane) => lane >= 0 && lane <= this.laneCount - 1 && Math.abs(lane - v.targetLane) > 0.01);
+      if (options.length && Math.random() < 0.62) v.targetLane = pick(options);
+      v.laneChangeMs = 900 + Math.random() * 1700;
+    }
+
+    const rate = v.direction === 'toward' ? 1.45 : 0.8;
+    v.lane += (v.targetLane - v.lane) * Math.min(1, seconds * rate);
+    if (Math.abs(v.lane - v.targetLane) < 0.01) v.lane = v.targetLane;
   }
 
   _checkCollections() {
