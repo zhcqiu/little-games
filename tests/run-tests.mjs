@@ -864,7 +864,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive initial damage', g.damage, 0);
   eq('drive initial lane', g.playerLane, 1);
   truthy('drive default speed reduced 20%', Math.abs(g.playerSpeed - 0.552) < 0.001);
-  truthy('drive fruit spawn rate increased 150%', Math.abs(g._difficulty().fruit - 1.93) < 0.001);
+  truthy('drive fruit spawn rate increased 150%', Math.abs(g._difficulty().fruit - 2.65) < 0.001);
 }
 {
   const g = new DriveGame();
@@ -933,8 +933,26 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 {
   const g = new DriveGame();
   g.vehicles = [{ lane: 0, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
-  g._spawnFruit();
-  eq('drive fruit waits for oncoming traffic', g.fruits.length, 0);
+  eq('drive fruit can spawn away from oncoming traffic', g._spawnFruit(), true);
+  eq('drive fruit appears in safe lane', g.fruits.length, 1);
+  truthy('drive fruit avoids blocked traffic lane', Math.abs(g.fruits[0].lane - 0) >= 0.52);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [
+    { lane: 0, targetLane: 0, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 1, targetLane: 1, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 2, targetLane: 2, z: 0.72, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+  ];
+  eq('drive fruit blocked returns false', g._spawnFruit(), false);
+  g.fruitSpawnMs = 0;
+  g._spawn(16);
+  truthy('drive fruit retries soon when blocked', g.fruitSpawnMs <= 320);
+}
+{
+  const g = new DriveGame();
+  const next = g._nextFruitSpawnMs();
+  truthy('drive fruit cadence is more even', next >= 850 && next <= 1500);
 }
 {
   const g = new DriveGame();

@@ -10,9 +10,9 @@ const VEHICLES = [
 ];
 
 const CHALLENGES = {
-  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 1.93 },
-  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 1.68 },
-  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 1.48 },
+  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 2.65 },
+  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 2.35 },
+  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 2.1 },
 };
 
 const PLAYER_HIT_LANE = 0.3;
@@ -58,7 +58,7 @@ export class Game {
     this.fruits = [];
     this.scenery = [];
     this.vehicleSpawnMs = 450;
-    this.fruitSpawnMs = 2600;
+    this.fruitSpawnMs = 850;
     this.scenerySpawnMs = 0;
     this.combo = 0;
     this.comboMs = 0;
@@ -248,8 +248,8 @@ export class Game {
       this.vehicleSpawnMs = clamp(980 - this.gameTimeMs / 220, 420, 980) + Math.random() * 260;
     }
     if (this.fruitSpawnMs <= 0) {
-      this._spawnFruit();
-      this.fruitSpawnMs = 2600 + Math.random() * 1800;
+      const spawned = this._spawnFruit();
+      this.fruitSpawnMs = spawned ? this._nextFruitSpawnMs() : 320;
     }
     if (this.scenerySpawnMs <= 0) {
       this._spawnSceneryPair();
@@ -329,20 +329,26 @@ export class Game {
     return slots;
   }
 
+  _nextFruitSpawnMs() {
+    return 850 + Math.random() * 650;
+  }
+
   _spawnFruit() {
-    if (this.vehicles.some((v) => v.direction === 'toward' && v.z > 0.18)) return;
-    const blocked = this.vehicles.filter((v) => v.z > 0.15).map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
+    const blocked = this.vehicles
+      .filter((v) => v.z > 0.12 && v.z < 1.08)
+      .map((v) => Number.isFinite(v.targetLane) ? v.targetLane : v.lane);
     const candidates = [];
     for (let lane = 0; lane < this.laneCount; lane++) {
-      if (!blocked.some((pos) => Math.abs(pos - lane) < 0.55)) candidates.push(lane);
+      if (!blocked.some((pos) => Math.abs(pos - lane) < 0.52)) candidates.push(lane);
     }
-    if (!candidates.length) return;
+    if (!candidates.length) return false;
     this.fruits.push({
       lane: pick(candidates),
       z: 1.02,
       emoji: pick(FRUITS),
       bob: Math.random() * Math.PI * 2,
     });
+    return true;
   }
 
   _moveObjects(seconds) {
