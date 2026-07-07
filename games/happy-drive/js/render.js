@@ -83,30 +83,65 @@ export class Renderer {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, this.w, this.h);
 
-    const sunX = this.w * 0.78;
-    const sunY = this.h * 0.11;
-    const r = this.w * 0.06;
-    ctx.fillStyle = '#ffca28';
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = Math.max(2, this.w * 0.006);
-    ctx.strokeStyle = '#f57f17';
-    ctx.beginPath();
-    ctx.arc(sunX - r * 0.28, sunY - r * 0.08, r * 0.08, 0, Math.PI * 2);
-    ctx.arc(sunX + r * 0.28, sunY - r * 0.08, r * 0.08, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(sunX, sunY + r * 0.08, r * 0.42, 0, Math.PI);
-    ctx.stroke();
+    this._drawSun(ctx, game);
 
     const px = (game.planeMs < 0 ? -game.planeMs / 3800 : 0) * (this.w + 180) - 90;
     if (game.planeMs < 0) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.font = `${Math.round(this.w * 0.045)}px sans-serif`;
       ctx.fillText('✈️', px, this.h * 0.16);
-      ctx.font = `${Math.round(this.w * 0.026)}px sans-serif`;
-      ctx.fillText('加油', px - this.w * 0.055, this.h * 0.16 + this.w * 0.045);
+      ctx.font = `${Math.round(this.w * 0.027)}px sans-serif`;
+      ctx.fillText('⭐❤️⭐', px - this.w * 0.035, this.h * 0.16 + this.w * 0.045);
     }
+  }
+
+  _drawSun(ctx, game) {
+    const sunX = this.w * 0.78;
+    const sunY = this.h * 0.11 + Math.sin(this.time / 850) * this.h * 0.004;
+    const pulse = 1 + Math.sin(this.time / 620) * 0.035;
+    const r = this.w * 0.06 * pulse;
+    const rayCount = 10;
+    const raySpin = this.time / 1800;
+
+    ctx.save();
+    ctx.translate(sunX, sunY);
+    ctx.strokeStyle = 'rgba(245,127,23,0.55)';
+    ctx.lineWidth = Math.max(2, this.w * 0.005);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < rayCount; i++) {
+      const a = raySpin + i * Math.PI * 2 / rayCount;
+      const inner = r * 1.25;
+      const outer = r * (1.55 + 0.1 * Math.sin(this.time / 300 + i));
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+      ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#ffca28';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineWidth = Math.max(2, this.w * 0.006);
+    ctx.strokeStyle = '#f57f17';
+    const blink = (this.time % 4200) > 3920;
+    ctx.beginPath();
+    if (blink) {
+      ctx.moveTo(-r * 0.36, -r * 0.08);
+      ctx.lineTo(-r * 0.2, -r * 0.08);
+      ctx.moveTo(r * 0.2, -r * 0.08);
+      ctx.lineTo(r * 0.36, -r * 0.08);
+    } else {
+      ctx.arc(-r * 0.28, -r * 0.08, r * 0.08, 0, Math.PI * 2);
+      ctx.arc(r * 0.28, -r * 0.08, r * 0.08, 0, Math.PI * 2);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, r * 0.08, r * 0.42, 0, Math.PI);
+    ctx.stroke();
+    ctx.restore();
   }
 
   _drawRoad(ctx, game, t) {

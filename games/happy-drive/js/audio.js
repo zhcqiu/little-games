@@ -61,6 +61,12 @@ export class Audio extends AudioEngine {
     setTimeout(() => this.playTone({ freq: 523, duration: 160, gain: 0.16 }), 120);
   }
 
+  playExtraLife() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [659, 784, 988, 1175].forEach((n, i) => this.scheduleNote(n, t + i * 0.07, 170, 0.18, 'triangle'));
+  }
+
   playHighScore() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;

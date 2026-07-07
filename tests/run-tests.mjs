@@ -1122,6 +1122,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive right speed line starts behind car', Math.abs(rightSpeedLine.start.x - playerPointForLines.x) < 45 && rightSpeedLine.start.y > playerPointForLines.y);
   truthy('drive left speed line follows road perspective', leftSpeedLine.end.x < leftSpeedLine.start.x && leftSpeedLine.end.y > leftSpeedLine.start.y);
   truthy('drive right speed line follows road perspective', rightSpeedLine.end.x > rightSpeedLine.start.x && rightSpeedLine.end.y > rightSpeedLine.start.y);
+  truthy('drive renderer has animated sun helper', typeof r._drawSun === 'function');
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);

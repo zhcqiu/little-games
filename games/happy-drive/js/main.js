@@ -122,9 +122,14 @@ function closeTopPanel() {
 game.on('fruit', ({ fruit, combo, extraLife }) => {
   audio.playFruit();
   const p = renderer.objectPoint(fruit.lane, game.laneCount, fruit.z);
-  effects.burst(p.x, p.y, ['#ffeb3b', '#ff7043', '#66bb6a', '#42a5f5'], extraLife ? 24 : 16);
+  effects.burst(p.x, p.y, extraLife ? ['#ffeb3b', '#ff80ab', '#ffffff', '#ffd54f', '#f06292'] : ['#ffeb3b', '#ff7043', '#66bb6a', '#42a5f5'], extraLife ? 42 : 16);
+  if (extraLife) {
+    const car = renderer.playerPoint(game);
+    effects.burst(car.x, car.y - canvas.height * 0.05, ['#ffeb3b', '#ff80ab', '#ffffff', '#ffd54f'], 32);
+    audio.playExtraLife();
+  }
   showClearToast(extraLife ? '❤️+1' : (combo >= 3 ? '🌈' + combo : fruit.emoji));
-  vibrate(extraLife ? [20, 20, 35] : [15]);
+  vibrate(extraLife ? [25, 20, 45, 20, 30] : [15]);
 });
 game.on('extraLife', () => {
   showToast('❤️');
