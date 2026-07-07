@@ -962,6 +962,10 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 {
   const r = Object.create(DriveRenderer.prototype);
   r.w = 600; r.h = 800; r.dpr = 1;
+  const player = r.playerPoint({ playerOffset: 1, laneCount: 3 });
+  truthy('drive player stays in lower screen', player.y > r.h * 0.72);
+  truthy('drive left lane shows left side', r._sideLean(r.w * 0.25, { width: r.w }) > 0);
+  truthy('drive right lane shows right side', r._sideLean(r.w * 0.75, { width: r.w }) < 0);
   const farDelta = r._roadAt(0.8).y - r._roadAt(0.9).y;
   const nearDelta = r._roadAt(0.1).y - r._roadAt(0.2).y;
   truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);

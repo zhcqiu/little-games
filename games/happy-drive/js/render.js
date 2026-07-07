@@ -1,3 +1,5 @@
+const PLAYER_Z = 0.02;
+
 export class Renderer {
   constructor(canvas, effects) {
     this.canvas = canvas;
@@ -28,8 +30,7 @@ export class Renderer {
   }
 
   playerPoint(game) {
-    const z = 0.08;
-    return { x: this.projectLane(game.playerOffset, game.laneCount, z), y: this._roadAt(z).y };
+    return { x: this.projectLane(game.playerOffset, game.laneCount, PLAYER_Z), y: this._roadAt(PLAYER_Z).y };
   }
 
   objectPoint(lane, laneCount, z) {
@@ -263,8 +264,8 @@ export class Renderer {
   _drawPlayer(ctx, game, t) {
     const p = this.playerPoint(game);
     const model = { color: t.primary, roof: '#ffe0b2' };
-    const road = this._roadAt(0.08);
-    this._drawCar(ctx, p.x, p.y, 1.28 * this.dpr, model, false, game.damage, 0.08, this._sideLean(p.x, road));
+    const road = this._roadAt(PLAYER_Z);
+    this._drawCar(ctx, p.x, p.y, this._scale(PLAYER_Z) * 1.02, model, false, game.damage, PLAYER_Z, this._sideLean(p.x, road));
   }
 
   _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2, sideLean = 0) {
@@ -390,7 +391,7 @@ export class Renderer {
 
   _sideLean(x, road) {
     const half = Math.max(1, road.width / 2);
-    return Math.max(-0.24, Math.min(0.24, ((x - this.w / 2) / half) * 0.2));
+    return Math.max(-0.24, Math.min(0.24, -((x - this.w / 2) / half) * 0.2));
   }
 
   _drawRepairOverlay(ctx) {
