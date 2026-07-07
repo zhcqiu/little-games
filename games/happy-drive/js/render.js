@@ -358,13 +358,17 @@ export class Renderer {
 
   _drawPlayer(ctx, game, t) {
     const p = this.playerPoint(game);
-    const model = { color: t.primary, roof: '#ffe0b2' };
+    const model = this._playerModel(t);
     const road = this._roadAt(PLAYER_Z);
     const speed = Math.max(0.35, game.playerSpeed || 0.5);
     const bob = Math.sin(this.time * (0.006 + speed * 0.006)) * (1.5 + speed * 3) * this.dpr;
     const turnTilt = Math.max(-0.12, Math.min(0.12, (game.targetOffset - game.playerOffset) * 0.18));
     const wheelPhase = this.time * (0.025 + speed * 0.045);
     this._drawCar(ctx, p.x, p.y + bob, this._scale(PLAYER_Z) * 1.02, model, false, game.damage, PLAYER_Z, this._sideLean(p.x, road), wheelPhase, turnTilt);
+  }
+
+  _playerModel(t) {
+    return { color: '#c98f7a', roof: '#ead4bf' };
   }
 
   _drawCar(ctx, x, y, scale, model, toward, damage = 0, z = 0.2, sideLean = 0, wheelPhase = 0, bodyTilt = 0) {

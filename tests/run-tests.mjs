@@ -1042,6 +1042,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
     eq('drive oncoming traffic spawn succeeds', g._spawnVehicle(), true);
     eq('drive oncoming traffic can spawn in half lane', g.vehicles[0].lane, 0.5);
     eq('drive half-lane spawn target matches lane', g.vehicles[0].targetLane, 0.5);
+    eq('drive traffic car palette is muted', g.vehicles[0].model.color, '#7aa7c9');
   } finally {
     Math.random = oldRandom;
   }
@@ -1123,6 +1124,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive left speed line follows road perspective', leftSpeedLine.end.x < leftSpeedLine.start.x && leftSpeedLine.end.y > leftSpeedLine.start.y);
   truthy('drive right speed line follows road perspective', rightSpeedLine.end.x > rightSpeedLine.start.x && rightSpeedLine.end.y > rightSpeedLine.start.y);
   truthy('drive renderer has animated sun helper', typeof r._drawSun === 'function');
+  eq('drive player car palette is muted', r._playerModel({}).color, '#c98f7a');
 }
 // ───── result ─────
 console.log(`${passed} passed, ${failed} failed`);

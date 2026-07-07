@@ -3,10 +3,10 @@ export const MAX_LANES = 8;
 export const FRUITS = ['🍓', '🍌', '🍎', '🍊', '🍇', '🍉'];
 
 const VEHICLES = [
-  { kind: 'car', color: '#42a5f5', roof: '#bbdefb' },
-  { kind: 'bus', color: '#ffca28', roof: '#fff8e1' },
-  { kind: 'truck', color: '#66bb6a', roof: '#c8e6c9' },
-  { kind: 'van', color: '#ef5350', roof: '#ffcdd2' },
+  { kind: 'car', color: '#7aa7c9', roof: '#c7d9e8' },
+  { kind: 'bus', color: '#d4b565', roof: '#eee2bf' },
+  { kind: 'truck', color: '#8db58b', roof: '#d4e2cf' },
+  { kind: 'van', color: '#c98282', roof: '#e8cbcb' },
 ];
 
 const CHALLENGES = {
