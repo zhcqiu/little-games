@@ -311,10 +311,10 @@ export class Renderer {
   _speedLineSegment(game, side, pairIndex, drift, speed) {
     const laneCount = game.laneCount || 3;
     const lane = Number.isFinite(game.playerOffset) ? game.playerOffset : Math.floor(laneCount / 2);
-    const zStart = Math.max(0.004, PLAYER_Z + 0.012 - drift * 0.014);
-    const zEnd = Math.max(0, zStart - (0.022 + speed * 0.018 + drift * 0.012));
-    const laneStart = Math.max(0, Math.min(laneCount - 1, lane + side * (0.22 + pairIndex * 0.1)));
-    const laneEnd = Math.max(0, Math.min(laneCount - 1, laneStart + side * (0.18 + speed * 0.12 + drift * 0.08)));
+    const zStart = Math.max(0, PLAYER_Z - 0.006 - drift * 0.008);
+    const zEnd = Math.max(0, zStart - (0.018 + speed * 0.014 + drift * 0.01));
+    const laneStart = Math.max(0, Math.min(laneCount - 1, lane + side * (0.06 + pairIndex * 0.035)));
+    const laneEnd = Math.max(0, Math.min(laneCount - 1, laneStart + side * (0.24 + speed * 0.14 + drift * 0.08)));
     return {
       start: this.objectPoint(laneStart, laneCount, zStart),
       end: this.objectPoint(laneEnd, laneCount, zEnd),
