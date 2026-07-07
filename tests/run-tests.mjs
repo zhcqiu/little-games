@@ -889,7 +889,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
 }
 {
   const g = new DriveGame();
-  g.vehicles = [{ lane: g.playerLane, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.vehicles = [{ lane: g.playerLane, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
   g.step(16);
   eq('drive crash damage +1', g.damage, 1);
   eq('drive crash not over yet', g.gameOver, false);
@@ -898,8 +898,8 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   const g = new DriveGame();
   g.setMaxHits(2);
   g.vehicles = [
-    { lane: g.playerLane, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
-    { lane: g.playerLane, z: 0.09, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: g.playerLane, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: g.playerLane, z: 0.05, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
   ];
   g.step(16);
   g.vehicles[1].hit = false;
@@ -932,11 +932,23 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   g.playerOffset = 0.5;
   g.targetOffset = 0.5;
   g.vehicles = [
-    { lane: 0, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
-    { lane: 1, z: 0.08, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 0, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
+    { lane: 1, z: 0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false },
   ];
   g.step(16);
   eq('drive gap between two cars avoids collision', g.damage, 0);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: g.playerLane, z: 0.12, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.step(16);
+  eq('drive near visual gap avoids collision', g.damage, 0);
+}
+{
+  const g = new DriveGame();
+  g.vehicles = [{ lane: g.playerLane, z: -0.04, speed: 0.2, direction: 'toward', model: { color: '#000', roof: '#fff' }, hit: false }];
+  g.step(16);
+  eq('drive passed vehicle clears bottom', g.vehicles.length, 0);
 }
 {
   const g = new DriveGame();

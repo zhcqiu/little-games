@@ -252,6 +252,7 @@ export class Renderer {
 
   _drawVehicles(ctx, game) {
     for (const v of game.vehicles.slice().sort((a, b) => b.z - a.z)) {
+      if (v.z <= 0) continue;
       const p = this.objectPoint(v.lane, game.laneCount, v.z);
       const road = this._roadAt(v.z);
       const sideLean = this._sideLean(p.x, road);

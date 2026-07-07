@@ -322,13 +322,16 @@ export class Game {
   _moveObjects(seconds) {
     const d = this._difficulty();
     const base = 0.08 + this.playerSpeed * 0.075;
-    for (const v of this.vehicles) v.z -= seconds * (base + v.speed * d.speed);
+    for (const v of this.vehicles) {
+      const nearExit = v.z < 0.16 ? (0.16 - v.z) * 2.4 : 0;
+      v.z -= seconds * (base + v.speed * d.speed + nearExit);
+    }
     for (const f of this.fruits) {
       f.z -= seconds * (base + 0.07);
       f.bob += seconds * 5;
     }
     for (const s of this.scenery) s.z -= seconds * (base + 0.1);
-    this.vehicles = this.vehicles.filter((v) => v.z > -0.14);
+    this.vehicles = this.vehicles.filter((v) => v.z > -0.025);
     this.fruits = this.fruits.filter((f) => f.z > -0.12);
     this.scenery = this.scenery.filter((s) => s.z > -0.1);
   }
@@ -354,8 +357,8 @@ export class Game {
   _checkCollisions() {
     for (const v of this.vehicles) {
       if (v.hit) continue;
-      const lateralOverlap = Math.abs(v.lane - this.playerOffset) < 0.38;
-      const depthOverlap = v.z < 0.15 && v.z > -0.045;
+      const lateralOverlap = Math.abs(v.lane - this.playerOffset) < 0.3;
+      const depthOverlap = v.z < 0.085 && v.z > -0.02;
       if (lateralOverlap && depthOverlap) {
         v.hit = true;
         this.damage += 1;
