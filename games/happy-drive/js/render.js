@@ -272,7 +272,7 @@ export class Renderer {
     const w = 34 * scale;
     const h = 56 * scale;
     const perspective = 1 - Math.max(0, Math.min(1, z));
-    const lean = Math.max(-0.24, Math.min(0.24, sideLean || 0));
+    const lean = Math.max(-0.38, Math.min(0.38, sideLean || 0));
     const topW = w * (0.54 + perspective * 0.08);
     const midW = w * (0.76 + perspective * 0.08);
     const bottomW = w * (1.0 + perspective * 0.08);
@@ -391,7 +391,7 @@ export class Renderer {
 
   _sideLean(x, road) {
     const half = Math.max(1, road.width / 2);
-    return Math.max(-0.24, Math.min(0.24, -((x - this.w / 2) / half) * 0.2));
+    return Math.max(-0.38, Math.min(0.38, -((x - this.w / 2) / half) * 0.4));
   }
 
   _drawRepairOverlay(ctx) {

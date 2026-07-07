@@ -10,9 +10,9 @@ const VEHICLES = [
 ];
 
 const CHALLENGES = {
-  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 0.55 },
-  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 0.48 },
-  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 0.42 },
+  gentle: { spawnMul: 1.28, speedMul: 0.54, fruitMul: 0.77 },
+  normal: { spawnMul: 1.55, speedMul: 0.62, fruitMul: 0.67 },
+  lively: { spawnMul: 1.82, speedMul: 0.7, fruitMul: 0.59 },
 };
 
 function clamp(n, min, max) {
@@ -221,7 +221,7 @@ export class Game {
   }
 
   _targetSpeed() {
-    return 0.45 + this.speedSetting * 0.12;
+    return (0.45 + this.speedSetting * 0.12) * 0.8;
   }
 
   _difficulty() {

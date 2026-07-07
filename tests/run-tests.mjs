@@ -862,6 +862,8 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   eq('drive initial score', g.score, 0);
   eq('drive initial damage', g.damage, 0);
   eq('drive initial lane', g.playerLane, 1);
+  truthy('drive default speed reduced 20%', Math.abs(g.playerSpeed - 0.552) < 0.001);
+  truthy('drive fruit spawn rate increased about 40%', Math.abs(g._difficulty().fruit - 0.77) < 0.001);
 }
 {
   const g = new DriveGame();
@@ -966,6 +968,7 @@ truthy('lian EMOJI_POOL ≥ 30', EMOJI_POOL.length >= 30);
   truthy('drive player stays in lower screen', player.y > r.h * 0.72);
   truthy('drive left lane shows left side', r._sideLean(r.w * 0.25, { width: r.w }) > 0);
   truthy('drive right lane shows right side', r._sideLean(r.w * 0.75, { width: r.w }) < 0);
+  truthy('drive side perspective is stronger', Math.abs(r._sideLean(r.w * 0.25, { width: r.w })) > 0.18);
   const farDelta = r._roadAt(0.8).y - r._roadAt(0.9).y;
   const nearDelta = r._roadAt(0.1).y - r._roadAt(0.2).y;
   truthy('drive perspective near screen speed > far', nearDelta > farDelta * 6);
