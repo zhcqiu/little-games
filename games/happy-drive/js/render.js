@@ -146,14 +146,14 @@ export class Renderer {
     ctx.save();
     ctx.strokeStyle = '#ffffff';
     ctx.lineCap = 'round';
-    const spacing = 0.13;
+    const spacing = 0.2;
     for (let z = this._laneMarkerStartZ(game, spacing); z < 0.96; z += spacing) {
       const zNear = Math.max(0, z);
-      const zFar = Math.min(0.985, z + 0.045 + (1 - z) * 0.025);
+      const zFar = Math.min(0.985, z + 0.034 + (1 - z) * 0.012);
       if (zFar <= 0 || zFar - zNear < 0.012) continue;
       const road = this._roadAt(zNear);
-      ctx.globalAlpha = 0.42 + road.k * 0.45;
-      ctx.lineWidth = Math.max(1.2, (1.2 + road.k * 3.4) * this.dpr);
+      ctx.globalAlpha = 0.2 + road.k * 0.26;
+      ctx.lineWidth = Math.max(1, (0.9 + road.k * 2.2) * this.dpr);
       for (let i = 1; i < game.laneCount; i++) {
         const lane = i - 0.5;
         const a = this.objectPoint(lane, game.laneCount, zFar);
@@ -169,7 +169,7 @@ export class Renderer {
 
   _laneMarkerPhase(game, spacing = 0.13) {
     const distance = Math.max(0, Number(game.distance) || 0);
-    const progress = (distance * 0.018) % spacing;
+    const progress = (distance * 0.006) % spacing;
     return (spacing - progress) % spacing;
   }
 
